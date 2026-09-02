@@ -582,8 +582,14 @@ kernel void ldbDownsampleHighlights(device const float4* source [[buffer(0)]],
         for (uint x = 0; x < scale; ++x) {
             uint2 sourcePosition = min(gid * scale + uint2(x, y),
                                        uint2(uint(p.imageSize.x) - 1, uint(p.imageSize.y) - 1));
-            sum += thresholdHighlight(source[sourcePosition.y * uint(p.imageSize.x) + sourcePosition.x].rgb,
-                                      scatter.threshold);
+            float4 sourceSample=source[sourcePosition.y*uint(p.imageSize.x)+sourcePosition.x];
+            float sourceWeight=1.0f;
+            if(p.depthMode>0u&&scatter.axisX>1.5f) {
+                float depth=normalizedDepth(sourceSample,p);
+                sourceWeight=smoothstep(.018f,.36f,
+                    abs(depth-clamp(p.depthFocus,0.0f,1.0f)));
+            }
+            sum+=thresholdHighlight(sourceSample.rgb,scatter.threshold)*sourceWeight;
         }
     }
     uint2 depthPosition=min(gid*scale+uint2(scale/2u),
@@ -640,6 +646,9 @@ kernel void ldbComposite(device const float4* source [[buffer(0)]],
                                   uint(bloomScatter.imageSize.x), uint(bloomScatter.imageSize.y)).rgb;
     float3 glare = sampleBilinear(glareScattered, glarePixel,
                                   uint(glareScatter.imageSize.x), uint(glareScatter.imageSize.y)).rgb;
+    float2 haloPixel = (float2(gid) + 0.5f) / float(haloScatter.scale) - 0.5f;
+    float3 halo = sampleBilinear(haloScattered, haloPixel,
+                                 uint(haloScatter.imageSize.x), uint(haloScatter.imageSize.y)).rgb;
     if(p.depthMode>0u) {
         float targetDepth=normalizedDepth(source[index],p);
         float bloomDepth=normalizedDepth(sampleNearest(bloomScattered,bloomPixel,
@@ -653,10 +662,11 @@ kernel void ldbComposite(device const float4* source [[buffer(0)]],
         float glareLayer=1.0f-smoothstep(.035f,.16f,abs(glareDepth-targetDepth));
         bloom*=mix(.12f,1.0f,bloomLayer);
         glare*=mix(.12f,1.0f,glareLayer);
+        float haloDepth=normalizedDepth(sampleNearest(haloScattered,haloPixel,
+            uint(haloScatter.imageSize.x),uint(haloScatter.imageSize.y)),p);
+        float haloLayer=1.0f-smoothstep(.035f,.16f,abs(haloDepth-targetDepth));
+        halo*=mix(.12f,1.0f,haloLayer);
     }
-    float2 haloPixel = (float2(gid) + 0.5f) / float(haloScatter.scale) - 0.5f;
-    float3 halo = sampleBilinear(haloScattered, haloPixel,
-                                 uint(haloScatter.imageSize.x), uint(haloScatter.imageSize.y)).rgb;
     float apertureMix=clamp(p.apertureResponse,0.0f,1.0f);
     float3 directOptics=mix(direct[index].rgb,apertureScattered[index].rgb,apertureMix);
     float3 result = directOptics

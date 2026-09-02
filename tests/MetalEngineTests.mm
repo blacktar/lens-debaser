@@ -524,6 +524,25 @@ int main(int argc, char** argv) {
                 "Spherical aberration must form a smooth decaying spatial halo");
         require(maxDifference(comaShapeOut,haloShapeOut)>.001f,
                 "Coma and spherical halo must have independent spatial shapes");
+        auto depthHaloPoint=offAxisPoint;
+        for(auto& pixel:depthHaloPoint)pixel.w=.5f;
+        auto depthHalo=haloShape;depthHalo.depthMode=2;depthHalo.depthChannel=4;
+        depthHalo.depthFocus=.5f;
+        auto focusedHalo=render(engine,device,queue,depthHaloPoint,width,height,depthHalo);
+        auto opaqueDepthHaloPoint=depthHaloPoint;
+        for(auto& pixel:opaqueDepthHaloPoint)pixel.w=1.0f;
+        require(maxDifference(focusedHalo,opaqueDepthHaloPoint)<1e-6f,
+                "Spherical Halo must preserve highlights on Focus Depth");
+        for(auto& pixel:depthHaloPoint)pixel.w=.85f;
+        opaqueDepthHaloPoint=depthHaloPoint;
+        for(auto& pixel:opaqueDepthHaloPoint)pixel.w=1.0f;
+        auto defocusedHalo=render(engine,device,queue,depthHaloPoint,width,height,depthHalo);
+        require(maxDifference(defocusedHalo,opaqueDepthHaloPoint)>.001f,
+                "Spherical Halo must respond away from Focus Depth");
+        auto shiftedHaloFocus=depthHalo;shiftedHaloFocus.depthFocus=.85f;
+        require(maxDifference(render(engine,device,queue,depthHaloPoint,width,height,shiftedHaloFocus),
+                              opaqueDepthHaloPoint)<1e-6f,
+                "Moving Focus Depth must move the clean spherical-aberration plane");
 
         auto glareAudit=neutral;glareAudit.glareEnergy=.6f;glareAudit.glareRadius=8;glareAudit.bloomThreshold=1;
         auto glareAuditOut=render(engine,device,queue,offAxisPoint,width,height,glareAudit);
@@ -668,6 +687,7 @@ int main(int argc, char** argv) {
         std::printf("PASS: asymmetric off-axis coma tail\n");
         std::printf("PASS: continuous coma tail without ghost gaps\n");
         std::printf("PASS: smooth spatial spherical-aberration halo\n");
+        std::printf("PASS: depth-conditioned spherical-aberration halo\n");
         std::printf("PASS: independent coma and spherical shapes\n");
         std::printf("PASS: fine-detail boost and loss\n");
         std::printf("PASS: independent microcontrast transfer\n");

@@ -688,6 +688,18 @@ int main(int argc, char** argv) {
         save("87-depth-boundaries-scatter-diagnostic.tiff",
              displayPreview(render(engine,device,queue,depthBoundaryChart,width,height,boundaryScatterDiagnostic)));
 
+        auto depthHaloTransitions=focusTransitions;
+        for(uint32_t y=0;y<height;++y)for(uint32_t x=0;x<width;++x)
+            depthHaloTransitions[size_t(y)*width+x].w=float(x)/float(width-1);
+        auto depthHalo=LDBNeutralOpticsParameters(width,height);
+        depthHalo.depthMode=2;depthHalo.depthChannel=4;depthHalo.depthFocus=.5f;
+        depthHalo.sphericalHalo=.85f;
+        save("88-focus-transitions-depth-spherical-halo.tiff",
+             displayPreview(render(engine,device,queue,depthHaloTransitions,width,height,depthHalo)));
+        depthHalo.depthFocus=.2f;
+        save("89-focus-transitions-depth-spherical-halo-near.tiff",
+             displayPreview(render(engine,device,queue,depthHaloTransitions,width,height,depthHalo)));
+
         struct Space { uint32_t value; const char* name; };
         const Space spaces[] = {{LDBWorkingColorSpaceACEScct,"acescct"},
             {LDBWorkingColorSpaceDaVinciIntermediate,"dwg-intermediate"},

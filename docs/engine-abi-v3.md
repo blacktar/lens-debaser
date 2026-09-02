@@ -71,3 +71,11 @@ target. A restrained nonzero optical floor reflects that lens scatter occurs
 after scene occlusion and prevents distant practicals from being cut out.
 Depth-Free rendering and the existing Bloom and Glare controls retain their
 previous behavior; no additional UI control is required.
+
+Version 1.27 depth-conditions the existing Spherical Halo response. With an
+external depth interpretation active, highlight eligibility rises smoothly
+with distance from `Focus Depth`; highlights on the focus plane remain clean,
+and near/far defocused highlights receive the established spherical-aberration
+shape. The scatter also uses the softened layer protection introduced for
+Bloom and Glare. `Depth-Free` preserves the 1.26 response and no new parameter
+is added.

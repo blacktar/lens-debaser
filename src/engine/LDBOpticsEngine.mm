@@ -179,7 +179,7 @@ void LDBOpticsEngine::encode(id<MTLCommandBuffer> commandBuffer,
         {{float(glareWidth), float(glareHeight)}, p.glareRadius / glareScale,
          p.glareRadius / glareScale, glareScale, p.bloomThreshold, 1, 0},
         {{float(haloWidth), float(haloHeight)}, haloRadius / haloScale,
-         haloRadius / haloScale, haloScale, 0.45f, 0, 0}
+         haloRadius / haloScale, haloScale, 0.45f, 2, 0}
     };
     NSUInteger bloomBytes = NSUInteger(bloomWidth) * NSUInteger(bloomHeight) * sizeof(simd_float4);
     NSUInteger glareBytes = NSUInteger(glareWidth) * NSUInteger(glareHeight) * sizeof(simd_float4);

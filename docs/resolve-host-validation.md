@@ -17,7 +17,7 @@
 
 ## Current host status
 
-- Lens Debaser 1.26 is the current development build for `/Library/OFX/Plugins`.
+- Lens Debaser 1.27 is the current development build for `/Library/OFX/Plugins`.
 - The installed arm64 bundle passes strict code-signature verification.
 - Resolve discovers and loads the effect.
 

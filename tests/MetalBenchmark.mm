@@ -81,6 +81,8 @@ int main(int argc, char** argv) {
         depthAperture.depthMode=2;depthAperture.depthChannel=4;depthAperture.depthFocus=.5f;
         auto depthBloom=vintage;
         depthBloom.depthMode=2;depthBloom.depthChannel=4;depthBloom.depthFocus=.5f;
+        auto depthHalo=aberration;
+        depthHalo.coma=0;depthHalo.depthMode=2;depthHalo.depthChannel=4;depthHalo.depthFocus=.5f;
         auto axialCA = neutral;
         axialCA.longitudinalCA=1;axialCA.longitudinalCARadius=8;
         std::printf("Metal device: %s\n", device.name.UTF8String);
@@ -91,6 +93,7 @@ int main(int argc, char** argv) {
         benchmark("aperture", engine, device, queue, source, destination, width, height, aperture, frames);
         benchmark("aperture-z", engine, device, queue, source, destination, width, height, depthAperture, frames);
         benchmark("bloom-z", engine, device, queue, source, destination, width, height, depthBloom, frames);
+        benchmark("halo-z", engine, device, queue, source, destination, width, height, depthHalo, frames);
         benchmark("axial-ca", engine, device, queue, source, destination, width, height, axialCA, frames);
         benchmark("vintage", engine, device, queue, source, destination, width, height, vintage, frames);
         benchmark("anamorphic", engine, device, queue, source, destination, width, height, anamorphic, frames);
