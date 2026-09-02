@@ -77,7 +77,8 @@ Prioritize only effects that gain a meaningful, controllable visual advantage:
 
 1. aperture/defocus radius and focus pulls;
 2. longitudinal chromatic aberration near/far assignment;
-3. depth-aware bloom, veiling glare, and atmospheric scatter occlusion;
+3. depth-aware bloom and veiling-glare occlusion (implemented in 1.26);
+   atmospheric scatter remains future work;
 4. depth-conditioned spherical aberration and highlight bokeh;
 5. foreground/background-specific optical character;
 6. optional depth-edge protection and confidence-aware blending.

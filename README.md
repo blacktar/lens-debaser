@@ -5,7 +5,7 @@ DaVinci Resolve. It models perceptually useful aspects of modern, vintage,
 anamorphic and exotic optics, prioritising pleasing visual approximations and
 interactive performance over scientific lens simulation.
 
-Current private baseline: **1.25**.
+Current development version: **1.26**.
 
 ## Implemented areas
 

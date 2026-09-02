@@ -17,7 +17,7 @@
 
 ## Current host status
 
-- Lens Debaser 1.25 is installed from `/Library/OFX/Plugins`.
+- Lens Debaser 1.26 is the current development build for `/Library/OFX/Plugins`.
 - The installed arm64 bundle passes strict code-signature verification.
 - Resolve discovers and loads the effect.
 
@@ -56,3 +56,9 @@
   `Aperture Shape: Circular` and `Longitudinal Amount: 0.000`, produced smooth
   focus movement without reported flicker or jumps. Playback at 4K was not
   real-time but retained usable interactive responsiveness.
+- Lens Debaser 1.26 depth-aware Bloom and Glare passed Resolve inspection with
+  the existing alpha-packed depth setup. Compared with `Depth-Free`, `Near
+  Black` reduced inappropriate cross-layer scatter while retaining a natural,
+  nonzero optical veil around practicals. Boundary references 84--87 showed no
+  obvious dark seams, hard depth outlines, missing practicals, retained ghost
+  cores or discontinuous halos.

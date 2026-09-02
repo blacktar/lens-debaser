@@ -266,6 +266,40 @@ int main(int argc, char** argv) {
         require(maxDifference(bloomOut,render(engine,device,queue,impulse,width,height,diagnosticBloom))>.001f,
                 "Diagnostic View must change the displayed analysis image");
 
+        // With an explicit near-black depth map, a bright background practical
+        // must not scatter through a nearer foreground silhouette. Reversing
+        // the layer assignment must still allow a nearer practical to veil the
+        // farther layer, matching the engine's occlusion direction.
+        std::vector<simd_float4> depthScatter(width*height,simd_float4{0,0,0,.8f});
+        for(uint32_t y=0;y<height;++y)for(uint32_t x=0;x<width/2;++x)
+            depthScatter[size_t(y)*width+x].w=.2f;
+        depthScatter[size_t(height/2)*width+width/2+1]={8,8,8,.8f};
+        auto depthBloom=bloom;depthBloom.depthMode=2;depthBloom.depthChannel=4;
+        depthBloom.bloomRadius=10;depthBloom.bloomEnergy=1;
+        auto protectedBloom=render(engine,device,queue,depthScatter,width,height,depthBloom);
+        size_t nearSide=size_t(height/2)*width+width/2-2;
+        auto depthFreeBloom=depthBloom;depthFreeBloom.depthMode=0;
+        auto unprotectedBloom=render(engine,device,queue,depthScatter,width,height,depthFreeBloom);
+        require(protectedBloom[nearSide].x<unprotectedBloom[nearSide].x*.3f,
+                "Depth-aware Bloom must strongly reduce background spill across foreground");
+        require(protectedBloom[nearSide].x>0.0f,
+                "Depth-aware Bloom must retain a nonzero optical veil across depth boundaries");
+        auto depthGlare=depthBloom;depthGlare.bloomEnergy=0;depthGlare.glareEnergy=1;
+        depthGlare.glareRadius=10;
+        auto protectedGlare=render(engine,device,queue,depthScatter,width,height,depthGlare);
+        auto depthFreeGlare=depthGlare;depthFreeGlare.depthMode=0;
+        auto unprotectedGlare=render(engine,device,queue,depthScatter,width,height,depthFreeGlare);
+        require(protectedGlare[nearSide].x<unprotectedGlare[nearSide].x*.3f,
+                "Depth-aware Glare must strongly reduce background spill across foreground");
+        require(protectedGlare[nearSide].x>0.0f,
+                "Depth-aware Glare must retain a nonzero optical veil across depth boundaries");
+        depthScatter[size_t(height/2)*width+width/2-1]={8,8,8,.2f};
+        depthScatter[size_t(height/2)*width+width/2+1]={0,0,0,.8f};
+        auto foregroundBloom=render(engine,device,queue,depthScatter,width,height,depthBloom);
+        size_t farSide=size_t(height/2)*width+width/2+2;
+        require(foregroundBloom[farSide].x>.001f,
+                "Nearer Bloom must remain able to veil a farther layer");
+
         auto swirl = neutral;
         swirl.swirl = 0.8f;
         auto swirlOut = render(engine, device, queue, image, width, height, swirl);

@@ -670,6 +670,24 @@ int main(int argc, char** argv) {
         save("83-depth-boundaries-focus-far.tiff",
              displayPreview(render(engine,device,queue,depthBoundaryChart,width,height,boundaryAperture)));
 
+        auto boundaryBloom=LDBNeutralOpticsParameters(width,height);
+        boundaryBloom.bloomThreshold=.7f;boundaryBloom.bloomEnergy=.8f;
+        boundaryBloom.bloomRadius=18.0f;
+        save("84-depth-boundaries-bloom-depth-free.tiff",
+             displayPreview(render(engine,device,queue,depthBoundaryChart,width,height,boundaryBloom)));
+        boundaryBloom.depthMode=2;boundaryBloom.depthChannel=4;
+        save("85-depth-boundaries-bloom-occluded.tiff",
+             displayPreview(render(engine,device,queue,depthBoundaryChart,width,height,boundaryBloom)));
+        auto boundaryGlare=boundaryBloom;
+        boundaryGlare.bloomEnergy=0.0f;boundaryGlare.glareEnergy=.55f;
+        boundaryGlare.glareRadius=42.0f;
+        save("86-depth-boundaries-glare-occluded.tiff",
+             displayPreview(render(engine,device,queue,depthBoundaryChart,width,height,boundaryGlare)));
+        auto boundaryScatterDiagnostic=boundaryBloom;
+        boundaryScatterDiagnostic.processingFlags=LDBDiagnosticScatter;
+        save("87-depth-boundaries-scatter-diagnostic.tiff",
+             displayPreview(render(engine,device,queue,depthBoundaryChart,width,height,boundaryScatterDiagnostic)));
+
         struct Space { uint32_t value; const char* name; };
         const Space spaces[] = {{LDBWorkingColorSpaceACEScct,"acescct"},
             {LDBWorkingColorSpaceDaVinciIntermediate,"dwg-intermediate"},

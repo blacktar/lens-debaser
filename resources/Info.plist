@@ -6,8 +6,8 @@
   <key>CFBundleIconFile</key><string>com.ldb.LensDebaser.png</string>
   <key>CFBundleIdentifier</key><string>com.ldb.LensDebaser</string>
   <key>CFBundleInfoDictionaryVersion</key><string>6.0</string>
-  <key>CFBundleName</key><string>Lens Debaser 1.25</string>
+  <key>CFBundleName</key><string>Lens Debaser 1.26</string>
   <key>CFBundlePackageType</key><string>BNDL</string>
-  <key>CFBundleShortVersionString</key><string>1.25</string>
-  <key>CFBundleVersion</key><string>125</string>
+  <key>CFBundleShortVersionString</key><string>1.26</string>
+  <key>CFBundleVersion</key><string>126</string>
 </dict></plist>

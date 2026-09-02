@@ -412,6 +412,43 @@ static float4 blurLine(device const float4* image, float2 pixel, float2 axis, fl
     return result / weightSum;
 }
 
+static float scatterDepthAgreement(float targetDepth,float sampleDepth) {
+    // A near layer occludes light scattered by a farther layer. Light from a
+    // nearer source may still veil a farther target, which preserves the useful
+    // photographic spread of foreground practicals without background bloom
+    // leaking through silhouettes.
+    float sameLayer=1.0f-smoothstep(.035f,.16f,abs(sampleDepth-targetDepth));
+    float directed=max(sameLayer,sampleDepth<targetDepth?1.0f:0.0f);
+    // Bloom and veiling glare are formed inside the lens after scene
+    // occlusion, so a farther practical must never be cut out completely.
+    // Retain a restrained optical floor while strongly reducing the spill.
+    return mix(.12f,1.0f,directed);
+}
+
+static float4 blurLineDepthAware(device const float4* image,float2 pixel,float2 axis,
+                                 float radius,uint width,uint height,
+                                 constant LDBOpticsParameters& p) {
+    if(radius<=.001f) return sampleBilinear(image,pixel,width,height);
+    float4 centre=sampleNearest(image,pixel,width,height);
+    float targetDepth=normalizedDepth(centre,p);
+    float3 result=0.0f;
+    float weightSum=0.0f;
+    constexpr float sigma=.45f;
+    int tapRadius=clamp(int(ceil(radius)),1,16);
+    for(int tap=-16;tap<=16;++tap) {
+        if(abs(tap)>tapRadius) continue;
+        float normalizedOffset=float(tap)/float(tapRadius);
+        float weight=exp(-.5f*(normalizedOffset/sigma)*(normalizedOffset/sigma));
+        float4 sample=sampleBilinear(image,pixel+axis*radius*normalizedOffset,width,height);
+        float sampleDepth=normalizedDepth(sampleNearest(image,
+            pixel+axis*radius*normalizedOffset,width,height),p);
+        weight*=scatterDepthAgreement(targetDepth,sampleDepth);
+        result+=sample.rgb*weight;
+        weightSum+=weight;
+    }
+    return float4(weightSum>1e-6f?result/weightSum:centre.rgb,centre.a);
+}
+
 kernel void ldbBlurAperture(device const float4* source [[buffer(0)]],
                             device float4* destination [[buffer(1)]],
                             constant LDBScatterParameters& scatter [[buffer(2)]],
@@ -549,27 +586,36 @@ kernel void ldbDownsampleHighlights(device const float4* source [[buffer(0)]],
                                       scatter.threshold);
         }
     }
-    destination[gid.y * width + gid.x] = float4(sum / float(scale * scale),1.0f);
+    uint2 depthPosition=min(gid*scale+uint2(scale/2u),
+        uint2(uint(p.imageSize.x)-1,uint(p.imageSize.y)-1));
+    float depthCarrier=source[depthPosition.y*uint(p.imageSize.x)+depthPosition.x].a;
+    destination[gid.y * width + gid.x] = float4(sum / float(scale * scale),depthCarrier);
 }
 
 kernel void ldbBlurHorizontal(device const float4* source [[buffer(0)]],
                               device float4* destination [[buffer(1)]],
                               constant LDBScatterParameters& scatter [[buffer(2)]],
+                              constant LDBOpticsParameters& p [[buffer(3)]],
                               uint2 gid [[thread_position_in_grid]]) {
     uint width = uint(scatter.imageSize.x), height = uint(scatter.imageSize.y);
     if (gid.x >= width || gid.y >= height) return;
-    destination[gid.y * width + gid.x] = blurLine(source, float2(gid), float2(1, 0),
-                                                   scatter.radiusX, width, height);
+    bool depthAware=p.depthMode>0u&&scatter.axisX>.5f;
+    destination[gid.y*width+gid.x]=depthAware
+        ?blurLineDepthAware(source,float2(gid),float2(1,0),scatter.radiusX,width,height,p)
+        :blurLine(source,float2(gid),float2(1,0),scatter.radiusX,width,height);
 }
 
 kernel void ldbBlurVertical(device const float4* source [[buffer(0)]],
                             device float4* destination [[buffer(1)]],
                             constant LDBScatterParameters& scatter [[buffer(2)]],
+                            constant LDBOpticsParameters& p [[buffer(3)]],
                             uint2 gid [[thread_position_in_grid]]) {
     uint width = uint(scatter.imageSize.x), height = uint(scatter.imageSize.y);
     if (gid.x >= width || gid.y >= height) return;
-    destination[gid.y * width + gid.x] = blurLine(source, float2(gid), float2(0, 1),
-                                                   scatter.radiusY, width, height);
+    bool depthAware=p.depthMode>0u&&scatter.axisX>.5f;
+    destination[gid.y*width+gid.x]=depthAware
+        ?blurLineDepthAware(source,float2(gid),float2(0,1),scatter.radiusY,width,height,p)
+        :blurLine(source,float2(gid),float2(0,1),scatter.radiusY,width,height);
 }
 
 kernel void ldbComposite(device const float4* source [[buffer(0)]],
@@ -594,6 +640,20 @@ kernel void ldbComposite(device const float4* source [[buffer(0)]],
                                   uint(bloomScatter.imageSize.x), uint(bloomScatter.imageSize.y)).rgb;
     float3 glare = sampleBilinear(glareScattered, glarePixel,
                                   uint(glareScatter.imageSize.x), uint(glareScatter.imageSize.y)).rgb;
+    if(p.depthMode>0u) {
+        float targetDepth=normalizedDepth(source[index],p);
+        float bloomDepth=normalizedDepth(sampleNearest(bloomScattered,bloomPixel,
+            uint(bloomScatter.imageSize.x),uint(bloomScatter.imageSize.y)),p);
+        float glareDepth=normalizedDepth(sampleNearest(glareScattered,glarePixel,
+            uint(glareScatter.imageSize.x),uint(glareScatter.imageSize.y)),p);
+        // The scatter buffer alpha is the depth of its low-resolution target,
+        // not the originating highlight. Use a symmetric reconstruction guard
+        // here; directional occlusion has already happened inside the blur.
+        float bloomLayer=1.0f-smoothstep(.035f,.16f,abs(bloomDepth-targetDepth));
+        float glareLayer=1.0f-smoothstep(.035f,.16f,abs(glareDepth-targetDepth));
+        bloom*=mix(.12f,1.0f,bloomLayer);
+        glare*=mix(.12f,1.0f,glareLayer);
+    }
     float2 haloPixel = (float2(gid) + 0.5f) / float(haloScatter.scale) - 0.5f;
     float3 halo = sampleBilinear(haloScattered, haloPixel,
                                  uint(haloScatter.imageSize.x), uint(haloScatter.imageSize.y)).rgb;

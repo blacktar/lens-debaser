@@ -63,3 +63,11 @@ Version 1.25 makes that protection occlusion-directed: farther layers cannot
 bleed forward, focused foreground remains crisp, and defocused nearer layers
 may expand over farther targets in proportion to their own defocus. This avoids
 the unnaturally sharp cutout boundary produced by fully symmetric rejection.
+
+Version 1.26 applies the same explicit depth interpretation automatically to
+Bloom and Glare. A nearer target strongly attenuates scattered light from
+farther samples, while light originating on a nearer layer may veil a farther
+target. A restrained nonzero optical floor reflects that lens scatter occurs
+after scene occlusion and prevents distant practicals from being cut out.
+Depth-Free rendering and the existing Bloom and Glare controls retain their
+previous behavior; no additional UI control is required.

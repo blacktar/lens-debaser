@@ -175,9 +175,9 @@ void LDBOpticsEngine::encode(id<MTLCommandBuffer> commandBuffer,
     if (!scatterActive[2]) haloScale = 1;
     LDBScatterParameters scatterParameters[3] = {
         {{float(bloomWidth), float(bloomHeight)}, bloomRadiusX / bloomScale,
-         p.bloomRadius / bloomScale, bloomScale, p.bloomThreshold, 0, 0},
+         p.bloomRadius / bloomScale, bloomScale, p.bloomThreshold, 1, 0},
         {{float(glareWidth), float(glareHeight)}, p.glareRadius / glareScale,
-         p.glareRadius / glareScale, glareScale, p.bloomThreshold, 0, 0},
+         p.glareRadius / glareScale, glareScale, p.bloomThreshold, 1, 0},
         {{float(haloWidth), float(haloHeight)}, haloRadius / haloScale,
          haloRadius / haloScale, haloScale, 0.45f, 0, 0}
     };
@@ -252,6 +252,7 @@ void LDBOpticsEngine::encode(id<MTLCommandBuffer> commandBuffer,
         [encoder setBuffer:scatterSource offset:0 atIndex:0];
         [encoder setBuffer:temporary offset:0 atIndex:1];
         [encoder setBytes:&scatter length:sizeof(scatter) atIndex:2];
+        [encoder setBytes:&p length:sizeof(p) atIndex:3];
         [encoder dispatchThreadgroups:scatterGroups threadsPerThreadgroup:threads];
         [encoder endEncoding];
 
@@ -260,6 +261,7 @@ void LDBOpticsEngine::encode(id<MTLCommandBuffer> commandBuffer,
         [encoder setBuffer:temporary offset:0 atIndex:0];
         [encoder setBuffer:scattered offset:0 atIndex:1];
         [encoder setBytes:&scatter length:sizeof(scatter) atIndex:2];
+        [encoder setBytes:&p length:sizeof(p) atIndex:3];
         [encoder dispatchThreadgroups:scatterGroups threadsPerThreadgroup:threads];
         [encoder endEncoding];
     }
