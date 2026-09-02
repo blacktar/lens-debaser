@@ -47,3 +47,12 @@
   Milano frame. Moving `Focus Depth` through `0`--`1` at 4K behaved as
   intended across people and architectural detail. Interaction was not
   real-time but remained responsive enough for practical adjustment.
+- A Resolve AI Depth Map TIFF sequence was exported with the clip's input CST
+  enabled and the DWG/Intermediate-to-Rec.709 output CST disabled, then packed
+  into source alpha in Fusion. `Diagnostic View: Depth Input` played smoothly
+  and remained aligned with the moving source.
+- Animating `Focus Depth` from `0.000` on the first frame to `1.000` on the
+  final frame, with `Aperture Response: 1.000`, `Response Radius: 24.00`,
+  `Aperture Shape: Circular` and `Longitudinal Amount: 0.000`, produced smooth
+  focus movement without reported flicker or jumps. Playback at 4K was not
+  real-time but retained usable interactive responsiveness.
