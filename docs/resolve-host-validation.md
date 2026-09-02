@@ -17,6 +17,20 @@
 
 ## Current host status
 
-- Lens Debaser 1.2 is installed from `/Library/OFX/Plugins`.
+- Lens Debaser 1.25 is installed from `/Library/OFX/Plugins`.
 - The installed arm64 bundle passes strict code-signature verification.
 - Resolve discovers and loads the effect.
+
+## Resolve Studio depth validation
+
+- Resolve Studio's AI Depth Map result can be rendered to a grayscale TIFF and
+  packed into the ARRI source alpha with Fusion Channel Booleans.
+- With the ARRI RGB connected as Channel Booleans Foreground and the grayscale
+  map as Background, RGB is copied from Foreground and Alpha from Background
+  Red.
+- Lens Debaser reads the packed map with `Depth Source Channel: Alpha` and
+  `Depth Interpretation: Near Black`; `Diagnostic View: Depth Input` matches
+  the supplied depth TIFF. `Near White` correctly displays its inverse.
+- Moving `Focus Depth` from `0` to `1` moves focus through the ARRI still as
+  expected. Interaction at 4K is not real-time, but is responsive enough for
+  practical adjustment on the tested Apple M1 system.
