@@ -1,0 +1,34 @@
+# macOS and editor metadata
+.DS_Store
+*.swp
+*.swo
+*~
+
+# Build products and compiler caches
+/build/
+*.air
+*.metallib
+*.o
+*.ofx.bundle/
+
+# Generated validation material and scratch work
+/outputs/
+/work/
+*.tif
+*.tiff
+*.png
+!resources/ldb.png
+
+# User presets and host diagnostics
+*.ldbpreset
+*.crash
+*.ips
+
+# External colour and camera assets
+*.cube
+*.mov
+*.mp4
+*.mxf
+*.braw
+*.ari
+*.arx
