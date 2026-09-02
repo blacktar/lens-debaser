@@ -34,3 +34,16 @@
 - Moving `Focus Depth` from `0` to `1` moves focus through the ARRI still as
   expected. Interaction at 4K is not real-time, but is responsive enough for
   practical adjustment on the tested Apple M1 system.
+- With `Aperture Response: 1.000` and `Response Radius: 24.00`, moving
+  `Focus Depth` through its complete `0`--`1` range produced acceptable results
+  even at the extreme values. No unacceptable boundary bleed, detached halo,
+  retained sharp core or hard cutout was observed.
+- Depth-aware `Circular`, `Polygon` and `Oval / Anamorphic` aperture shapes
+  passed visual inspection on the ARRI frame.
+- With aperture and lateral fringing disabled, `Longitudinal Amount: 1.000`
+  and `Longitudinal Radius: 7.00` responded correctly while moving
+  `Focus Depth` from `0` to `1`; the depth-aware longitudinal CA test passed.
+- The same external-depth aperture workflow passed on the supplied iPhone
+  Milano frame. Moving `Focus Depth` through `0`--`1` at 4K behaved as
+  intended across people and architectural detail. Interaction was not
+  real-time but remained responsive enough for practical adjustment.
