@@ -28,10 +28,10 @@ Current development version: **1.32**.
 - DaVinci Resolve or Resolve Studio;
 - Resolve's installed OpenFX 1.4 headers and support library.
 
-The validation suite optionally uses local reference material that is not part
-of this repository: an ISO 12233 chart, an iPhone DWG/Intermediate frame, an
-ARRI LogC4 frame and ARRI's installed LogC4 display LUT. Override their paths
-when needed:
+The repository includes the three image references required by the validation
+suite: an ISO 12233 chart, an iPhone DWG/Intermediate frame, and an ARRI LogC4
+frame. ARRI's LogC4 display LUT is loaded from the standard Resolve LUT
+installation. Override the reference directory when needed:
 
 ```bash
 make deploy REFERENCE_DIR=/path/to/reference-folder
@@ -61,8 +61,8 @@ make deploy
 ```
 
 Fully quit Resolve before deployment. Generated binaries, validation renders,
-camera footage, LUTs, user presets and crash reports are intentionally excluded
-from version control.
+additional camera footage, LUTs, user presets and crash reports are
+intentionally excluded from version control.
 
 ## License
 

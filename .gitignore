@@ -18,6 +18,8 @@
 *.tiff
 *.png
 !resources/ldb.png
+!references/*.tif
+!references/*.tiff
 
 # User presets and host diagnostics
 *.ldbpreset
