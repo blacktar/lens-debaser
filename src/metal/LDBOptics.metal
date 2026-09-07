@@ -2,6 +2,20 @@
 #include "LDBOpticsParameters.h"
 using namespace metal;
 
+kernel void ldbPackDepthLuminance(
+    device const float4* source [[buffer(0)]],
+    device const float4* depthSource [[buffer(1)]],
+    device float4* destination [[buffer(2)]],
+    constant LDBOpticsParameters& p [[buffer(3)]],
+    uint2 gid [[thread_position_in_grid]]) {
+    uint width = uint(p.imageSize.x), height = uint(p.imageSize.y);
+    if (gid.x >= width || gid.y >= height) return;
+    uint index = gid.y * width + gid.x;
+    float depth = dot(depthSource[index].rgb,
+                      float3(0.2126f, 0.7152f, 0.0722f));
+    destination[index] = float4(source[index].rgb, depth);
+}
+
 static float logCurveEncode(float x, float base, float linSlope, float linOffset,
                             float logSlope, float logOffset, float linBreak,
                             float explicitLinearSlope) {
@@ -133,11 +147,47 @@ static float4 sampleNearest(device const float4* image, float2 pixel, uint width
     return sampleInteger(image, int2(floor(pixel + 0.5f)), width, height);
 }
 
-static float3 thresholdHighlight(float3 color, float threshold) {
-    color = max(color, float3(0.0f));
-    float luminance = dot(color, float3(0.2126f, 0.7152f, 0.0722f));
-    float excess = max(luminance - threshold, 0.0f);
-    return color * excess / max(luminance, 1e-6f);
+static float3 thresholdHighlightResponse(float3 color,float threshold,float knee) {
+    color=max(color,float3(0.0f));
+    float luminance=dot(color,float3(0.2126f,0.7152f,0.0722f));
+    float width=max(knee,0.0f);
+    float excess;
+    if(width<=1e-6f) excess=max(luminance-threshold,0.0f);
+    else {
+        float x=luminance-threshold;
+        if(x<=-width) excess=0.0f;
+        else if(x>=width) excess=x;
+        else {
+            float t=(x+width)/(2.0f*width);
+            excess=width*t*t;
+        }
+    }
+    return color*excess/max(luminance,1e-6f);
+}
+
+static float defocusResponse(float depth,constant LDBOpticsParameters& p) {
+    float onset=clamp(p.responseDefocusOnset,0.0f,1.0f);
+    float falloff=max(clamp(p.responseDefocusFalloff,0.0f,1.0f),onset+1e-4f);
+    return smoothstep(onset,falloff,
+                      abs(depth-clamp(p.depthFocus,0.0f,1.0f)));
+}
+
+static float protectedLayerAgreement(float targetDepth,float sampleDepth,
+                                     constant LDBOpticsParameters& p) {
+    float sameLayer=1.0f-smoothstep(.035f,.16f,abs(sampleDepth-targetDepth));
+    float protectedAgreement=mix(.12f,1.0f,sameLayer);
+    return mix(1.0f,protectedAgreement,
+               clamp(p.responseScatterEdgeProtection,0.0f,1.0f));
+}
+
+static float variationPhase(uint seed) {
+    // Integer hashing avoids frame state and produces a deterministic phase on
+    // every Apple Silicon render. It is not image noise and never changes with
+    // time unless the user animates the seed.
+    uint h=seed*747796405u+2891336453u;
+    h=((h>>((h>>28u)+4u))^h)*277803737u;
+    h=(h>>22u)^h;
+    return float(h&0x00ffffffu)/float(0x01000000u)*M_PI_F*2.0f;
 }
 
 static float normalizedDepth(float4 sample,constant LDBOpticsParameters& p) {
@@ -157,10 +207,11 @@ static float depthSampleAgreement(float targetDepth,float sampleDepth,
     // this keeps focused silhouettes crisp while allowing defocused foreground
     // bokeh to soften outward instead of producing a cardboard-cutout edge.
     float sameLayer=1.0f-smoothstep(.035f,.16f,abs(sampleDepth-targetDepth));
-    float sourceDefocus=smoothstep(.018f,.36f,
-        abs(sampleDepth-clamp(p.depthFocus,0.0f,1.0f)));
+    float sourceDefocus=defocusResponse(sampleDepth,p);
     float nearerExpansion=sampleDepth<targetDepth?sourceDefocus:0.0f;
-    return max(sameLayer,nearerExpansion);
+    float protectedAgreement=max(sameLayer,nearerExpansion);
+    return mix(1.0f,protectedAgreement,
+               clamp(p.responseScatterEdgeProtection,0.0f,1.0f));
 }
 
 static float4 smoothAxisBlur(device const float4* image, float2 pixel, float2 axis,
@@ -208,6 +259,14 @@ static float2 distortCoordinate(float2 uv, constant LDBOpticsParameters& p) {
     float s = sin(theta), c = cos(theta);
     q = float2(c * q.x - s * q.y, s * q.x + c * q.y);
     q *= scale;
+    if (p.anamorphicDistortion != 0.0f) {
+        // Cylindrical groups characteristically bend the horizontal and
+        // vertical field by different amounts. This remains a field response,
+        // never a squeeze/desqueeze operation.
+        float amount = clamp(p.anamorphicDistortion, -1.0f, 1.0f);
+        q *= float2(1.0f + amount * r2,
+                    1.0f - amount * r2 * .22f);
+    }
     q.x /= fieldAspect;
     return q + p.opticalCenter;
 }
@@ -237,31 +296,90 @@ kernel void ldbOpticsMain(device const float4* source [[buffer(0)]],
     float2 uv = (float2(gid) + 0.5f) / p.imageSize;
     float2 warped = distortCoordinate(uv, p);
     float2 basePixel = warped * p.imageSize - 0.5f;
-    float2 field = warped - p.opticalCenter;
+    float2 opticalField = warped - p.opticalCenter;
     float fieldAspect = sqrt(max(p.anamorphicSqueeze, 0.001f));
-    float2 fieldMetric = float2(field.x * fieldAspect, field.y);
+    float2 fieldMetric = float2(opticalField.x * fieldAspect, opticalField.y);
     float radius = clamp(length(fieldMetric) * 2.0f, 0.0f, 1.5f);
     // Gradient of the elliptical radius gives the perceptual radial direction
     // in image coordinates.
-    float2 radial = normalize(float2(field.x * fieldAspect * fieldAspect, field.y)
+    float2 radial = normalize(float2(opticalField.x * fieldAspect * fieldAspect, opticalField.y)
                               + float2(1e-6f, 0.0f));
     float2 tangent = float2(-radial.y, radial.x);
+    float variation=clamp(p.variationAmount,0.0f,1.0f);
+    float phase=variationPhase(p.variationSeed);
 
-    float caR = p.lateralCARed * radius * radius;
-    float caB = p.lateralCABlue * radius * radius;
+    // Field Shape is deliberately independent from Optical Center. Optical
+    // Center continues to govern distortion, vignette and lateral chromatic
+    // displacement, while this field controls focus/detail/off-axis response.
+    // The neutral branch retains the exact established field calculation.
+    bool customField = p.fieldCenter.x != .5f || p.fieldCenter.y != .5f
+                    || p.fieldAspect != 1.0f || p.fieldRotation != 0.0f;
+    if (customField) {
+        float2 shaped = warped - p.fieldCenter;
+        float angle = p.fieldRotation * (M_PI_F / 180.0f);
+        float s = sin(angle), c = cos(angle);
+        shaped = float2(c * shaped.x + s * shaped.y,
+                       -s * shaped.x + c * shaped.y);
+        float aspect = sqrt(clamp(p.fieldAspect, .25f, 4.0f));
+        float2 shapedMetric = float2(shaped.x * aspect, shaped.y / aspect);
+        radius = clamp(length(shapedMetric) * 2.0f, 0.0f, 1.5f);
+        float2 localRadial = normalize(float2(shaped.x * aspect * aspect,
+                                              shaped.y / (aspect * aspect))
+                                       + float2(1e-6f, 0.0f));
+        radial = float2(c * localRadial.x - s * localRadial.y,
+                        s * localRadial.x + c * localRadial.y);
+        tangent = float2(-radial.y, radial.x);
+    }
+    if(variation>0.0f&&p.variationFieldAsymmetry!=0.0f) {
+        float2 direction=float2(cos(phase),sin(phase));
+        float asymmetry=dot(warped-p.fieldCenter,direction)*2.0f
+                       *clamp(p.variationFieldAsymmetry,-1.0f,1.0f)*variation;
+        radius=clamp(radius*(1.0f+asymmetry*.65f),0.0f,1.5f);
+    }
+
+    float opticalRadius = clamp(length(fieldMetric) * 2.0f, 0.0f, 1.5f);
+    float2 opticalRadial = normalize(float2(opticalField.x * fieldAspect * fieldAspect,
+                                             opticalField.y) + float2(1e-6f, 0.0f));
+    float caR = p.lateralCARed * opticalRadius * opticalRadius;
+    float caB = p.lateralCABlue * opticalRadius * opticalRadius;
     float2 pixelScale = p.imageSize;
     float4 center = sampleBilinear(source, basePixel, width, height);
-    float red = sampleBilinear(source, basePixel + radial * caR * pixelScale * 0.002f, width, height).r;
-    float blue = sampleBilinear(source, basePixel + radial * caB * pixelScale * 0.002f, width, height).b;
-    center.r = red;
-    center.b = blue;
+    float2 redOffset=opticalRadial*caR*pixelScale*.002f;
+    float2 blueOffset=opticalRadial*caB*pixelScale*.002f;
+    if(variation>0.0f&&p.variationChromaticAsymmetry!=0.0f) {
+        float2 variationAxis=float2(cos(phase),sin(phase));
+        float signedField=dot(opticalField,variationAxis)*2.0f;
+        float shift=clamp(p.variationChromaticAsymmetry,-2.0f,2.0f)
+                   *variation*signedField*opticalRadius*p.imageSize.x*.0012f;
+        redOffset+=variationAxis*shift;
+        blueOffset-=variationAxis*shift;
+    }
+    if (p.anamorphicAberration != 0.0f) {
+        float amount = clamp(p.anamorphicAberration, -2.0f, 2.0f)
+                     * opticalRadius * opticalRadius;
+        float horizontalPixels = amount * p.imageSize.x * .0015f;
+        redOffset+=float2(horizontalPixels,0.0f);
+        blueOffset-=float2(horizontalPixels,0.0f);
+    }
+    center.r=sampleBilinear(source,basePixel+redOffset,width,height).r;
+    center.b=sampleBilinear(source,basePixel+blueOffset,width,height).b;
 
     // These are normalized perceptual controls. Each must remain independently
     // visible; earlier versions merely modulated an existing field blur by 1–2%,
     // making all three appear broken unless another control was already active.
-    float fieldEnvelope = smoothstep(0.08f, 1.0f, clamp(radius, 0.0f, 1.0f));
+    float fieldOnset=clamp(p.responseFieldOnset,0.0f,1.5f);
+    float fieldFalloff=max(clamp(p.responseFieldFalloff,0.0f,1.5f),fieldOnset+1e-4f);
+    float fieldEnvelope = smoothstep(fieldOnset,fieldFalloff,clamp(radius,0.0f,1.5f));
+    // Corner loss and curvature predate the configurable envelope and were
+    // expressed directly in powers of radius. Scale those established curves
+    // relative to their original smoothstep(0,1) envelope so the defaults are
+    // unchanged while custom onset/falloff values affect every field family.
+    float establishedFieldEnvelope=smoothstep(0.0f,1.0f,clamp(radius,0.0f,1.5f));
+    float fieldResponseScale=establishedFieldEnvelope>1e-6f
+        ?fieldEnvelope/establishedFieldEnvelope:0.0f;
     float curvatureBlur = clamp(p.fieldCurvature, 0.0f, 2.0f) * radius * radius * radius * radius * 2.4f;
     float fieldBlur = max(0.0f, clamp(p.cornerSharpnessLoss, 0.0f, 2.0f) * radius * radius * 2.4f + curvatureBlur);
+    fieldBlur*=fieldResponseScale;
     float astigmatism = clamp(p.astigmatism, -2.0f, 2.0f);
     float radialSmear = clamp(p.radialSmear, 0.0f, 2.0f);
     float tangentSmear = clamp(p.tangentialSmear, 0.0f, 2.0f);
@@ -303,7 +421,7 @@ kernel void ldbOpticsMain(device const float4* source [[buffer(0)]],
         if (p.depthMode > 0u) {
             float depth = normalizedDepth(sampleBilinear(source, basePixel, width, height), p);
             float signedDefocus = depth - clamp(p.depthFocus, 0.0f, 1.0f);
-            float defocus = smoothstep(0.025f, 0.32f, abs(signedDefocus));
+            float defocus = defocusResponse(depth,p);
             float3 depthTint = signedDefocus < 0.0f ? nearTint : farTint;
             axialChroma = edgeEnergy * depthTint * defocus;
         } else {
@@ -342,7 +460,7 @@ kernel void ldbOpticsMain(device const float4* source [[buffer(0)]],
         // and avoid the doubled edges produced by a single sparse outer ring.
         float4 mediumBase = fineBase * 0.7f + outerBase * 0.3f;
         float3 mediumBand = center.rgb - mediumBase.rgb;
-        float fieldWeight = smoothstep(0.0f, 1.0f, clamp(radius, 0.0f, 1.0f));
+        float fieldWeight = fieldEnvelope;
         float edgeLoss = clamp(p.detailEdgeFalloff, 0.0f, 2.0f) * fieldWeight;
         float3 transfer = fineBand * p.fineDetail * 0.35f
                         + mediumBand * p.microContrast * 0.28f;
@@ -372,9 +490,12 @@ kernel void ldbOpticsMain(device const float4* source [[buffer(0)]],
             float2 sourcePixel=basePixel-radial*distance*directionSign;
             float weight=exp(-1.8f*t);
             float threshold=clamp(p.comaThreshold,0.0f,4.0f);
-            float3 sampleCenter=thresholdHighlight(sampleBilinear(source,sourcePixel,width,height).rgb,threshold);
-            float3 sampleWings=thresholdHighlight(sampleBilinear(source,sourcePixel+tangent*wing,width,height).rgb,threshold)
-                              +thresholdHighlight(sampleBilinear(source,sourcePixel-tangent*wing,width,height).rgb,threshold);
+            float3 sampleCenter=thresholdHighlightResponse(sampleBilinear(source,sourcePixel,width,height).rgb,
+                                                           threshold,p.responseHighlightKnee);
+            float3 sampleWings=thresholdHighlightResponse(sampleBilinear(source,sourcePixel+tangent*wing,width,height).rgb,
+                                                          threshold,p.responseHighlightKnee)
+                              +thresholdHighlightResponse(sampleBilinear(source,sourcePixel-tangent*wing,width,height).rgb,
+                                                          threshold,p.responseHighlightKnee);
             float centerWeight=mix(0.72f,0.32f,t);
             comaGlow+=(sampleCenter*centerWeight+sampleWings*((1.0f-centerWeight)*0.5f))*weight;
             weightSum+=weight;
@@ -388,19 +509,51 @@ kernel void ldbOpticsMain(device const float4* source [[buffer(0)]],
     optical.rgb *= vignetteAt(uv, p);
     float3 transmission = mix(float3(1.0f), p.transmissionColor, p.transmissionColorAmount);
     optical.rgb *= transmission;
+    if (p.transmissionDensity != 0.0f) {
+        optical.rgb *= exp2(-clamp(p.transmissionDensity, -2.0f, 2.0f));
+    }
+    if (p.transmissionContrast != 0.0f) {
+        constexpr float pivot = .18f;
+        float contrast = exp2(clamp(p.transmissionContrast, -2.0f, 2.0f));
+        float3 signValue = sign(optical.rgb);
+        optical.rgb = signValue * pivot
+                    * pow(max(abs(optical.rgb) / pivot, float3(1e-6f)), contrast);
+    }
+    if (p.transmissionHighlightSoftness > 0.0f) {
+        float softness = clamp(p.transmissionHighlightSoftness, 0.0f, 2.0f);
+        // Preserve 18% middle grey while progressively compressing only the
+        // positive highlight side. Negative extended-range values pass through.
+        float3 positive = max(optical.rgb, float3(0.0f));
+        float3 softened = positive * (1.0f + softness * .18f)
+                        / (1.0f + softness * positive);
+        optical.rgb = select(optical.rgb, softened, optical.rgb >= 0.0f);
+    }
+    if(variation>0.0f&&p.variationTransmissionUnevenness!=0.0f) {
+        float2 direction=float2(cos(phase+1.7f),sin(phase+1.7f));
+        float broad=dot(uv-float2(.5f),direction)*1.35f
+                   +sin((uv.x*1.7f+uv.y*1.3f)*M_PI_F+phase)*.18f;
+        float uneven=1.0f+clamp(p.variationTransmissionUnevenness,-1.0f,1.0f)
+                           *variation*broad*.35f;
+        optical.rgb*=max(uneven,.2f);
+    }
     uint index = gid.y * width + gid.x;
     direct[index] = float4(optical.rgb, source[index].a);
     if ((p.processingFlags & 1u) != 0u)
         highlights[index] = float4(max(center.rgb, float3(0.0f)) * highlight / max(luminance, 1e-6f), 1.0f);
 }
 
+static int scatterTapLimit(constant LDBOpticsParameters& p) {
+    (void)p;
+    return 16;
+}
+
 static float4 blurLine(device const float4* image, float2 pixel, float2 axis, float radius,
-                       uint width, uint height) {
+                       uint width, uint height, int maximumTaps) {
     if (radius <= 0.001f) return sampleBilinear(image, pixel, width, height);
     float4 result = 0.0f;
     float weightSum = 0.0f;
     constexpr float sigma = 0.45f;
-    int tapRadius = clamp(int(ceil(radius)), 1, 16);
+    int tapRadius = clamp(int(ceil(radius)), 1, maximumTaps);
     for (int tap = -16; tap <= 16; ++tap) {
         if (abs(tap) > tapRadius) continue;
         float normalizedOffset = float(tap) / float(tapRadius);
@@ -412,7 +565,8 @@ static float4 blurLine(device const float4* image, float2 pixel, float2 axis, fl
     return result / weightSum;
 }
 
-static float scatterDepthAgreement(float targetDepth,float sampleDepth) {
+static float scatterDepthAgreement(float targetDepth,float sampleDepth,
+                                   constant LDBOpticsParameters& p) {
     // A near layer occludes light scattered by a farther layer. Light from a
     // nearer source may still veil a farther target, which preserves the useful
     // photographic spread of foreground practicals without background bloom
@@ -422,19 +576,21 @@ static float scatterDepthAgreement(float targetDepth,float sampleDepth) {
     // Bloom and veiling glare are formed inside the lens after scene
     // occlusion, so a farther practical must never be cut out completely.
     // Retain a restrained optical floor while strongly reducing the spill.
-    return mix(.12f,1.0f,directed);
+    float protectedAgreement=mix(.12f,1.0f,directed);
+    return mix(1.0f,protectedAgreement,
+               clamp(p.responseScatterEdgeProtection,0.0f,1.0f));
 }
 
 static float4 blurLineDepthAware(device const float4* image,float2 pixel,float2 axis,
                                  float radius,uint width,uint height,
-                                 constant LDBOpticsParameters& p) {
+                                 constant LDBOpticsParameters& p,int maximumTaps) {
     if(radius<=.001f) return sampleBilinear(image,pixel,width,height);
     float4 centre=sampleNearest(image,pixel,width,height);
     float targetDepth=normalizedDepth(centre,p);
     float3 result=0.0f;
     float weightSum=0.0f;
     constexpr float sigma=.45f;
-    int tapRadius=clamp(int(ceil(radius)),1,16);
+    int tapRadius=clamp(int(ceil(radius)),1,maximumTaps);
     for(int tap=-16;tap<=16;++tap) {
         if(abs(tap)>tapRadius) continue;
         float normalizedOffset=float(tap)/float(tapRadius);
@@ -442,7 +598,7 @@ static float4 blurLineDepthAware(device const float4* image,float2 pixel,float2 
         float4 sample=sampleBilinear(image,pixel+axis*radius*normalizedOffset,width,height);
         float sampleDepth=normalizedDepth(sampleNearest(image,
             pixel+axis*radius*normalizedOffset,width,height),p);
-        weight*=scatterDepthAgreement(targetDepth,sampleDepth);
+        weight*=scatterDepthAgreement(targetDepth,sampleDepth,p);
         result+=sample.rgb*weight;
         weightSum+=weight;
     }
@@ -466,7 +622,7 @@ kernel void ldbBlurAperture(device const float4* source [[buffer(0)]],
         if(p.depthMode>0u) {
             float depth=normalizedDepth(centreSample,p);
             targetDepth=depth;
-            float defocus=smoothstep(.018f,.36f,abs(depth-clamp(p.depthFocus,0.0f,1.0f)));
+            float defocus=defocusResponse(depth,p);
             reconstructionRadius*=defocus;
             if(reconstructionRadius<=.001f) {
                 destination[gid.y*width+gid.x]=source[gid.y*width+gid.x];
@@ -506,7 +662,7 @@ kernel void ldbBlurAperture(device const float4* source [[buffer(0)]],
     if(p.depthMode>0u) {
         float depth=normalizedDepth(centreSample,p);
         targetDepth=depth;
-        float defocus=smoothstep(.018f,.36f,abs(depth-clamp(p.depthFocus,0.0f,1.0f)));
+        float defocus=defocusResponse(depth,p);
         radius*=defocus;
         if(radius<=.001f) {
             destination[gid.y*width+gid.x]=source[gid.y*width+gid.x];
@@ -542,6 +698,12 @@ kernel void ldbBlurAperture(device const float4* source [[buffer(0)]],
             float local=fmod(angle+M_PI_F,sector)-0.5f*sector;
             float polygonBoundary=cos(M_PI_F/float(blades))/max(cos(local),1e-4f);
             boundary=mix(polygonBoundary,1.0f,curvature);
+        }
+        if(p.variationAmount>0.0f&&p.variationPupilIrregularity!=0.0f) {
+            float phase=variationPhase(p.variationSeed);
+            float irregular=sin(angle*3.0f+phase)*.62f+sin(angle*5.0f-phase*.7f)*.38f;
+            boundary*=1.0f+irregular*clamp(p.variationPupilIrregularity,-1.0f,1.0f)
+                            *clamp(p.variationAmount,0.0f,1.0f)*.16f;
         }
         float2 localPoint=direction*diskRadius*boundary;
         localPoint*=float2(aspect,1.0f/aspect);
@@ -586,10 +748,10 @@ kernel void ldbDownsampleHighlights(device const float4* source [[buffer(0)]],
             float sourceWeight=1.0f;
             if(p.depthMode>0u&&scatter.axisX>1.5f) {
                 float depth=normalizedDepth(sourceSample,p);
-                sourceWeight=smoothstep(.018f,.36f,
-                    abs(depth-clamp(p.depthFocus,0.0f,1.0f)));
+                sourceWeight=defocusResponse(depth,p);
             }
-            sum+=thresholdHighlight(sourceSample.rgb,scatter.threshold)*sourceWeight;
+            sum+=thresholdHighlightResponse(sourceSample.rgb,scatter.threshold,
+                                             p.responseHighlightKnee)*sourceWeight;
         }
     }
     uint2 depthPosition=min(gid*scale+uint2(scale/2u),
@@ -606,9 +768,10 @@ kernel void ldbBlurHorizontal(device const float4* source [[buffer(0)]],
     uint width = uint(scatter.imageSize.x), height = uint(scatter.imageSize.y);
     if (gid.x >= width || gid.y >= height) return;
     bool depthAware=p.depthMode>0u&&scatter.axisX>.5f;
+    int maximumTaps=scatterTapLimit(p);
     destination[gid.y*width+gid.x]=depthAware
-        ?blurLineDepthAware(source,float2(gid),float2(1,0),scatter.radiusX,width,height,p)
-        :blurLine(source,float2(gid),float2(1,0),scatter.radiusX,width,height);
+        ?blurLineDepthAware(source,float2(gid),float2(1,0),scatter.radiusX,width,height,p,maximumTaps)
+        :blurLine(source,float2(gid),float2(1,0),scatter.radiusX,width,height,maximumTaps);
 }
 
 kernel void ldbBlurVertical(device const float4* source [[buffer(0)]],
@@ -619,9 +782,10 @@ kernel void ldbBlurVertical(device const float4* source [[buffer(0)]],
     uint width = uint(scatter.imageSize.x), height = uint(scatter.imageSize.y);
     if (gid.x >= width || gid.y >= height) return;
     bool depthAware=p.depthMode>0u&&scatter.axisX>.5f;
+    int maximumTaps=scatterTapLimit(p);
     destination[gid.y*width+gid.x]=depthAware
-        ?blurLineDepthAware(source,float2(gid),float2(0,1),scatter.radiusY,width,height,p)
-        :blurLine(source,float2(gid),float2(0,1),scatter.radiusY,width,height);
+        ?blurLineDepthAware(source,float2(gid),float2(0,1),scatter.radiusY,width,height,p,maximumTaps)
+        :blurLine(source,float2(gid),float2(0,1),scatter.radiusY,width,height,maximumTaps);
 }
 
 kernel void ldbComposite(device const float4* source [[buffer(0)]],
@@ -630,11 +794,13 @@ kernel void ldbComposite(device const float4* source [[buffer(0)]],
                          device const float4* glareScattered [[buffer(3)]],
                          device const float4* haloScattered [[buffer(4)]],
                          device const float4* apertureScattered [[buffer(5)]],
-                         device float4* destination [[buffer(6)]],
-                         constant LDBOpticsParameters& p [[buffer(7)]],
-                         constant LDBScatterParameters& bloomScatter [[buffer(8)]],
-                         constant LDBScatterParameters& glareScatter [[buffer(9)]],
-                         constant LDBScatterParameters& haloScatter [[buffer(10)]],
+                         device const float4* flareScattered [[buffer(6)]],
+                         device float4* destination [[buffer(7)]],
+                         constant LDBOpticsParameters& p [[buffer(8)]],
+                         constant LDBScatterParameters& bloomScatter [[buffer(9)]],
+                         constant LDBScatterParameters& glareScatter [[buffer(10)]],
+                         constant LDBScatterParameters& haloScatter [[buffer(11)]],
+                         constant LDBScatterParameters& flareScatter [[buffer(12)]],
                          uint2 gid [[thread_position_in_grid]]) {
     uint width = uint(p.imageSize.x), height = uint(p.imageSize.y);
     if (gid.x >= width || gid.y >= height) return;
@@ -649,6 +815,9 @@ kernel void ldbComposite(device const float4* source [[buffer(0)]],
     float2 haloPixel = (float2(gid) + 0.5f) / float(haloScatter.scale) - 0.5f;
     float3 halo = sampleBilinear(haloScattered, haloPixel,
                                  uint(haloScatter.imageSize.x), uint(haloScatter.imageSize.y)).rgb;
+    float2 flarePixel = (float2(gid) + 0.5f) / float(flareScatter.scale) - 0.5f;
+    float3 flare = sampleBilinear(flareScattered, flarePixel,
+                                  uint(flareScatter.imageSize.x), uint(flareScatter.imageSize.y)).rgb;
     if(p.depthMode>0u) {
         float targetDepth=normalizedDepth(source[index],p);
         float bloomDepth=normalizedDepth(sampleNearest(bloomScattered,bloomPixel,
@@ -658,28 +827,32 @@ kernel void ldbComposite(device const float4* source [[buffer(0)]],
         // The scatter buffer alpha is the depth of its low-resolution target,
         // not the originating highlight. Use a symmetric reconstruction guard
         // here; directional occlusion has already happened inside the blur.
-        float bloomLayer=1.0f-smoothstep(.035f,.16f,abs(bloomDepth-targetDepth));
-        float glareLayer=1.0f-smoothstep(.035f,.16f,abs(glareDepth-targetDepth));
-        bloom*=mix(.12f,1.0f,bloomLayer);
-        glare*=mix(.12f,1.0f,glareLayer);
+        bloom*=protectedLayerAgreement(targetDepth,bloomDepth,p);
+        glare*=protectedLayerAgreement(targetDepth,glareDepth,p);
         float haloDepth=normalizedDepth(sampleNearest(haloScattered,haloPixel,
             uint(haloScatter.imageSize.x),uint(haloScatter.imageSize.y)),p);
-        float haloLayer=1.0f-smoothstep(.035f,.16f,abs(haloDepth-targetDepth));
-        halo*=mix(.12f,1.0f,haloLayer);
+        halo*=protectedLayerAgreement(targetDepth,haloDepth,p);
+        float flareDepth=normalizedDepth(sampleNearest(flareScattered,flarePixel,
+            uint(flareScatter.imageSize.x),uint(flareScatter.imageSize.y)),p);
+        flare*=protectedLayerAgreement(targetDepth,flareDepth,p);
     }
     float apertureMix=clamp(p.apertureResponse,0.0f,1.0f);
     float3 directOptics=mix(direct[index].rgb,apertureScattered[index].rgb,apertureMix);
     float3 result = directOptics
                   + bloom * max(0.0f, p.bloomEnergy)
                   + glare * max(0.0f, p.glareEnergy) * glareTint
-                  + halo * clamp(p.sphericalHalo, 0.0f, 2.0f) * 0.22f;
+                  + halo * clamp(p.sphericalHalo, 0.0f, 2.0f) * 0.22f
+                  + flare * max(0.0f, p.anamorphicFlareAmount)
+                    * max(p.anamorphicFlareColor, float3(0.0f));
     uint diagnostic = p.processingFlags & LDBDiagnosticMask;
     if (diagnostic == LDBDiagnosticDifference)
         result = float3(0.18f) + (result - source[index].rgb) * 2.0f;
     else if (diagnostic == LDBDiagnosticScatter)
         result = (bloom * max(0.0f, p.bloomEnergy)
                 + glare * max(0.0f, p.glareEnergy) * glareTint
-                + halo * clamp(p.sphericalHalo, 0.0f, 2.0f) * 0.22f) * 2.0f;
+                + halo * clamp(p.sphericalHalo, 0.0f, 2.0f) * 0.22f
+                + flare * max(0.0f, p.anamorphicFlareAmount)
+                  * max(p.anamorphicFlareColor, float3(0.0f))) * 2.0f;
     else if (diagnostic == LDBDiagnosticDirectOptics)
         result = directOptics;
     else if (diagnostic == LDBDiagnosticDepth) {

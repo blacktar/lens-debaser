@@ -1,13 +1,6 @@
 # Resolve host-validation checklist
 
 ## Open items
-
-- Investigate why the supplied `ldb.png` bundle icon is not displayed for Lens
-  Debaser in Resolve's Open FX menu. Verify what Resolve/Resolve Studio actually
-  supports for an effect-list icon rather than assuming that macOS
-  `CFBundleIconFile` or the generic OFX parameter-icon property controls it.
-  Keep the supplied artwork unchanged unless a Resolve-specific size, format,
-  filename, or bundle location is required.
 - Append the current plugin version to the user-facing effect label everywhere
   it is appropriate, beginning with `Lens Debaser 1.2`. Keep the stable OFX
   identifier `com.ldb.LensDebaser` unchanged so projects continue to resolve the
@@ -17,18 +10,38 @@
 
 ## Current host status
 
-- Lens Debaser 1.27 is the current development build for `/Library/OFX/Plugins`.
+- Lens Debaser 1.32 is the current development build and has passed its Resolve
+  host check for both native Color-page depth-map input routes.
+- Version 1.31 bounds aggregate Metal scatter scratch memory, uses two-buffer
+  aperture reconstruction, limits retained scratch memory, and serializes large
+  Lens Debaser render graphs per Metal device. Scatter processing now uses one
+  fixed high-quality allocation policy, preventing interactive controls from
+  changing resource geometry on Resolve's live Metal queue.
 - The installed arm64 bundle passes strict code-signature verification.
 - Resolve discovers and loads the effect.
+- The supplied Lens Debaser icon is displayed in Resolve's Open FX menu.
 
 ## Resolve Studio depth validation
+
+### Version 1.32 native Color-page inputs
+
+- `Depth Map Source: Alpha Input` reads the incoming alpha produced by an
+  upstream Resolve Depth Map node.
+- `Depth Map Source: Second RGB Input` reads grayscale/luminance from the
+  optional `Depth Map` image connector exposed by the General OFX context.
+- Both paths feed the same normalized engine depth carrier and therefore use
+  the existing `Depth Interpretation`, `Depth Near`, `Depth Far`, and
+  `Focus Depth` controls.
+- Resolve host validation passed for both `Alpha Input` and `Second RGB Input`.
+  If a host configuration selects Filter context, `Alpha Input` remains the
+  supported route because an optional second image connector is unavailable.
 
 - Resolve Studio's AI Depth Map result can be rendered to a grayscale TIFF and
   packed into the ARRI source alpha with Fusion Channel Booleans.
 - With the ARRI RGB connected as Channel Booleans Foreground and the grayscale
   map as Background, RGB is copied from Foreground and Alpha from Background
   Red.
-- Lens Debaser reads the packed map with `Depth Source Channel: Alpha` and
+- Lens Debaser reads the packed map with `Depth Map Source: Alpha Input` and
   `Depth Interpretation: Near Black`; `Diagnostic View: Depth Input` matches
   the supplied depth TIFF. `Near White` correctly displays its inverse.
 - Moving `Focus Depth` from `0` to `1` moves focus through the ARRI still as

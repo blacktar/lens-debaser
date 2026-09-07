@@ -5,7 +5,7 @@ DaVinci Resolve. It models perceptually useful aspects of modern, vintage,
 anamorphic and exotic optics, prioritising pleasing visual approximations and
 interactive performance over scientific lens simulation.
 
-Current development version: **1.27**.
+Current development version: **1.32**.
 
 ## Implemented areas
 
@@ -34,6 +34,12 @@ ARRI LogC4 frame and ARRI's installed LogC4 display LUT. Override their paths
 when needed:
 
 ```bash
+make deploy REFERENCE_DIR=/path/to/reference-folder
+```
+
+Individual files can still be overridden when needed:
+
+```bash
 make deploy \
   ISO_CHART=/path/to/ISO_12233-reschart.tif \
   REAL_FOOTAGE=/path/to/iphone-dwg-frame.tif \
@@ -58,7 +64,11 @@ Fully quit Resolve before deployment. Generated binaries, validation renders,
 camera footage, LUTs, user presets and crash reports are intentionally excluded
 from version control.
 
-## Project status
+## License
 
-This repository is private development work. No public redistribution or
-open-source licence is granted at this stage.
+Lens Debaser is licensed under the
+[Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International
+License](https://creativecommons.org/licenses/by-nc-sa/4.0/). You may share
+and adapt the project with attribution for non-commercial purposes, provided
+derivative work is distributed under the same license. See [LICENSE](LICENSE)
+for the complete legal terms.

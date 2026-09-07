@@ -1,0 +1,14 @@
+LensDebaserPreset=2
+lookInfluence=1
+lookCharacter=0.15
+cornerSharpnessLoss=0.08
+fieldCurvature=0.05
+astigmatism=0.03
+microContrast=-0.04
+fineDetail=-0.03
+lateralCARed=0.08
+lateralCABlue=-0.1
+vignetteNatural=0.03
+bloomEnergy=0.025
+glareEnergy=0.012
+sphericalHalo=0.02

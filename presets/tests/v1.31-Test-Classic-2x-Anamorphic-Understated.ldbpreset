@@ -1,0 +1,15 @@
+LensDebaserPreset=2
+lookInfluence=1
+lookAnamorphicBias=0.15
+anamorphicSqueeze=1.15
+anamorphicAberration=0.12
+anamorphicFlareAmount=0.12
+anamorphicFlareRadius=90
+anamorphicFlareThreshold=0.7
+bloomEnergy=0.035
+bloomHorizontalStretch=2
+fieldCurvature=0.05
+astigmatism=0.05
+tangentialSmear=0.04
+apertureCatEye=0.08
+apertureAspect=1.2

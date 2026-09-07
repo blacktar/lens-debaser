@@ -1,0 +1,12 @@
+LensDebaserPreset=2
+captureInfluence=1
+captureFocalLength=12
+captureAperture=0.7
+captureFocusDistance=20
+captureGate=8
+cornerSharpnessLoss=1.5
+fieldCurvature=1.25
+apertureResponse=0.9
+apertureRadius=22
+sphericalHalo=0.8
+longitudinalCA=0.8

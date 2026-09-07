@@ -22,7 +22,11 @@ The optical engine always operates in scene-linear AP1:
 
 The output encoding and primaries must match the input working space. Extended-range and negative values must not be clipped. Alpha passes through unchanged.
 
-Input Working Space and LogC3 EI are OFX instance/project settings. They are deliberately excluded from `.ldbpreset` files, and preset loading must not modify them.
+Input Working Space and Diagnostic View are OFX processing
+context. They are deliberately excluded from `.ldbpreset` files, preset loading
+must not modify them, and changing them must not mark the selected preset as
+Custom. Resolve host events such as bypassing and re-enabling a node likewise
+must not affect preset status.
 
 Visual validation is blocked until round-trip and cross-encoding equivalence tests pass for every supported working space.
 

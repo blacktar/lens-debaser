@@ -16,7 +16,8 @@ public:
                 id<MTLBuffer> destination,
                 uint32_t width,
                 uint32_t height,
-                const LDBOpticsParameters& parameters);
+                const LDBOpticsParameters& parameters,
+                id<MTLBuffer> depthSource = nil);
 
 private:
     struct Impl;

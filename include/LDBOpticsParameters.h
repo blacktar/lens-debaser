@@ -13,7 +13,7 @@ typedef simd_float2 LDBFloat2;
 typedef simd_float3 LDBFloat3;
 #endif
 
-enum : uint32_t { LDBOpticsParameterABIVersion = 3 };
+enum : uint32_t { LDBOpticsParameterABIVersion = 4 };
 
 enum LDBWorkingColorSpace : uint32_t {
     LDBWorkingColorSpaceACEScg = 0,
@@ -24,10 +24,6 @@ enum LDBWorkingColorSpace : uint32_t {
 };
 
 enum LDBProcessingFlags : uint32_t {
-    LDBProcessingQualityBalanced = 0u,
-    LDBProcessingQualityFast = 1u,
-    LDBProcessingQualityHigh = 2u,
-    LDBProcessingQualityMask = 3u,
     LDBDiagnosticDifference = 1u << 8,
     LDBDiagnosticScatter = 2u << 8,
     LDBDiagnosticDirectOptics = 3u << 8,
@@ -121,6 +117,64 @@ struct alignas(16) LDBOpticsParameters {
     uint32_t depthChannel;
     float depthNear;
     float depthFar;
+
+    // ABI v4: an independently positionable and shaped off-axis response
+    // field, followed by perceptual transmission response controls.
+    LDBFloat2 fieldCenter;
+    float fieldAspect;
+    float fieldRotation;
+
+    float transmissionDensity;
+    float transmissionContrast;
+    float transmissionHighlightSoftness;
+    float anamorphicDistortion;
+
+    float anamorphicAberration;
+    float reservedV4_0;
+    float reservedV4_1;
+    float reservedV4_2;
+
+    float anamorphicFlareAmount;
+    float anamorphicFlareRadius;
+    float anamorphicFlareThreshold;
+    float reservedV4_3;
+
+    LDBFloat3 anamorphicFlareColor;
+
+    float variationAmount;
+    uint32_t variationSeed;
+    float variationFieldAsymmetry;
+    float variationPupilIrregularity;
+
+    float variationChromaticAsymmetry;
+    float variationTransmissionUnevenness;
+    float reservedV4_4;
+    float reservedV4_5;
+
+    float responseHighlightKnee;
+    float responseFieldOnset;
+    float responseFieldFalloff;
+    float responseDefocusOnset;
+
+    float responseDefocusFalloff;
+    float responseScatterEdgeProtection;
+    float reservedV4_6;
+    float reservedV4_7;
+
+    float captureFocalLength;
+    float captureAperture;
+    float captureFocusDistance;
+    float captureGateWidth;
+
+    float captureGateHeight;
+    float captureInfluence;
+    float lookCharacter;
+    float lookVintageBias;
+
+    float lookExoticBias;
+    float lookInfluence;
+    float lookAnamorphicBias;
+    float lookVintageCaricatureBias;
 };
 
 struct alignas(16) LDBScatterParameters {
@@ -135,7 +189,7 @@ struct alignas(16) LDBScatterParameters {
 
 #ifndef __METAL_VERSION__
 static_assert(std::is_standard_layout_v<LDBOpticsParameters>);
-static_assert(sizeof(LDBOpticsParameters) == 368, "LDB optics ABI v3 size changed");
+static_assert(sizeof(LDBOpticsParameters) == 560, "LDB optics ABI v4 size changed");
 static_assert(alignof(LDBOpticsParameters) == 16, "LDB optics ABI v2 alignment changed");
 static_assert(offsetof(LDBOpticsParameters, distortionK1) == 16);
 static_assert(offsetof(LDBOpticsParameters, cornerSharpnessLoss) == 64);
@@ -152,6 +206,21 @@ static_assert(offsetof(LDBOpticsParameters, longitudinalCA) == 260);
 static_assert(offsetof(LDBOpticsParameters, nearFocusColor) == 288);
 static_assert(offsetof(LDBOpticsParameters, farFocusColor) == 320);
 static_assert(offsetof(LDBOpticsParameters, depthMode) == 340);
+static_assert(offsetof(LDBOpticsParameters, fieldCenter) == 360);
+static_assert(offsetof(LDBOpticsParameters, fieldAspect) == 368);
+static_assert(offsetof(LDBOpticsParameters, transmissionDensity) == 376);
+static_assert(offsetof(LDBOpticsParameters, anamorphicDistortion) == 388);
+static_assert(offsetof(LDBOpticsParameters, anamorphicAberration) == 392);
+static_assert(offsetof(LDBOpticsParameters, anamorphicFlareAmount) == 408);
+static_assert(offsetof(LDBOpticsParameters, anamorphicFlareColor) == 432);
+static_assert(offsetof(LDBOpticsParameters, variationAmount) == 448);
+static_assert(offsetof(LDBOpticsParameters, variationChromaticAsymmetry) == 464);
+static_assert(offsetof(LDBOpticsParameters, responseHighlightKnee) == 480);
+static_assert(offsetof(LDBOpticsParameters, responseDefocusFalloff) == 496);
+static_assert(offsetof(LDBOpticsParameters, captureFocalLength) == 512);
+static_assert(offsetof(LDBOpticsParameters, lookExoticBias) == 544);
+static_assert(offsetof(LDBOpticsParameters, lookAnamorphicBias) == 552);
+static_assert(offsetof(LDBOpticsParameters, lookVintageCaricatureBias) == 556);
 static_assert(sizeof(LDBScatterParameters) == 32, "LDB scatter ABI v1 size changed");
 #endif
 
@@ -182,5 +251,20 @@ static inline LDBOpticsParameters LDBNeutralOpticsParameters(float width, float 
     p.depthNear = 0.0f;
     p.depthFar = 1.0f;
     p.depthChannel = 4;
+    p.fieldCenter = {0.5f, 0.5f};
+    p.fieldAspect = 1.0f;
+    p.anamorphicFlareRadius = 80.0f;
+    p.anamorphicFlareThreshold = 1.0f;
+    p.anamorphicFlareColor = {0.35f, 0.55f, 1.0f};
+    p.responseFieldOnset = 0.0f;
+    p.responseFieldFalloff = 1.0f;
+    p.responseDefocusOnset = 0.018f;
+    p.responseDefocusFalloff = 0.36f;
+    p.responseScatterEdgeProtection = 1.0f;
+    p.captureFocalLength = 50.0f;
+    p.captureAperture = 2.8f;
+    p.captureFocusDistance = 3.0f;
+    p.captureGateWidth = 36.0f;
+    p.captureGateHeight = 24.0f;
     return p;
 }

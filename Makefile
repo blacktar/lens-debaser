@@ -1,8 +1,12 @@
-SDKROOT := $(shell xcrun --sdk macosx --show-sdk-path)
+# Resolve builds require full Xcode. Do not depend on the global xcode-select
+# setting, which macOS/Command Line Tools updates can change underneath us.
+XCODE_DEVELOPER_DIR := /Applications/Xcode.app/Contents/Developer
+XCRUN := env DEVELOPER_DIR="$(XCODE_DEVELOPER_DIR)" xcrun
+SDKROOT := $(shell $(XCRUN) --sdk macosx --show-sdk-path)
 MOBILE_METAL_BIN := $(dir $(firstword $(wildcard /private/var/run/com.apple.security.cryptexd/mnt/com.apple.MobileAsset.MetalToolchain-*/Metal.xctoolchain/usr/bin/metal)))
-METAL := $(if $(MOBILE_METAL_BIN),$(MOBILE_METAL_BIN)metal,$(shell xcrun --find metal))
-METALLIB := $(if $(MOBILE_METAL_BIN),$(MOBILE_METAL_BIN)metallib,$(shell xcrun --find metallib))
-CXX := xcrun clang++
+METAL := $(if $(MOBILE_METAL_BIN),$(MOBILE_METAL_BIN)metal,$(shell $(XCRUN) --find metal 2>/dev/null))
+METALLIB := $(if $(MOBILE_METAL_BIN),$(MOBILE_METAL_BIN)metallib,$(shell $(XCRUN) --find metallib 2>/dev/null))
+CXX := $(XCRUN) clang++
 BUILD := build
 export CLANG_MODULE_CACHE_PATH := $(CURDIR)/$(BUILD)/module-cache
 METAL_AIR := $(BUILD)/LDBOptics.air
@@ -21,9 +25,10 @@ OFX_BUNDLE := $(BUILD)/LensDebaser.ofx.bundle
 OFX_BINARY := $(OFX_BUNDLE)/Contents/MacOS/LensDebaser.ofx
 OFX_SUPPORT_SOURCES := ofxsCore ofxsImageEffect ofxsInteract ofxsLog ofxsMultiThread ofxsParams ofxsProperty ofxsPropertyValidation
 OFX_SUPPORT_OBJECTS := $(addprefix $(OFX_BUILD)/,$(addsuffix .o,$(OFX_SUPPORT_SOURCES)))
-ISO_CHART ?= /Users/blacktar/Desktop/ISO_12233-reschart.tif
-REAL_FOOTAGE ?= /Users/blacktar/Desktop/iphone_milano_dwg_1.tif
-ARRI_FOOTAGE ?= /Users/blacktar/Desktop/arri_log00086400.tif
+REFERENCE_DIR ?= /Users/blacktar/Desktop/LDB
+ISO_CHART ?= $(REFERENCE_DIR)/ISO_12233-reschart.tif
+REAL_FOOTAGE ?= $(REFERENCE_DIR)/iphone_milano_dwg_1.tif
+ARRI_FOOTAGE ?= $(REFERENCE_DIR)/arri_log00086400.tif
 ARRI_REVEAL_LUT ?= /Library/Application Support/Blackmagic Design/DaVinci Resolve/LUT/Arri/ARRI_LogC4_v1_LUT_Package/LUTs/ARRI_LogC4-to-Gamma24_Rec709-D65_v1-65.cube
 VALIDATION_OUTPUT := outputs/engine-validation
 
@@ -41,6 +46,7 @@ validate: test benchmark visual-test
 # then install only if every preceding step succeeds.
 deploy:
 	@if pgrep -x "Resolve" >/dev/null; then echo "ERROR: Fully quit DaVinci Resolve before deployment." >&2; exit 1; fi
+	@test -d "$(XCODE_DEVELOPER_DIR)" || { echo "ERROR: Full Xcode is required at $(XCODE_DEVELOPER_DIR)." >&2; exit 1; }
 	@test -d "$(OFX_INCLUDE)" || { echo "ERROR: Resolve OpenFX SDK is unavailable at $(OFX_INCLUDE)." >&2; exit 1; }
 	@test -x "$(METAL)" && test -x "$(METALLIB)" || { echo "ERROR: Apple Metal compiler tools are unavailable." >&2; exit 1; }
 	@for reference in "$(ISO_CHART)" "$(REAL_FOOTAGE)" "$(ARRI_FOOTAGE)" "$(ARRI_REVEAL_LUT)"; do test -f "$$reference" || { echo "ERROR: Required validation reference is missing: $$reference" >&2; exit 1; }; done

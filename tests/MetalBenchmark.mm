@@ -85,6 +85,10 @@ int main(int argc, char** argv) {
         depthHalo.coma=0;depthHalo.depthMode=2;depthHalo.depthChannel=4;depthHalo.depthFocus=.5f;
         auto axialCA = neutral;
         axialCA.longitudinalCA=1;axialCA.longitudinalCARadius=8;
+        auto anamorphicFlare=neutral;
+        anamorphicFlare.anamorphicFlareAmount=.7f;
+        anamorphicFlare.anamorphicFlareRadius=120;
+        anamorphicFlare.anamorphicFlareThreshold=1;
         std::printf("Metal device: %s\n", device.name.UTF8String);
         benchmark("neutral", engine, device, queue, source, destination, width, height, neutral, frames);
         benchmark("geometry", engine, device, queue, source, destination, width, height, geometry, frames);
@@ -95,6 +99,7 @@ int main(int argc, char** argv) {
         benchmark("bloom-z", engine, device, queue, source, destination, width, height, depthBloom, frames);
         benchmark("halo-z", engine, device, queue, source, destination, width, height, depthHalo, frames);
         benchmark("axial-ca", engine, device, queue, source, destination, width, height, axialCA, frames);
+        benchmark("ana-flare", engine, device, queue, source, destination, width, height, anamorphicFlare, frames);
         benchmark("vintage", engine, device, queue, source, destination, width, height, vintage, frames);
         benchmark("anamorphic", engine, device, queue, source, destination, width, height, anamorphic, frames);
     }

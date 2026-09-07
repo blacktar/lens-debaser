@@ -21,6 +21,7 @@
 
 # User presets and host diagnostics
 *.ldbpreset
+!presets/tests/*.ldbpreset
 *.crash
 *.ips
 
