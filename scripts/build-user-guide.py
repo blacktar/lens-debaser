@@ -153,6 +153,7 @@ guide_css += ":root{--orange:#16cbf6;--acid:#f64116}"
 guide_css += """
 .hero{display:grid;grid-template-columns:minmax(0,1fr) minmax(180px,340px);gap:clamp(35px,7vw,110px);align-items:center}
 .hero-copy{min-width:0}.hero h1 span{display:block}.hero-logo{display:block;width:100%;height:auto;justify-self:end}
+.hero-cta{border:0;background:var(--orange);color:#fff}
 .disclaimer{padding:34px 38px;border:1px solid #623026;border-left:8px solid var(--acid);background:#211614}.disclaimer h2{font-size:clamp(2rem,4vw,3.2rem)}.disclaimer p:last-child{margin-bottom:0}
 @media(max-width:800px){.hero{grid-template-columns:minmax(0,1fr) minmax(110px,25vw);gap:25px}}
 @media(max-width:560px){.hero{grid-template-columns:1fr}.hero-logo{width:min(55vw,220px);justify-self:start;grid-row:1}.hero-copy{grid-row:2}}
