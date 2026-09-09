@@ -1,0 +1,24 @@
+LensDebaserPreset=2
+# Family: Warm-Amber-Scope
+# Strength: Subtle
+# Visual approximation; tune to the shot and working resolution.
+anamorphicAberration=0.2275
+anamorphicDistortion=0.0105
+anamorphicFlareAmount=0.28
+anamorphicFlareB=0.713
+anamorphicFlareG=0.55
+anamorphicFlareR=0.5775
+anamorphicFlareRadius=115
+anamorphicFlareThreshold=0.895
+anamorphicSqueeze=1.1925
+apertureAspect=1.1925
+apertureCatEye=0.133
+apertureRadius=8.8
+apertureResponse=0.1925
+apertureShape=2
+cornerSharpnessLoss=0.1925
+glareEnergy=0.0525
+transmissionB=0.9055
+transmissionColorAmount=0.098
+transmissionG=0.972
+transmissionR=1

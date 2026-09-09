@@ -502,12 +502,35 @@ int main(int argc, char **argv) {
         float z = float(x) / float(width - 1);
         depthRGB[y * width + x] = {z, z, z, 1.0f};
       }
+    auto luminanceDepth = depthDiagnostic;
+    luminanceDepth.depthChannel = 0;
     auto secondInputOut = renderWithDepth(engine, device, queue, image,
                                            depthRGB, width, height,
-                                           depthDiagnostic);
+                                           luminanceDepth);
     require(maxDifference(depthOut, secondInputOut) < 1e-6f,
-            "Second RGB depth input must match the alpha depth carrier");
-    std::puts("PASS: native alpha and second RGB depth-map inputs");
+            "Second RGB depth input must match the internal depth carrier");
+    std::puts("PASS: dedicated second RGB depth-map input");
+    auto defocusDiagnostic = depthDiagnostic;
+    defocusDiagnostic.processingFlags = LDBDiagnosticDefocus;
+    auto defocusOut = render(engine, device, queue, depthPacked, width, height,
+                             defocusDiagnostic);
+    require(defocusOut[width / 2].x < .01f &&
+                defocusOut.front().x > .9f && defocusOut[width - 1].x > .9f,
+            "Defocus Amount diagnostic must show the Focus Depth plane");
+    std::vector<simd_float4> diagnosticStep(width * height,
+                                            simd_float4{0, 0, 0, .2f});
+    for (uint32_t y = 0; y < height; ++y)
+      for (uint32_t x = width / 2; x < width; ++x)
+        diagnosticStep[size_t(y) * width + x].w = .8f;
+    auto rejectionDiagnostic = depthDiagnostic;
+    rejectionDiagnostic.processingFlags = LDBDiagnosticDepthRejection;
+    auto rejectionOut = render(engine, device, queue, diagnosticStep, width,
+                               height, rejectionDiagnostic);
+    size_t edgeProbe = size_t(height / 2) * width + width / 2;
+    size_t flatProbe = size_t(height / 2) * width + width / 4;
+    require(rejectionOut[edgeProbe].x > .2f &&
+                rejectionOut[flatProbe].x < .01f,
+            "Depth Rejection diagnostic must isolate map boundaries");
     auto inverseDepth = depthDiagnostic;
     inverseDepth.depthMode = 1;
     auto inverseOut =
@@ -695,14 +718,14 @@ int main(int argc, char **argv) {
     combinedScatter.glareEnergy = .5f;
     combinedScatter.glareRadius = 96.0f;
     combinedScatter.sphericalHalo = .8f;
-    for (uint32_t diagnosticMode = 0; diagnosticMode <= 4; ++diagnosticMode) {
+    for (uint32_t diagnosticMode = 0; diagnosticMode <= 6; ++diagnosticMode) {
         combinedScatter.processingFlags = diagnosticMode << 8;
         auto transitionOut = render(engine, device, queue, impulse, width,
                                     height, combinedScatter);
         for (const auto &sample : transitionOut)
           require(std::isfinite(sample.x) && std::isfinite(sample.y) &&
                       std::isfinite(sample.z) && std::isfinite(sample.w),
-                  "Quality and Diagnostic View transitions must remain finite");
+                  "Diagnostic View transitions must remain finite");
     }
 
     // With an explicit near-black depth map, a bright background practical
@@ -738,7 +761,22 @@ int main(int argc, char **argv) {
     auto openBoundaryBloom = render(engine, device, queue, depthScatter, width,
                                     height, disabledEdgeProtection);
     require(openBoundaryBloom[nearSide].x > protectedBloom[nearSide].x,
-            "Scatter Edge Protection must control cross-layer optical spill");
+            "Depth Edge Protection must control cross-layer optical spill");
+    auto softDepthScatter = depthScatter;
+    for (uint32_t y = 0; y < height; ++y)
+      for (uint32_t x = width / 2; x < width; ++x)
+        softDepthScatter[size_t(y) * width + x].w = .27f;
+    auto crispBoundaryBloom = depthBloom;
+    crispBoundaryBloom.depthEdgeSoftness = 0.0f;
+    auto crispProtection = render(engine, device, queue, softDepthScatter,
+                                  width, height, crispBoundaryBloom);
+    auto softBoundaryBloom = depthBloom;
+    softBoundaryBloom.depthEdgeSoftness = 1.0f;
+    auto softenedProtection = render(engine, device, queue, softDepthScatter,
+                                     width, height, softBoundaryBloom);
+    require(softenedProtection[nearSide].x > crispProtection[nearSide].x,
+            "Depth Edge Softness must admit more response across a soft map "
+            "transition");
     auto depthGlare = depthBloom;
     depthGlare.bloomEnergy = 0;
     depthGlare.glareEnergy = 1;
@@ -1325,6 +1363,8 @@ int main(int argc, char **argv) {
     std::printf("PASS: lateral chromatic aberration\n");
     std::printf("PASS: longitudinal near/far chromatic aberration\n");
     std::printf("PASS: optional depth input interpretation and diagnostic\n");
+    std::printf("PASS: depth edge softness and protection\n");
+    std::printf("PASS: defocus and depth rejection diagnostics\n");
     std::printf("PASS: transmission color and response\n");
     std::printf("PASS: independent field shape\n");
     std::printf("PASS: independent anamorphic distortion and aberration\n");

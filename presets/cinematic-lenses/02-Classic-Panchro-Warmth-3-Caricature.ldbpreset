@@ -1,0 +1,22 @@
+LensDebaserPreset=2
+# Family: Classic-Panchro-Warmth
+# Strength: Caricature
+# Visual approximation; tune to the shot and working resolution.
+astigmatism=0.18
+bloomEnergy=0.2
+cornerSharpnessLoss=0.8
+fieldCurvature=0.5
+fineDetail=-0.18
+glareEnergy=0.16
+lateralCABlue=-0.65
+lateralCARed=0.5
+longitudinalCA=0.3
+microContrast=-0.28
+sphericalHalo=0.18
+transmissionB=0.72
+transmissionColorAmount=0.3
+transmissionContrast=-0.18
+transmissionG=0.91
+transmissionHighlightSoftness=0.5
+transmissionR=1
+vignetteNatural=0.2

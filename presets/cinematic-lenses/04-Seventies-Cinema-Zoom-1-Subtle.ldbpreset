@@ -1,0 +1,25 @@
+LensDebaserPreset=2
+# Family: Seventies-Cinema-Zoom
+# Strength: Subtle
+# Visual approximation; tune to the shot and working resolution.
+astigmatism=0.105
+bloomEnergy=0.098
+cornerSharpnessLoss=0.315
+detailEdgeFalloff=0.28
+distortionK1=0.01225
+distortionK2=0.028
+fineDetail=-0.1225
+glareEnergy=0.0875
+lateralCABlue=-0.385
+lateralCARed=0.2975
+microContrast=-0.1925
+radialSmear=0.077
+transmissionB=0.895
+transmissionColorAmount=0.112
+transmissionG=0.965
+transmissionR=1
+variationAmount=0.1575
+variationSeed=1977
+variationTransmissionUnevenness=0.14
+vignetteNatural=0.077
+vignetteOptical=0.063

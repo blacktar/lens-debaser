@@ -1,0 +1,15 @@
+LensDebaserPreset=2
+# Family: Demo-Advanced-Responses
+# Strength: Subtle
+apertureRadius=8.8
+apertureResponse=0.245
+bloomEnergy=0.2275
+bloomRadius=27.05
+cornerSharpnessLoss=0.4025
+fieldCurvature=0.315
+responseDefocusFalloff=0.451
+responseDefocusOnset=0.0397
+responseFieldFalloff=0.867
+responseFieldOnset=0.112
+responseHighlightKnee=0.49
+responseScatterEdgeProtection=0.7725

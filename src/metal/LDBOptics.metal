@@ -11,8 +11,8 @@ kernel void ldbPackDepthLuminance(
     uint width = uint(p.imageSize.x), height = uint(p.imageSize.y);
     if (gid.x >= width || gid.y >= height) return;
     uint index = gid.y * width + gid.x;
-    float depth = dot(depthSource[index].rgb,
-                      float3(0.2126f, 0.7152f, 0.0722f));
+    float4 sample = depthSource[index];
+    float depth = dot(sample.rgb, float3(0.2126f, 0.7152f, 0.0722f));
     destination[index] = float4(source[index].rgb, depth);
 }
 
@@ -172,9 +172,20 @@ static float defocusResponse(float depth,constant LDBOpticsParameters& p) {
                       abs(depth-clamp(p.depthFocus,0.0f,1.0f)));
 }
 
+static float depthLayerSimilarity(float targetDepth,float sampleDepth,
+                                  constant LDBOpticsParameters& p) {
+    // Softness 0.5 exactly reproduces the approved historical .035/.16
+    // transition. Lower values protect crisp mattes; higher values tolerate
+    // soft, noisy, or low-resolution neural depth boundaries.
+    float softness=clamp(p.depthEdgeSoftness,0.0f,1.0f);
+    float inner=mix(.005f,.065f,softness);
+    float outer=mix(.04f,.28f,softness);
+    return 1.0f-smoothstep(inner,outer,abs(sampleDepth-targetDepth));
+}
+
 static float protectedLayerAgreement(float targetDepth,float sampleDepth,
                                      constant LDBOpticsParameters& p) {
-    float sameLayer=1.0f-smoothstep(.035f,.16f,abs(sampleDepth-targetDepth));
+    float sameLayer=depthLayerSimilarity(targetDepth,sampleDepth,p);
     float protectedAgreement=mix(.12f,1.0f,sameLayer);
     return mix(1.0f,protectedAgreement,
                clamp(p.responseScatterEdgeProtection,0.0f,1.0f));
@@ -206,7 +217,7 @@ static float depthSampleAgreement(float targetDepth,float sampleDepth,
     // may expand over a farther target only in proportion to its own defocus;
     // this keeps focused silhouettes crisp while allowing defocused foreground
     // bokeh to soften outward instead of producing a cardboard-cutout edge.
-    float sameLayer=1.0f-smoothstep(.035f,.16f,abs(sampleDepth-targetDepth));
+    float sameLayer=depthLayerSimilarity(targetDepth,sampleDepth,p);
     float sourceDefocus=defocusResponse(sampleDepth,p);
     float nearerExpansion=sampleDepth<targetDepth?sourceDefocus:0.0f;
     float protectedAgreement=max(sameLayer,nearerExpansion);
@@ -571,7 +582,7 @@ static float scatterDepthAgreement(float targetDepth,float sampleDepth,
     // nearer source may still veil a farther target, which preserves the useful
     // photographic spread of foreground practicals without background bloom
     // leaking through silhouettes.
-    float sameLayer=1.0f-smoothstep(.035f,.16f,abs(sampleDepth-targetDepth));
+    float sameLayer=depthLayerSimilarity(targetDepth,sampleDepth,p);
     float directed=max(sameLayer,sampleDepth<targetDepth?1.0f:0.0f);
     // Bloom and veiling glare are formed inside the lens after scene
     // occlusion, so a farther practical must never be cut out completely.
@@ -858,6 +869,23 @@ kernel void ldbComposite(device const float4* source [[buffer(0)]],
     else if (diagnostic == LDBDiagnosticDepth) {
         float d=p.depthMode>0u?normalizedDepth(source[index],p):0.0f;
         result=float3(d);
+    }
+    else if (diagnostic == LDBDiagnosticDefocus) {
+        float d=p.depthMode>0u?normalizedDepth(source[index],p):p.depthFocus;
+        result=float3(defocusResponse(d,p));
+    }
+    else if (diagnostic == LDBDiagnosticDepthRejection) {
+        float rejection=0.0f;
+        if(p.depthMode>0u) {
+            float target=normalizedDepth(source[index],p);
+            float agreement=0.0f;
+            agreement+=depthLayerSimilarity(target,normalizedDepth(sampleInteger(source,int2(gid)+int2(-1,0),width,height),p),p);
+            agreement+=depthLayerSimilarity(target,normalizedDepth(sampleInteger(source,int2(gid)+int2(1,0),width,height),p),p);
+            agreement+=depthLayerSimilarity(target,normalizedDepth(sampleInteger(source,int2(gid)+int2(0,-1),width,height),p),p);
+            agreement+=depthLayerSimilarity(target,normalizedDepth(sampleInteger(source,int2(gid)+int2(0,1),width,height),p),p);
+            rejection=(1.0f-agreement*.25f)*clamp(p.responseScatterEdgeProtection,0.0f,1.0f);
+        }
+        result=float3(rejection);
     }
     float outputAlpha=(p.depthMode>0u&&p.depthChannel==4u)?1.0f:source[index].a;
     destination[index] = float4(mix(source[index].rgb, result, clamp(p.effectBlend, 0.0f, 1.0f)), outputAlpha);

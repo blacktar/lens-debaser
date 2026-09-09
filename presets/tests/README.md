@@ -16,9 +16,12 @@ View are host/session context and must neither be loaded
 from a preset nor change its selected status. These files are versioned test
 fixtures, not factory looks.
 
-Version 1.32 adds two native Color-page depth fixtures. They intentionally use
-the same optical settings; only `depthSource` differs, so their results should
-match when fed equivalent maps:
+Version 1.35 uses only the verified dedicated RGB Depth Map connector. Resolve's
+blue key/mask inputs are not depth sources.
 
-- `v1.32-Test-Depth-Alpha-Input.ldbpreset`
-- `v1.32-Test-Depth-Second-RGB-Input.ldbpreset`
+Version 1.33 adds three boundary-conditioning fixtures. Use the same native
+depth input for all three and compare foreground/background contamination:
+
+- `v1.33-Test-Depth-Edges-Understated.ldbpreset`
+- `v1.33-Test-Depth-Edges-Mid.ldbpreset`
+- `v1.33-Test-Depth-Edges-Max.ldbpreset`

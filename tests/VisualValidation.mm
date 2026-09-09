@@ -700,6 +700,27 @@ int main(int argc, char** argv) {
         save("89-focus-transitions-depth-spherical-halo-near.tiff",
              displayPreview(render(engine,device,queue,depthHaloTransitions,width,height,depthHalo)));
 
+        auto edgeProtectionOff=boundaryBloom;
+        edgeProtectionOff.responseScatterEdgeProtection=0.0f;
+        save("90-depth-boundaries-protection-off.tiff",
+             displayPreview(render(engine,device,queue,depthBoundaryChart,width,height,edgeProtectionOff)));
+        auto edgeSoftnessCrisp=boundaryBloom;
+        edgeSoftnessCrisp.depthEdgeSoftness=0.0f;
+        save("91-depth-boundaries-softness-crisp.tiff",
+             displayPreview(render(engine,device,queue,depthBoundaryChart,width,height,edgeSoftnessCrisp)));
+        auto edgeSoftnessSoft=boundaryBloom;
+        edgeSoftnessSoft.depthEdgeSoftness=1.0f;
+        save("92-depth-boundaries-softness-soft.tiff",
+             displayPreview(render(engine,device,queue,depthBoundaryChart,width,height,edgeSoftnessSoft)));
+        auto defocusDiagnostic=boundaryAperture;
+        defocusDiagnostic.processingFlags=LDBDiagnosticDefocus;
+        save("93-depth-boundaries-defocus-diagnostic.tiff",
+             displayPreview(render(engine,device,queue,depthBoundaryChart,width,height,defocusDiagnostic)));
+        auto rejectionDiagnostic=boundaryAperture;
+        rejectionDiagnostic.processingFlags=LDBDiagnosticDepthRejection;
+        save("94-depth-boundaries-rejection-diagnostic.tiff",
+             displayPreview(render(engine,device,queue,depthBoundaryChart,width,height,rejectionDiagnostic)));
+
         struct Space { uint32_t value; const char* name; };
         const Space spaces[] = {{LDBWorkingColorSpaceACEScct,"acescct"},
             {LDBWorkingColorSpaceDaVinciIntermediate,"dwg-intermediate"},

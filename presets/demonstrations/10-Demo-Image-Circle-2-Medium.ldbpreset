@@ -1,0 +1,6 @@
+LensDebaserPreset=2
+# Family: Demo-Image-Circle
+# Strength: Medium
+imageCircleAspect=1.2275
+imageCircleSize=0.992
+imageCircleSoftness=0.178

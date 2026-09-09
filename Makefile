@@ -32,7 +32,7 @@ ARRI_FOOTAGE ?= $(REFERENCE_DIR)/arri_log00086400.tif
 ARRI_REVEAL_LUT ?= /Library/Application Support/Blackmagic Design/DaVinci Resolve/LUT/Arri/ARRI_LogC4_v1_LUT_Package/LUTs/ARRI_LogC4-to-Gamma24_Rec709-D65_v1-65.cube
 VALIDATION_OUTPUT := outputs/engine-validation
 
-.PHONY: all ofx validate deploy aperture-chart install install-user test clean
+.PHONY: all ofx validate deploy release aperture-chart presets preset-test install install-user test clean
 
 all: $(METAL_LIB) $(TEST_BIN) $(VISUAL_BIN) $(BENCHMARK_BIN)
 
@@ -40,7 +40,17 @@ ofx: $(OFX_BINARY)
 
 install: install-user
 
-validate: test benchmark visual-test
+release: validate ofx
+	./scripts/package-release.sh
+
+validate: preset-test test benchmark visual-test
+
+presets:
+	./scripts/generate-presets.py
+
+preset-test: presets
+	@test "$$(find presets/demonstrations presets/cinematic-lenses -name '*.ldbpreset' -type f | wc -l | tr -d ' ')" = 96 || { echo "ERROR: Expected 96 generated factory presets." >&2; exit 1; }
+	@! rg -n '^(inputWorkingSpace|diagnosticView|depthSource)=' presets/demonstrations presets/cinematic-lenses || { echo "ERROR: A processing-only or removed control was serialized in a factory preset." >&2; exit 1; }
 
 # One command for a Resolve test build: validate the engine and visual outputs,
 # then install only if every preceding step succeeds.

@@ -1,0 +1,8 @@
+LensDebaserPreset=2
+# Family: Demo-Geometry
+# Strength: Subtle
+distortionK1=0.028
+distortionK2=0.063
+moustacheK3=0.077
+opticalCenterX=0.4895
+opticalCenterY=0.5105

@@ -72,7 +72,8 @@ void RunLensDebaserMetal(void* commandQueue, int width, int height,
               (unsigned long long)source.length, (unsigned long long)destination.length);
         throw std::runtime_error("Resolve supplied an undersized Metal image buffer");
     }
-    if (depth && depth.length < requiredBytes)
+    const NSUInteger requiredDepthBytes = pixels * sizeof(float) * 4u;
+    if (depth && depth.length < requiredDepthBytes)
         throw std::runtime_error("Resolve supplied an undersized Metal depth buffer");
     id<MTLCommandBuffer> commandBuffer = [queue commandBuffer];
     if (!commandBuffer)
@@ -81,7 +82,8 @@ void RunLensDebaserMetal(void* commandQueue, int width, int height,
     [commandBuffer addCompletedHandler:^(id<MTLCommandBuffer> completed) {
         reportMetalFailure(completed);
     }];
-    engine->encode(commandBuffer, source, destination, uint32_t(width), uint32_t(height), parameters, depth);
+    engine->encode(commandBuffer, source, destination, uint32_t(width),
+                   uint32_t(height), parameters, depth);
     [commandBuffer commit];
 }
 

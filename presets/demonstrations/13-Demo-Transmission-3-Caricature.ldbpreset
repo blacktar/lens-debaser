@@ -1,0 +1,10 @@
+LensDebaserPreset=2
+# Family: Demo-Transmission
+# Strength: Caricature
+transmissionB=0.63
+transmissionColorAmount=0.55
+transmissionContrast=-0.5
+transmissionDensity=0.55
+transmissionG=0.84
+transmissionHighlightSoftness=1.15
+transmissionR=1

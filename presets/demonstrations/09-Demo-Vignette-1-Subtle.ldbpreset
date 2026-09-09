@@ -1,0 +1,6 @@
+LensDebaserPreset=2
+# Family: Demo-Vignette
+# Strength: Subtle
+vignetteMechanical=0.105
+vignetteNatural=0.1925
+vignetteOptical=0.1575

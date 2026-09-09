@@ -1,0 +1,13 @@
+LensDebaserPreset=2
+# Family: Demo-Capture
+# Strength: Medium
+# Capture Influence activates the capture-dependent response.
+captureAperture=1.76
+captureFocalLength=33.1
+captureFocusDistance=150.5
+captureGate=5
+captureInfluence=0.65
+cornerSharpnessLoss=0.585
+fieldCurvature=0.3575
+longitudinalCA=0.2275
+vignetteNatural=0.143

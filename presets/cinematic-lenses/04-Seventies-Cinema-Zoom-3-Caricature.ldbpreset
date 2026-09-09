@@ -1,0 +1,25 @@
+LensDebaserPreset=2
+# Family: Seventies-Cinema-Zoom
+# Strength: Caricature
+# Visual approximation; tune to the shot and working resolution.
+astigmatism=0.3
+bloomEnergy=0.28
+cornerSharpnessLoss=0.9
+detailEdgeFalloff=0.8
+distortionK1=0.035
+distortionK2=0.08
+fineDetail=-0.35
+glareEnergy=0.25
+lateralCABlue=-1.1
+lateralCARed=0.85
+microContrast=-0.55
+radialSmear=0.22
+transmissionB=0.7
+transmissionColorAmount=0.32
+transmissionG=0.9
+transmissionR=1
+variationAmount=0.45
+variationSeed=1977
+variationTransmissionUnevenness=0.4
+vignetteNatural=0.22
+vignetteOptical=0.18

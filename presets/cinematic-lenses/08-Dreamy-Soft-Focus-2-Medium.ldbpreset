@@ -1,0 +1,16 @@
+LensDebaserPreset=2
+# Family: Dreamy-Soft-Focus
+# Strength: Medium
+# Visual approximation; tune to the shot and working resolution.
+bloomEnergy=0.182
+bloomRadius=33.45
+bloomThreshold=0.7725
+fineDetail=-0.3575
+glareEnergy=0.247
+glareRadius=50.65
+longitudinalCA=0.182
+microContrast=-0.4875
+sphericalHalo=0.7475
+transmissionContrast=-0.26
+transmissionHighlightSoftness=0.78
+vignetteNatural=0.078

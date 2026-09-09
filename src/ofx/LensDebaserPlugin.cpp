@@ -14,7 +14,7 @@
 #include <vector>
 
 namespace {
-constexpr const char *kName = "Lens Debaser 1.32";
+constexpr const char *kName = "Lens Debaser 1.35";
 constexpr const char *kIdentifier = "com.ldb.LensDebaser";
 constexpr const char *kDepthClipName = "Depth";
 struct DoubleSpec {
@@ -147,10 +147,10 @@ const DoubleSpec kSpecs[] = {
      "Energy added by veiling glare."},
     {"glareRadius", "Glare Radius", 24, 0, 200, .01,
      "Glare spread; requires Glare Amount."},
-    {"depthNear", "Depth Near", 0, 0, 1000, .001,
-     "Raw depth value mapped to normalized near."},
-    {"depthFar", "Depth Far", 1, 0, 1000, .001,
-     "Raw depth value mapped to normalized far."},
+    {"depthNear", "Input Near", 0, 0, 1, .001,
+     "Input-map value remapped to the normalized near endpoint."},
+    {"depthFar", "Input Far", 1, 0, 1, .001,
+     "Input-map value remapped to the normalized far endpoint."},
     {"depthFocus", "Focus Depth", .5, 0, 1, .001,
      "Normalized depth plane held in focus; longitudinal color increases away "
      "from this value."},
@@ -186,8 +186,10 @@ const DoubleSpec kSpecs[] = {
      "Depth distance where active defocus responses begin."},
     {"responseDefocusFalloff", "Defocus Falloff", .36, 0, 1, .001,
      "Depth distance where active defocus responses reach full strength."},
-    {"responseScatterEdgeProtection", "Scatter Edge Protection", 1, 0, 1, .001,
+    {"responseScatterEdgeProtection", "Depth Edge Protection", 1, 0, 1, .001,
      "Controls cross-layer rejection for depth-aware aperture and scatter."},
+    {"depthEdgeSoftness", "Depth Edge Softness", .5, 0, 1, .001,
+     "Adjusts depth-layer tolerance at soft or noisy map boundaries."},
     {"effectBlend", "Blend", 1, 0, 1, .001,
      "Final dry/wet blend in increments of 0.001."}};
 
@@ -199,7 +201,7 @@ struct Preset {
       nearFocus{1, .35, .75}, farFocus{.35, 1, .65},
       anamorphicFlare{.35, .55, 1};
   int apertureShape = 0, apertureBladeCount = 6, depthMode = 0,
-      depthSource = 0, captureGate = 0;
+      captureGate = 0;
 };
 
 class Processor final : public OFX::ImageProcessor {
@@ -240,7 +242,6 @@ public:
     presetChoice = fetchChoiceParam("preset");
     apertureShape = fetchChoiceParam("apertureShape");
     depthMode = fetchChoiceParam("depthMode");
-    depthSource = fetchChoiceParam("depthSource");
     captureGate = fetchChoiceParam("captureGate");
     apertureBladeCount = fetchDoubleParam("apertureBladeCount");
     opticalCenter = fetchDouble2DParam("opticalCenter");
@@ -266,9 +267,7 @@ public:
     Processor processor(*this);
     processor.source = src.get();
     std::unique_ptr<OFX::Image> depth;
-    int sourceChoice = 0;
-    depthSource->getValueAtTime(a.time, sourceChoice);
-    if (sourceChoice == 1 && depthInput && depthInput->isConnected()) {
+    if (depthInput && depthInput->isConnected()) {
       depth.reset(depthInput->fetchImage(a.time));
       if (!depth || depth->getPixelDepth() != OFX::eBitDepthFloat ||
           depth->getPixelComponents() != OFX::ePixelComponentRGBA ||
@@ -414,6 +413,7 @@ private:
     D(responseDefocusOnset);
     D(responseDefocusFalloff);
     D(responseScatterEdgeProtection);
+    D(depthEdgeSoftness);
     D(captureFocalLength);
     D(captureAperture);
     D(captureFocusDistance);
@@ -430,15 +430,14 @@ private:
     p.opticalCenter = {float(x), float(y)};
     fieldCenter->getValueAtTime(t, x, y);
     p.fieldCenter = {float(x), float(y)};
-    int s = 0, d = 0, a = 0, dm = 0, ds = 0, cg = 0;
+    int s = 0, d = 0, a = 0, dm = 0, cg = 0;
     workingSpace->getValueAtTime(t, s);
     diagnostic->getValueAtTime(t, d);
     apertureShape->getValueAtTime(t, a);
     depthMode->getValueAtTime(t, dm);
-    depthSource->getValueAtTime(t, ds);
     captureGate->getValueAtTime(t, cg);
     p.depthMode = uint32_t(dm);
-    p.depthChannel = 4u;
+    p.depthChannel = 0u;
     p.depthNear = float(value("depthNear", t));
     p.depthFar = float(value("depthFar", t));
     p.depthFocus = float(value("depthFocus", t));
@@ -500,7 +499,6 @@ private:
                                     p.anamorphicFlare[1], p.anamorphicFlare[2]);
     apertureShape->getValueAtTime(time, p.apertureShape);
     depthMode->getValueAtTime(time, p.depthMode);
-    depthSource->getValueAtTime(time, p.depthSource);
     captureGate->getValueAtTime(time, p.captureGate);
     double blades = 6;
     apertureBladeCount->getValueAtTime(time, blades);
@@ -511,7 +509,7 @@ private:
     for (const auto &s : kSpecs)
       if (name == s.id)
         return true;
-    static const std::array<const char *, 18> otherControls = {
+    static const std::array<const char *, 17> otherControls = {
         "opticalCenter",
         "fieldCenter",
         "transmissionColor",
@@ -522,7 +520,6 @@ private:
         "apertureShape",
         "apertureBladeCount",
         "depthMode",
-        "depthSource",
         "captureGate",
         "opticalCenterX",
         "opticalCenterY",
@@ -560,7 +557,6 @@ private:
            current.apertureShape == target.apertureShape &&
            current.apertureBladeCount == target.apertureBladeCount &&
            current.depthMode == target.depthMode &&
-           current.depthSource == target.depthSource &&
            current.captureGate == target.captureGate;
   }
   void updateApertureControls() {
@@ -587,10 +583,11 @@ private:
     depthMode->getValue(mode);
     bool active = mode > 0;
     depthMode->setEnabled(true);
-    depthSource->setEnabled(active);
     doubles.at("depthNear")->setEnabled(active);
     doubles.at("depthFar")->setEnabled(active);
     doubles.at("depthFocus")->setEnabled(active);
+    doubles.at("responseScatterEdgeProtection")->setEnabled(active);
+    doubles.at("depthEdgeSoftness")->setEnabled(active);
   }
   void updateV4Controls() {
     auto enabledBy = [&](const char *parent,
@@ -683,7 +680,7 @@ private:
         "responses",
         active({"responseHighlightKnee", "responseFieldOnset",
                 "responseFieldFalloff", "responseDefocusOnset",
-                "responseDefocusFalloff", "responseScatterEdgeProtection"}));
+                "responseDefocusFalloff"}));
     setGroupOpen("opticsSection",
                  active({"distortionK1",
                          "distortionK2",
@@ -733,7 +730,8 @@ private:
         active({"coma", "comaThreshold", "variationAmount",
                 "responseHighlightKnee", "responseFieldOnset",
                 "responseFieldFalloff", "responseDefocusOnset",
-                "responseDefocusFalloff", "responseScatterEdgeProtection"}) ||
+                "responseDefocusFalloff", "responseScatterEdgeProtection",
+                "depthEdgeSoftness"}) ||
             p.depthMode > 0);
   }
   void selectPresetIfNeeded(int desired) {
@@ -765,7 +763,6 @@ private:
     apertureShape->setValue(std::clamp(p.apertureShape, 0, 2));
     apertureBladeCount->setValue(std::clamp(p.apertureBladeCount, 3, 32));
     depthMode->setValue(std::clamp(p.depthMode, 0, 5));
-    depthSource->setValue(std::clamp(p.depthSource, 0, 1));
     captureGate->setValue(std::clamp(p.captureGate, 0, 12));
     selectPresetIfNeeded(comparisonPresetIndex);
     endEditBlock();
@@ -821,8 +818,6 @@ private:
           p.apertureBladeCount = int(std::lround(n));
         else if (key == "depthMode")
           p.depthMode = int(n);
-        else if (key == "depthSource")
-          p.depthSource = int(n);
         else if (key == "captureGate")
           p.captureGate = int(n);
         else if (key == "opticalCenterX")
@@ -930,7 +925,6 @@ private:
     f << "apertureShape=" << p.apertureShape << '\n'
       << "apertureBladeCount=" << p.apertureBladeCount << '\n'
       << "depthMode=" << p.depthMode << '\n'
-      << "depthSource=" << p.depthSource << '\n'
       << "captureGate=" << p.captureGate << '\n'
       << "opticalCenterX=" << p.center[0] << "\nopticalCenterY=" << p.center[1]
       << '\n'
@@ -958,7 +952,7 @@ private:
   OFX::ChoiceParam *workingSpace = nullptr, *diagnostic = nullptr,
                    *presetChoice = nullptr,
                    *apertureShape = nullptr, *depthMode = nullptr,
-                   *depthSource = nullptr, *captureGate = nullptr;
+                   *captureGate = nullptr;
   OFX::DoubleParam *apertureBladeCount = nullptr;
   OFX::Double2DParam *opticalCenter = nullptr, *fieldCenter = nullptr;
   OFX::RGBParam *transmission = nullptr, *glare = nullptr, *nearFocus = nullptr,
@@ -996,7 +990,7 @@ OFX::GroupParamDescriptor *addGroup(OFX::ImageEffectDescriptor &d,
 } // namespace
 
 LensDebaserPluginFactory::LensDebaserPluginFactory()
-    : PluginFactoryHelper(kIdentifier, 1, 32) {}
+    : PluginFactoryHelper(kIdentifier, 1, 35) {}
 void LensDebaserPluginFactory::describe(OFX::ImageEffectDescriptor &d) {
   d.setLabels(kName, kName, kName);
   d.getPropertySet().propSetString(kOfxPropIcon, "com.ldb.LensDebaser.png", 1,
@@ -1077,9 +1071,12 @@ void LensDebaserPluginFactory::describeInContext(OFX::ImageEffectDescriptor &d,
   diag->setLabels("Diagnostic View", "Diagnostic View", "Diagnostic View");
   diag->setHint("Scatter Only is black when no bloom, glare or halo energy is "
                 "present. Direct Optics Only excludes those scatter layers. "
-                "Depth Input displays the normalized optional depth clip.");
+                "Depth Input displays normalized depth. Defocus Amount shows "
+                "distance from Focus Depth. Depth Rejection shows protected "
+                "map boundaries.");
   for (auto *s : {"Off", "Difference (Amplified)", "Scatter Only",
-                  "Direct Optics Only", "Depth Input"})
+                  "Direct Optics Only", "Depth Input", "Defocus Amount",
+                  "Depth Rejection"})
     diag->appendOption(s);
   diag->setDefault(0);
   diag->setParent(*processing);
@@ -1128,22 +1125,12 @@ void LensDebaserPluginFactory::describeInContext(OFX::ImageEffectDescriptor &d,
     dm->appendOption(s);
   dm->setDefault(0);
   dm->setHint(
-      "External modes read depth packed into a selected channel of the "
-      "incoming RGBA image; Alpha is recommended. Depth drives Aperture "
+      "External modes read luminance from the dedicated Depth Map RGB input. "
+      "Depth drives Aperture "
       "Response, Longitudinal Amount, Spherical Halo, and Bloom/Glare "
       "occlusion. Depth-Free preserves the local approximation.");
   dm->setParent(*depthGroup);
   advanced->addChild(*dm);
-  auto *ds = d.defineChoiceParam("depthSource");
-  ds->setLabels("Depth Map Source", "Depth Map Source", "Depth Map Source");
-  ds->appendOption("Alpha Input");
-  ds->appendOption("Second RGB Input");
-  ds->setDefault(0);
-  ds->setHint("Alpha Input reads the incoming alpha made by an upstream Resolve "
-              "Depth Map node. Second RGB Input reads luminance from Lens "
-              "Debaser's optional Depth Map image input.");
-  ds->setParent(*depthGroup);
-  advanced->addChild(*ds);
   auto *shape = d.defineChoiceParam("apertureShape");
   shape->setLabels("Aperture Shape", "Aperture Shape", "Aperture Shape");
   shape->appendOption("Circular");
@@ -1196,7 +1183,9 @@ void LensDebaserPluginFactory::describeInContext(OFX::ImageEffectDescriptor &d,
     else if (id.rfind("anamorphic", 0) == 0) {
       g = anamorphic;
       p = optics;
-    } else if (id == "depthNear" || id == "depthFar" || id == "depthFocus") {
+    } else if (id == "depthNear" || id == "depthFar" || id == "depthFocus" ||
+               id == "responseScatterEdgeProtection" ||
+               id == "depthEdgeSoftness") {
       g = depthGroup;
       p = advanced;
     } else if (id.rfind("aperture", 0) == 0) {

@@ -1,0 +1,29 @@
+LensDebaserPreset=2
+# Family: Plastic-Fantasy-Optic
+# Strength: Subtle
+# Visual approximation; tune to the shot and working resolution.
+bloomEnergy=0.112
+cornerSharpnessLoss=0.5425
+distortionK1=0.0315
+distortionK2=0.077
+fieldCurvature=0.4025
+imageCircleAspect=1.0525
+imageCircleSize=1.116
+imageCircleSoftness=0.107
+lateralCABlue=-0.945
+lateralCARed=0.77
+longitudinalCA=0.2625
+moustacheK3=0.063
+radialSmear=0.2275
+sphericalHalo=0.1925
+swirl=0.1925
+tangentialSmear=0.28
+transmissionB=0.895
+transmissionColorAmount=0.105
+transmissionG=0.937
+transmissionR=1
+variationAmount=0.2625
+variationChromaticAsymmetry=0.42
+variationFieldAsymmetry=0.245
+variationSeed=42424
+vignetteMechanical=0.098

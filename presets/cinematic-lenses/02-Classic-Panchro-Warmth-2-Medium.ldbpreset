@@ -1,0 +1,22 @@
+LensDebaserPreset=2
+# Family: Classic-Panchro-Warmth
+# Strength: Medium
+# Visual approximation; tune to the shot and working resolution.
+astigmatism=0.117
+bloomEnergy=0.13
+cornerSharpnessLoss=0.52
+fieldCurvature=0.325
+fineDetail=-0.117
+glareEnergy=0.104
+lateralCABlue=-0.4225
+lateralCARed=0.325
+longitudinalCA=0.195
+microContrast=-0.182
+sphericalHalo=0.117
+transmissionB=0.818
+transmissionColorAmount=0.195
+transmissionContrast=-0.117
+transmissionG=0.9415
+transmissionHighlightSoftness=0.325
+transmissionR=1
+vignetteNatural=0.13

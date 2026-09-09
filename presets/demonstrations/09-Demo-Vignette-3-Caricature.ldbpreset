@@ -1,0 +1,6 @@
+LensDebaserPreset=2
+# Family: Demo-Vignette
+# Strength: Caricature
+vignetteMechanical=0.3
+vignetteNatural=0.55
+vignetteOptical=0.45

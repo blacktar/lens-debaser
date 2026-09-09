@@ -1,0 +1,17 @@
+LensDebaserPreset=2
+# Family: Soap-Bubble-Triplet
+# Strength: Caricature
+# Visual approximation; tune to the shot and working resolution.
+apertureCatEye=0.32
+apertureRadius=17
+apertureResponse=1
+apertureShape=0
+apertureSoftness=0.12
+astigmatism=0.45
+cornerSharpnessLoss=1.1
+fieldCurvature=1
+longitudinalCA=0.35
+microContrast=-0.35
+radialSmear=0.35
+sphericalHalo=0.5
+tangentialSmear=0.45

@@ -1,0 +1,20 @@
+LensDebaserPreset=2
+# Family: Controlled-Blue-Radiance
+# Strength: Caricature
+# Visual approximation; tune to the shot and working resolution.
+anamorphicFlareAmount=0.75
+anamorphicFlareB=1
+anamorphicFlareG=0.46
+anamorphicFlareR=0.24
+anamorphicFlareRadius=150
+anamorphicFlareThreshold=0.8
+fineDetail=0.08
+glareEnergy=0.15
+glareRadius=45
+microContrast=0.15
+transmissionB=0.88
+transmissionColorAmount=0.12
+transmissionContrast=0.05
+transmissionG=0.96
+transmissionHighlightSoftness=0.3
+transmissionR=1

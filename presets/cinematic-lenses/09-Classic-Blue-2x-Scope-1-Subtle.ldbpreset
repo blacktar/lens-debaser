@@ -1,0 +1,24 @@
+LensDebaserPreset=2
+# Family: Classic-Blue-2x-Scope
+# Strength: Subtle
+# Visual approximation; tune to the shot and working resolution.
+anamorphicAberration=0.35
+anamorphicDistortion=0.01575
+anamorphicFlareAmount=0.42
+anamorphicFlareB=1
+anamorphicFlareG=0.5255
+anamorphicFlareR=0.2975
+anamorphicFlareRadius=129
+anamorphicFlareThreshold=0.8425
+anamorphicSqueeze=1.35
+apertureAspect=1.35
+apertureCatEye=0.175
+apertureRadius=9.15
+apertureResponse=0.2275
+apertureShape=2
+astigmatism=0.1575
+cornerSharpnessLoss=0.2275
+fieldAspect=1.175
+lateralCABlue=-0.35
+lateralCARed=0.2625
+vignetteOptical=0.063

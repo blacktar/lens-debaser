@@ -1,0 +1,17 @@
+LensDebaserPreset=2
+# Family: Soap-Bubble-Triplet
+# Strength: Subtle
+# Visual approximation; tune to the shot and working resolution.
+apertureCatEye=0.112
+apertureRadius=9.85
+apertureResponse=0.35
+apertureShape=0
+apertureSoftness=0.367
+astigmatism=0.1575
+cornerSharpnessLoss=0.385
+fieldCurvature=0.35
+longitudinalCA=0.1225
+microContrast=-0.1225
+radialSmear=0.1225
+sphericalHalo=0.175
+tangentialSmear=0.1575

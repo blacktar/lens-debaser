@@ -1,0 +1,12 @@
+LensDebaserPreset=2
+# Family: Demo-Aperture
+# Strength: Caricature
+apertureAspect=1.25
+apertureBladeCount=6
+apertureBladeCurvature=0.2
+apertureCatEye=0.65
+apertureRadius=18
+apertureResponse=1
+apertureRotation=20
+apertureShape=1
+apertureSoftness=0.3

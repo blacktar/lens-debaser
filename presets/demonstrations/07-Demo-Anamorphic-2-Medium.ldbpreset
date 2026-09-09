@@ -1,0 +1,11 @@
+LensDebaserPreset=2
+# Family: Demo-Anamorphic
+# Strength: Medium
+anamorphicAberration=0.585
+anamorphicDistortion=0.03575
+anamorphicFlareAmount=0.78
+anamorphicFlareB=1
+anamorphicFlareG=0.5045
+anamorphicFlareR=0.285
+anamorphicFlareRadius=145
+anamorphicFlareThreshold=0.805

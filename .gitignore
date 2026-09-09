@@ -10,10 +10,14 @@
 *.metallib
 *.o
 *.ofx.bundle/
+!/releases/
+!/releases/*.zip
+!/releases/*.sha256
 
 # Generated validation material and scratch work
 /outputs/
 /work/
+/docs/user-guide/guide-*-preview.webp
 *.tif
 *.tiff
 *.png
@@ -24,6 +28,8 @@
 # User presets and host diagnostics
 *.ldbpreset
 !presets/tests/*.ldbpreset
+!presets/demonstrations/*.ldbpreset
+!presets/cinematic-lenses/*.ldbpreset
 *.crash
 *.ips
 

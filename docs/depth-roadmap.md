@@ -82,15 +82,14 @@ Evaluate Resolve Studio's native AI Neural Engine analysis as a first-class
 depth generator, not merely as a way to route an existing map. This includes
 the Resolve FX Depth Map analysis of ordinary 2D footage and Resolve 21
 CineFocus with `Source: Internal`, where Resolve's AI estimates which parts of
-the 2D image are nearer or farther from the camera. Also test CineFocus
-`From Alpha Input` as the complementary external-map route. Its normalized
-Focus Distance, depth-of-field, inversion, near/far limits, and gamma controls
-closely match Lens Debaser's current alpha carrier and normalized Focus Depth.
+the 2D image are nearer or farther from the camera. Its normalized Focus
+Distance, depth-of-field, inversion, near/far limits, and gamma controls remain
+useful references for Lens Debaser's normalized Focus Depth.
 
 Research and host validation:
 
-- exact Color-page and Fusion-page node graphs for exporting native depth into
-  Lens Debaser's incoming alpha without sacrificing the source RGB;
+- exact Color-page node graphs for routing native depth into Lens Debaser's
+  dedicated RGB Depth Map input without sacrificing the source RGB;
 - Resolve Neural Engine analysis setup for stills and moving footage, including
   analysis initiation, tracking/temporal behaviour, re-analysis, and cache reuse;
 - whether the standalone Resolve FX Depth Map or CineFocus Internal result can
@@ -116,13 +115,13 @@ analysis time, playback cost, and Apple Silicon memory use.
 
 The plugin must not depend on undocumented access to Resolve's proprietary
 internal depth analysis. The practical supported route remains an explicit map
-provided through the image alpha channel unless host testing proves otherwise.
+provided through Lens Debaser's dedicated RGB Depth Map connector.
 
 ### Evaluation result
 
-Resolve 21 CineFocus documents both an AI-generated `Internal` depth source and
-`From Alpha Input`. Its documented convention is brighter for nearer subjects
-and darker for farther subjects, which maps to Lens Debaser's existing
+Resolve 21 CineFocus documents an AI-generated `Internal` depth source. Its
+documented convention is brighter for nearer subjects and darker for farther
+subjects, which maps to Lens Debaser's existing
 `Near White` interpretation. CineFocus also exposes map limits, gamma,
 post-filtering, expansion/contraction and blur. Those are useful upstream map
 conditioning operations, but its internal AI map is not documented as a public
@@ -130,14 +129,10 @@ third-party OFX input or API.
 
 The next host-validation task is therefore deliberately narrow: determine
 whether Resolve FX Depth Map or CineFocus can output its generated map as a
-full-range floating-point image/alpha channel downstream. If it can, package a
-Fusion `.setting` helper that combines source RGB with generated depth in alpha.
+full-range floating-point image downstream. If it can, route that image to the
+dedicated Depth Map connector.
 If it cannot, the supported Resolve-native route is to render/cache the depth
 sequence first, as already proven with TIFF sequences.
-
-For `CineFocus: From Alpha Input`, set its layer separation to zero when using
-an externally supplied continuous map; Resolve documents this as the setting
-for an external depth input.
 
 ## Map interchange and conditioning
 
@@ -149,8 +144,7 @@ TIFF remains supported and has already passed host testing.
 Condition maps once upstream where possible. Lens Debaser should add only
 controls that are needed for repeatable optical interpretation:
 
-- normalized near and far rails (already implemented as `Depth Near` and
-  `Depth Far`);
+- normalized near and far rails (implemented as `Input Near` and `Input Far`);
 - normalized focus plane (already implemented as `Focus Depth`);
 - a small map-edge softness control for quantized/noisy maps;
 - an edge-rejection control that trades foreground protection against holes;
@@ -164,17 +158,18 @@ better performed by the generator or Resolve upstream.
 
 ### Phase A — current plugin
 
-Version 1.32 adds two native Color-page ingestion routes: upstream alpha and an
-optional second RGB depth image. Both are deliberately independent of Fusion.
-The second image is converted to a grayscale depth carrier using luminance while
-the primary image remains the RGB source.
+Version 1.35 supports the verified optional RGB Depth Map image input. It is
+packed internally while the primary image remains the RGB source. It also adds
+explicit boundary conditioning and diagnostics without changing the approved
+default response.
 
-1. Validate `Alpha Input` and `Second RGB Input` with Resolve FX Depth Map.
-2. Add `Depth Edge Softness` and `Depth Edge Protection` under `Depth Input`.
-3. Keep their neutral defaults bit-exact with the approved current output.
-4. Add `Defocus Amount` and `Depth Rejection` diagnostic views.
-5. Extend hard-boundary tests 79--89 for both controls and diagnostics.
-6. Supply versioned understated/mid/max test presets where static values apply.
+1. The dedicated RGB Depth Map input passed Resolve host validation.
+2. `Depth Edge Softness` and `Depth Edge Protection` are implemented under
+   `Depth Input`.
+3. Their neutral defaults preserve the approved boundary transition.
+4. `Defocus Amount` and `Depth Rejection` diagnostic views are implemented.
+5. Hard-boundary visual references 90--94 cover both controls and diagnostics.
+6. Versioned understated/mid/max depth-edge test presets are included.
 
 ### Phase B — Resolve-native host validation
 
@@ -189,6 +184,29 @@ the primary image remains the RGB source.
 Prototype Video Depth Anything Small outside Resolve, initially as a command
 line/helper application. Validate temporal stability and cache interchange
 before considering UI integration or distribution.
+
+### Phase D — external depth formats (deferred)
+
+Revisit external depth ingestion after the dedicated RGB workflow is stable.
+Research and validate, rather than assume, support for:
+
+1. Apple photo/video depth and disparity information, including HEIF/HEIC
+   auxiliary depth images, AVFoundation `AVDepthData`, portrait captures and
+   calibration metadata;
+2. metric depth versus normalized depth versus inverse-depth/disparity maps,
+   including the conversions required by each source;
+3. OpenEXR half/float depth sequences and common Z-channel conventions;
+4. TIFF float and integer grayscale maps, including tags, range and transfer
+   ambiguity;
+5. DNG/ProRAW auxiliary depth metadata where it is documented and accessible;
+6. depth exports from other cameras, phones, 3D/rendering tools and
+   depth-estimation applications;
+7. whether import belongs inside the OFX plugin, in a companion converter, or
+   upstream in Resolve, based on Color-page host access and playback cost.
+
+For every candidate, verify container access, units, polarity, precision,
+invalid-value handling, camera calibration, temporal alignment and licensing.
+Do not add a format to the UI until a repeatable Resolve test proves it useful.
 
 Primary references:
 
@@ -213,7 +231,7 @@ sensor-independent MTF character, and most off-axis field effects should remain
 primarily image/field based unless a concrete photographic benefit is shown.
 ## Hard-boundary validation
 
-Visual validation images 79--83 use a packed-alpha discontinuous depth scene
+Visual validation images 79--83 use an internally packed discontinuous depth scene
 with a curved foreground silhouette, hair-like strands, thin railings, crossing
 edges and bright practicals adjacent to depth jumps. They compare the source and
 normalized map with near-, railing- and far-focused aperture renders. These are

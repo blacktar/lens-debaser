@@ -1,0 +1,12 @@
+LensDebaserPreset=2
+# Family: Demo-Glare-And-Halo
+# Strength: Subtle
+coma=0.1575
+comaThreshold=0.5475
+glareB=0.825
+glareColorAmount=0.1225
+glareEnergy=0.315
+glareG=0.9125
+glareR=1
+glareRadius=45.35
+sphericalHalo=0.35

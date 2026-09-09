@@ -1,0 +1,10 @@
+LensDebaserPreset=2
+# Family: Demo-Focus-And-Field
+# Strength: Subtle
+astigmatism=0.28
+cornerSharpnessLoss=0.4725
+fieldAspect=1.0875
+fieldCurvature=0.385
+radialSmear=0.1925
+swirl=0.245
+tangentialSmear=0.2625

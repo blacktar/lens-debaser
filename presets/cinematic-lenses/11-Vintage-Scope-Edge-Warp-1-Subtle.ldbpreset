@@ -1,0 +1,23 @@
+LensDebaserPreset=2
+# Family: Vintage-Scope-Edge-Warp
+# Strength: Subtle
+# Visual approximation; tune to the shot and working resolution.
+anamorphicAberration=0.4375
+anamorphicDistortion=0.02275
+anamorphicFlareAmount=0.245
+anamorphicFlareRadius=136
+anamorphicSqueeze=1.35
+apertureAspect=1.42
+apertureCatEye=0.245
+apertureRadius=9.5
+apertureResponse=0.245
+apertureShape=2
+astigmatism=0.2625
+cornerSharpnessLoss=0.385
+fieldAspect=1.245
+fieldCurvature=0.2275
+lateralCABlue=-0.525
+lateralCARed=0.42
+radialSmear=0.1575
+tangentialSmear=0.245
+vignetteOptical=0.098

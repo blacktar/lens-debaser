@@ -1,0 +1,22 @@
+LensDebaserPreset=2
+# Family: Asymmetric-Rehoused-Photo
+# Strength: Subtle
+# Visual approximation; tune to the shot and working resolution.
+astigmatism=0.1225
+cornerSharpnessLoss=0.245
+distortionK1=0.00875
+fieldCurvature=0.1925
+lateralCABlue=-0.3325
+lateralCARed=0.2625
+microContrast=-0.0875
+transmissionB=0.937
+transmissionColorAmount=0.07
+transmissionG=0.979
+transmissionR=1
+variationAmount=0.28
+variationChromaticAsymmetry=0.2625
+variationFieldAsymmetry=0.1925
+variationPupilIrregularity=0.14
+variationSeed=13579
+variationTransmissionUnevenness=0.1575
+vignetteOptical=0.063

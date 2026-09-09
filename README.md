@@ -5,7 +5,9 @@ DaVinci Resolve. It models perceptually useful aspects of modern, vintage,
 anamorphic and exotic optics, prioritising pleasing visual approximations and
 interactive performance over scientific lens simulation.
 
-Current development version: **1.32**.
+Current development version: **1.35**.
+
+Testers can open the standalone [Lens Debaser user guide](docs/user-guide/Lens-Debaser-User-Guide.html) for the complete workflow, control reference, depth setup, and preset catalogue.
 
 ## Implemented areas
 
@@ -20,6 +22,12 @@ Current development version: **1.32**.
 - ACES AP1/ACEScct, DaVinci Wide Gamut/Intermediate, ARRI LogC3 EI800 and ARRI
   LogC4 working-space handling;
 - editable external `.ldbpreset` preset files.
+
+The generated external preset library contains 96 files in
+`presets/demonstrations` and `presets/cinematic-lenses`: sixteen families in
+each library, with Subtle, Medium, and Caricature variants. Installation copies
+them outside the OFX bundle to
+`~/Library/Application Support/Lens Debaser/Presets`.
 
 ## Platform and dependencies
 
@@ -60,9 +68,24 @@ plugin into Resolve:
 make deploy
 ```
 
-Fully quit Resolve before deployment. Generated binaries, validation renders,
-additional camera footage, LUTs, user presets and crash reports are
-intentionally excluded from version control.
+Fully quit Resolve before deployment. Validation renders, additional camera
+footage, LUTs, user presets and crash reports are intentionally excluded from
+version control.
+
+## Compiled releases
+
+Create the complete versioned Apple Silicon distribution after updating the
+version number:
+
+```bash
+make release
+```
+
+The command validates the engine, builds the Metal/OpenFX bundle and writes a
+ZIP archive plus SHA-256 checksum into `releases/`. Each archive contains the
+compiled OFX plug-in, compiled Metal library, factory presets, standalone user
+guide and a double-clickable installer. Versioned release archives are kept in
+the repository so testers do not need Xcode or the Resolve OpenFX SDK.
 
 ## License
 

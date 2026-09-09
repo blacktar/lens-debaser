@@ -1,0 +1,7 @@
+LensDebaserPreset=2
+# Family: Demo-Bloom
+# Strength: Caricature
+bloomEnergy=1.4
+bloomHorizontalStretch=2.2
+bloomRadius=70
+bloomThreshold=0.55

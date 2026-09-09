@@ -1,0 +1,7 @@
+LensDebaserPreset=2
+# Family: Demo-Bloom
+# Strength: Medium
+bloomEnergy=0.91
+bloomHorizontalStretch=1.78
+bloomRadius=49.7
+bloomThreshold=0.7075

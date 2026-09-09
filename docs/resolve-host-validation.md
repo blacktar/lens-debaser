@@ -10,8 +10,9 @@
 
 ## Current host status
 
-- Lens Debaser 1.32 is the current development build and has passed its Resolve
-  host check for both native Color-page depth-map input routes.
+- Lens Debaser 1.33 is the current development build. Version 1.32 passed its
+  Resolve host check for both native Color-page depth-map input routes; the new
+  1.33 boundary controls and diagnostics require the next host check.
 - Version 1.31 bounds aggregate Metal scatter scratch memory, uses two-buffer
   aperture reconstruction, limits retained scratch memory, and serializes large
   Lens Debaser render graphs per Metal device. Scatter processing now uses one
@@ -23,27 +24,32 @@
 
 ## Resolve Studio depth validation
 
-### Version 1.32 native Color-page inputs
+### Native Color-page depth input
 
-- `Depth Map Source: Alpha Input` reads the incoming alpha produced by an
-  upstream Resolve Depth Map node.
-- `Depth Map Source: Second RGB Input` reads grayscale/luminance from the
-  optional `Depth Map` image connector exposed by the General OFX context.
-- Both paths feed the same normalized engine depth carrier and therefore use
-  the existing `Depth Interpretation`, `Depth Near`, `Depth Far`, and
-  `Focus Depth` controls.
-- Resolve host validation passed for both `Alpha Input` and `Second RGB Input`.
-  If a host configuration selects Filter context, `Alpha Input` remains the
-  supported route because an optional second image connector is unavailable.
+- Lens Debaser reads luminance from its dedicated optional `Depth Map` RGB
+  connector exposed by the General OFX context.
+- Resolve's blue key/mask connectors are not used as depth-map inputs.
+- `Input Near`, `Input Far`, and `Focus Depth` operate in normalized `0`--`1`
+  map space.
 
-- Resolve Studio's AI Depth Map result can be rendered to a grayscale TIFF and
-  packed into the ARRI source alpha with Fusion Channel Booleans.
-- With the ARRI RGB connected as Channel Booleans Foreground and the grayscale
-  map as Background, RGB is copied from Foreground and Alpha from Background
-  Red.
-- Lens Debaser reads the packed map with `Depth Map Source: Alpha Input` and
-  `Depth Interpretation: Near Black`; `Diagnostic View: Depth Input` matches
-  the supplied depth TIFF. `Near White` correctly displays its inverse.
+### Version 1.33 depth boundary controls
+
+- `Depth Edge Protection` controls how strongly depth-aware aperture and
+  scatter reject samples across depth layers.
+- `Depth Edge Softness` controls how different two normalized depth values may
+  be before they are treated as separate layers. Its default preserves the
+  previously approved transition.
+- `Diagnostic View: Defocus Amount` displays the response driven by the exact
+  current `Focus Depth`, `Defocus Onset`, and `Defocus Falloff` settings.
+- `Diagnostic View: Depth Rejection` displays boundaries currently protected
+  from cross-layer sampling.
+- Visual references 90--94 and the three `v1.33-Test-Depth-Edges-*` presets are
+  the acceptance material for this build.
+
+- Lens Debaser reads the map through its dedicated Depth Map connector with
+  `Depth Interpretation: Near Black`;
+  `Diagnostic View: Depth Input` matches the supplied depth TIFF. `Near White`
+  correctly displays its inverse.
 - Moving `Focus Depth` from `0` to `1` moves focus through the ARRI still as
   expected. Interaction at 4K is not real-time, but is responsive enough for
   practical adjustment on the tested Apple M1 system.

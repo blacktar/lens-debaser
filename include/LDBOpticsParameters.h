@@ -28,6 +28,8 @@ enum LDBProcessingFlags : uint32_t {
     LDBDiagnosticScatter = 2u << 8,
     LDBDiagnosticDirectOptics = 3u << 8,
     LDBDiagnosticDepth = 4u << 8,
+    LDBDiagnosticDefocus = 5u << 8,
+    LDBDiagnosticDepthRejection = 6u << 8,
     LDBDiagnosticMask = 7u << 8,
 };
 
@@ -158,7 +160,7 @@ struct alignas(16) LDBOpticsParameters {
 
     float responseDefocusFalloff;
     float responseScatterEdgeProtection;
-    float reservedV4_6;
+    float depthEdgeSoftness;
     float reservedV4_7;
 
     float captureFocalLength;
@@ -217,6 +219,7 @@ static_assert(offsetof(LDBOpticsParameters, variationAmount) == 448);
 static_assert(offsetof(LDBOpticsParameters, variationChromaticAsymmetry) == 464);
 static_assert(offsetof(LDBOpticsParameters, responseHighlightKnee) == 480);
 static_assert(offsetof(LDBOpticsParameters, responseDefocusFalloff) == 496);
+static_assert(offsetof(LDBOpticsParameters, depthEdgeSoftness) == 504);
 static_assert(offsetof(LDBOpticsParameters, captureFocalLength) == 512);
 static_assert(offsetof(LDBOpticsParameters, lookExoticBias) == 544);
 static_assert(offsetof(LDBOpticsParameters, lookAnamorphicBias) == 552);
@@ -261,6 +264,7 @@ static inline LDBOpticsParameters LDBNeutralOpticsParameters(float width, float 
     p.responseDefocusOnset = 0.018f;
     p.responseDefocusFalloff = 0.36f;
     p.responseScatterEdgeProtection = 1.0f;
+    p.depthEdgeSoftness = 0.5f;
     p.captureFocalLength = 50.0f;
     p.captureAperture = 2.8f;
     p.captureFocusDistance = 3.0f;

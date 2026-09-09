@@ -1,0 +1,20 @@
+LensDebaserPreset=2
+# Family: Brass-Portrait-Swirl
+# Strength: Caricature
+# Visual approximation; tune to the shot and working resolution.
+apertureBladeCount=8
+apertureBladeCurvature=0.7
+apertureCatEye=0.48
+apertureRadius=16
+apertureResponse=0.75
+apertureShape=1
+astigmatism=0.6
+cornerSharpnessLoss=1.5
+fieldCurvature=1.25
+glareEnergy=0.2
+imageCircleSize=1.02
+imageCircleSoftness=0.2
+longitudinalCA=0.35
+swirl=1.65
+tangentialSmear=0.55
+vignetteOptical=0.3

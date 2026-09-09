@@ -1,0 +1,25 @@
+LensDebaserPreset=2
+# Family: Uncoated-Golden-Age
+# Strength: Caricature
+# Visual approximation; tune to the shot and working resolution.
+bloomEnergy=0.55
+bloomRadius=58
+bloomThreshold=0.55
+cornerSharpnessLoss=0.85
+fieldCurvature=0.58
+fineDetail=-0.32
+glareEnergy=0.6
+glareRadius=90
+lateralCABlue=-1.05
+lateralCARed=0.8
+longitudinalCA=0.42
+microContrast=-0.65
+sphericalHalo=0.38
+transmissionB=0.6
+transmissionColorAmount=0.45
+transmissionContrast=-0.6
+transmissionDensity=0.2
+transmissionG=0.86
+transmissionHighlightSoftness=1
+transmissionR=1
+vignetteOptical=0.22

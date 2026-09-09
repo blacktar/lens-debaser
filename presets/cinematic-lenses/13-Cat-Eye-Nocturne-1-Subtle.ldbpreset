@@ -1,0 +1,17 @@
+LensDebaserPreset=2
+# Family: Cat-Eye-Nocturne
+# Strength: Subtle
+# Visual approximation; tune to the shot and working resolution.
+apertureAspect=1.042
+apertureBladeCount=9
+apertureBladeCurvature=0.605
+apertureCatEye=0.2975
+apertureRadius=10.55
+apertureResponse=0.35
+apertureShape=1
+apertureSoftness=0.43
+coma=0.133
+comaThreshold=0.53
+cornerSharpnessLoss=0.1925
+imageCircleSize=1.1475
+vignetteOptical=0.098

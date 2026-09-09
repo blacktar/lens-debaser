@@ -1,0 +1,10 @@
+LensDebaserPreset=2
+# Family: Demo-Transmission
+# Strength: Medium
+transmissionB=0.7595
+transmissionColorAmount=0.3575
+transmissionContrast=-0.325
+transmissionDensity=0.3575
+transmissionG=0.896
+transmissionHighlightSoftness=0.7475
+transmissionR=1

@@ -1,0 +1,16 @@
+LensDebaserPreset=2
+# Family: Wide-Angle-Moustache
+# Strength: Medium
+# Visual approximation; tune to the shot and working resolution.
+astigmatism=0.2275
+cornerSharpnessLoss=0.4875
+distortionK1=-0.0325
+distortionK2=0.182
+imageCircleSize=1.096
+imageCircleSoftness=0.152
+lateralCABlue=-0.8775
+lateralCARed=0.715
+moustacheK3=0.273
+radialSmear=0.26
+vignetteMechanical=0.0975
+vignetteNatural=0.182
