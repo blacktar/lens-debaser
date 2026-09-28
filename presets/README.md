@@ -12,9 +12,9 @@ Depth Map RGB connector and assumes `Near Black` interpretation.
 
 ## cinematic-lenses
 
-Twenty-four optical-character families, normally supplied at three strengths,
+Twenty-five optical-character families, normally supplied at three strengths,
 including reference-inspired Hawk V-Lite Vintage '74 and Cooke Anamorphic /i
-Special Flare families, the current-model Decentered Dream Glass family, plus one
+Special Flare families, Decentered Dream Glass and Edge Prism Glass, plus one
 independently authored Bodycam Edge Stress signature preset.
 They are visual, behavior-inspired approximations rather than scientific lens
 profiles or claims of exact matching. Caricature variants are diagnostic and

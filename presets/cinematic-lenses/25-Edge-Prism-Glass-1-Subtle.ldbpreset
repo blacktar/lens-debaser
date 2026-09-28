@@ -1,0 +1,23 @@
+LensDebaserPreset=2
+# Family: Edge-Prism-Glass
+# Strength: Subtle
+# A hand-held linear-prism character with a continuous one-sided bend, controlled spectral separation and softly integrated edge stress.
+chromaticFieldFalloff=1.12
+chromaticFieldOnset=0.24
+cornerSharpnessLoss=0.1
+lateralCABlue=-0.11
+lateralCARed=0.08
+microContrast=-0.025
+prismAmount=0.24
+prismDirection=16
+prismDispersion=0.12
+prismEdgeBias=0.72
+prismSoftness=0.52
+refractiveAnisotropy=0.12
+refractiveDispersion=0.05
+refractiveEdgeBias=0.78
+refractiveIrregularity=0.012
+refractiveRotation=16
+refractiveScale=1.15
+responseFieldFalloff=1.18
+responseFieldOnset=0.2

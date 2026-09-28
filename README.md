@@ -27,11 +27,12 @@ Read the online [Lens Debaser user guide](https://vidarandersen.com/dmz/lens-deb
   LogC4 working-space handling;
 - editable external `.ldbpreset` preset files.
 
-The generated external preset library contains 101 files in
+The generated external preset library contains 104 files in
 `presets/demonstrations` and `presets/cinematic-lenses`: thirty-one single,
 moderate educational demonstrations, twenty-four cinematic-lens families with
 three independently authored variants each, and the Bodycam Edge Stress
-signature preset. Installation copies
+signature preset. The cinematic library includes the three-tier Edge Prism
+Glass family for the coherent prism controls. Installation copies
 them outside the OFX bundle to
 `~/Library/Application Support/Lens Debaser/Presets`.
 

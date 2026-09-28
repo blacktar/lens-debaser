@@ -63,7 +63,7 @@ presets:
 	./scripts/generate-presets.py
 
 preset-test: presets
-	@test "$$(find presets/demonstrations presets/cinematic-lenses -name '*.ldbpreset' -type f | wc -l | tr -d ' ')" = 101 || { echo "ERROR: Expected 101 generated factory presets." >&2; exit 1; }
+	@test "$$(find presets/demonstrations presets/cinematic-lenses -name '*.ldbpreset' -type f | wc -l | tr -d ' ')" = 104 || { echo "ERROR: Expected 104 generated factory presets." >&2; exit 1; }
 	@! grep -REn '^(inputWorkingSpace|diagnosticView|depthSource)=' presets/demonstrations presets/cinematic-lenses || { echo "ERROR: A processing-only or removed control was serialized in a factory preset." >&2; exit 1; }
 
 # One command for a Resolve test build: validate the engine and visual outputs,

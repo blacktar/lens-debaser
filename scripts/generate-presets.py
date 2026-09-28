@@ -490,6 +490,37 @@ def generate_lenses():
     # reference-grounded optical identity. Do not ship a preset merely to fill
     # a catalogue slot.
     families = [family for family in families if family[0] != 25]
+    # Replace the retired flare-driven night-scope recipe with a prism-led
+    # optical family.  The supporting field, refractive and chromatic controls
+    # keep the wedge integrated with the photographed image while the three
+    # tiers remain useful starting points rather than calibration extremes.
+    families.append(
+      (25,"Edge-Prism-Glass",recipes(
+        {"prismDirection":16,"responseFieldOnset":.20,
+         "responseFieldFalloff":1.18,"chromaticFieldOnset":.24,
+         "chromaticFieldFalloff":1.12},
+        {"prismAmount":.24,"prismDispersion":.12,"prismEdgeBias":.72,
+         "prismSoftness":.52,"refractiveIrregularity":.012,
+         "refractiveScale":1.15,"refractiveEdgeBias":.78,
+         "refractiveAnisotropy":.12,"refractiveRotation":16,
+         "refractiveDispersion":.05,"cornerSharpnessLoss":.10,
+         "lateralCARed":.08,"lateralCABlue":-.11,"microContrast":-.025},
+        {"prismAmount":.62,"prismDispersion":.38,"prismEdgeBias":.58,
+         "prismSoftness":.42,"refractiveIrregularity":.028,
+         "refractiveScale":1.28,"refractiveEdgeBias":.70,
+         "refractiveAnisotropy":.20,"refractiveRotation":16,
+         "refractiveDispersion":.12,"cornerSharpnessLoss":.24,
+         "fieldCurvature":.10,"tangentialSmear":.08,
+         "lateralCARed":.20,"lateralCABlue":-.28,"microContrast":-.06},
+        {"prismAmount":1.08,"prismDispersion":.82,"prismEdgeBias":.44,
+         "prismSoftness":.32,"refractiveIrregularity":.060,
+         "refractiveScale":1.45,"refractiveEdgeBias":.60,
+         "refractiveAnisotropy":.32,"refractiveRotation":16,
+         "refractiveDispersion":.24,"cornerSharpnessLoss":.48,
+         "fieldCurvature":.22,"astigmatism":.12,"tangentialSmear":.18,
+         "lateralCARed":.46,"lateralCABlue":-.62,"microContrast":-.12,
+         "glareEnergy":.08,"glareRadius":34}),
+        "A hand-held linear-prism character with a continuous one-sided bend, controlled spectral separation and softly integrated edge stress."))
     families.sort(key=lambda family: family[0])
     for order,name,values,note in families:
         explicit_triplet(d,order,name,values,note)
@@ -687,9 +718,9 @@ Depth Map RGB connector and assumes `Near Black` interpretation.
 
 ## cinematic-lenses
 
-Twenty-four optical-character families, normally supplied at three strengths,
+Twenty-five optical-character families, normally supplied at three strengths,
 including reference-inspired Hawk V-Lite Vintage '74 and Cooke Anamorphic /i
-Special Flare families, the current-model Decentered Dream Glass family, plus one
+Special Flare families, Decentered Dream Glass and Edge Prism Glass, plus one
 independently authored Bodycam Edge Stress signature preset.
 They are visual, behavior-inspired approximations rather than scientific lens
 profiles or claims of exact matching. Caricature variants are diagnostic and
@@ -706,7 +737,16 @@ def validate_library():
     demos = sorted((OUT / "demonstrations").glob("*.ldbpreset"))
     lenses = sorted((OUT / "cinematic-lenses").glob("*.ldbpreset"))
     assert len(demos) == 31, f"expected 31 demonstration presets, found {len(demos)}"
-    assert len(lenses) == 70, f"expected 70 cinematic presets, found {len(lenses)}"
+    assert len(lenses) == 73, f"expected 73 cinematic presets, found {len(lenses)}"
+    prism_lenses = [path for path in lenses if path.name.startswith("25-Edge-Prism-Glass-")]
+    assert len(prism_lenses) == 3, "expected three Edge Prism Glass strength presets"
+    for path in prism_lenses:
+        values = dict(line.split("=", 1) for line in path.read_text().splitlines()
+                      if line and not line.startswith("#") and "=" in line)
+        assert float(values.get("prismAmount", 0.0)) > 0.0, \
+            f"missing active prism response in {path.name}"
+        assert float(values.get("prismSoftness", 0.0)) > 0.0, \
+            f"missing continuous prism transition in {path.name}"
     for path in demos + lenses:
         assignments = [line for line in path.read_text().splitlines()
                        if line and not line.startswith("#") and "=" in line]
@@ -768,4 +808,4 @@ generate_abi16_smoke_tests()
 readme()
 purge_numbered_conflict_copies()
 validate_library()
-print("Generated 101 Lens Debaser presets.")
+print("Generated 104 Lens Debaser presets.")

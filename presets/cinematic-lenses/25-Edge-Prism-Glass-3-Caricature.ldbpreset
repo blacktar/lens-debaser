@@ -1,0 +1,28 @@
+LensDebaserPreset=2
+# Family: Edge-Prism-Glass
+# Strength: Caricature
+# A hand-held linear-prism character with a continuous one-sided bend, controlled spectral separation and softly integrated edge stress.
+astigmatism=0.12
+chromaticFieldFalloff=1.12
+chromaticFieldOnset=0.24
+cornerSharpnessLoss=0.48
+fieldCurvature=0.22
+glareEnergy=0.08
+glareRadius=34
+lateralCABlue=-0.62
+lateralCARed=0.46
+microContrast=-0.12
+prismAmount=1.08
+prismDirection=16
+prismDispersion=0.82
+prismEdgeBias=0.44
+prismSoftness=0.32
+refractiveAnisotropy=0.32
+refractiveDispersion=0.24
+refractiveEdgeBias=0.6
+refractiveIrregularity=0.06
+refractiveRotation=16
+refractiveScale=1.45
+responseFieldFalloff=1.18
+responseFieldOnset=0.2
+tangentialSmear=0.18

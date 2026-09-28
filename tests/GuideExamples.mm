@@ -294,8 +294,8 @@ int main(int argc,char** argv) {
                 std::printf("Wrote preset %s / %s\n",presetPath.stem().c_str(),source.key);
             }
         }
-        if(mediumPresets.size()!=24) {
-            std::fprintf(stderr,"Expected 23 Medium cinematic presets plus Bodycam Edge Stress, found %zu\n",mediumPresets.size());
+        if(mediumPresets.size()!=25) {
+            std::fprintf(stderr,"Expected 24 Medium cinematic presets plus Bodycam Edge Stress, found %zu\n",mediumPresets.size());
             return 8;
         }
     }
