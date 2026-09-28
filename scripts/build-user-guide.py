@@ -2,7 +2,6 @@
 """Build the Lens Debaser HTML guide and its Resolve-style UI image source."""
 
 from pathlib import Path
-import base64
 import html as html_module
 import plistlib
 
@@ -168,16 +167,23 @@ def image_uri(slug):
                            f'<text x="200" y="{y+25}" fill="#d9dcdf" font-family="-apple-system,Segoe UI,sans-serif" font-size="13">{html_module.escape(value)}</text>']
             y += row_height
         pieces.append('</svg>')
-        return "data:image/svg+xml;base64," + base64.b64encode(''.join(pieces).encode()).decode()
+        controls_dir = IMG / "controls"
+        controls_dir.mkdir(parents=True, exist_ok=True)
+        control_path = controls_dir / f"{slug}.svg"
+        control_path.write_text(''.join(pieces))
+        return f"images/controls/{slug}.svg"
     p=IMG/f"{slug}.webp"
-    if p.exists(): return "data:image/webp;base64,"+base64.b64encode(p.read_bytes()).decode()
+    if p.exists(): return f"images/{slug}.webp"
     return f"images/{slug}.webp"
 
 def guide_example_uri(filename):
     path = IMG / "examples" / filename
-    if path.exists(): return "data:image/png;base64," + base64.b64encode(path.read_bytes()).decode()
-    svg = '<svg xmlns="http://www.w3.org/2000/svg" width="960" height="540"><rect width="100%" height="100%" fill="#181b1e"/><text x="50%" y="50%" text-anchor="middle" fill="#aab1b6" font-family="sans-serif" font-size="28">Render pending: make guide-examples</text></svg>'
-    return "data:image/svg+xml;base64," + base64.b64encode(svg.encode()).decode()
+    if path.exists(): return f"images/examples/{filename}"
+    pending = IMG / "examples" / "render-pending.svg"
+    pending.parent.mkdir(parents=True, exist_ok=True)
+    if not pending.exists():
+        pending.write_text('<svg xmlns="http://www.w3.org/2000/svg" width="960" height="540"><rect width="100%" height="100%" fill="#181b1e"/><text x="50%" y="50%" text-anchor="middle" fill="#aab1b6" font-family="sans-serif" font-size="28">Render pending: make guide-examples</text></svg>')
+    return "images/examples/render-pending.svg"
 
 IPHONE_CAPTURE="color-graded image captured with an iPhone 17 Pro and a 1.55× anamorphic adapter (ProRes RAW Open Gate)"
 example_specs = [
