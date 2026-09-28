@@ -1,0 +1,11 @@
+LensDebaserPreset=2
+# Family: Demo-Blend
+# Strength: Educational
+# A clear compound effect is mixed to 50%; move Blend between source and full processing.
+bloomEnergy=0.4
+bloomThreshold=0.52
+cornerSharpnessLoss=0.92
+effectBlend=0.5
+fieldCurvature=0.68
+lateralCABlue=-1.42
+lateralCARed=1.18

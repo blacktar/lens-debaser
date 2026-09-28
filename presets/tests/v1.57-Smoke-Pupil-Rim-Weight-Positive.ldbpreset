@@ -1,0 +1,14 @@
+LensDebaserPreset=2
+# Family: ABI v16 Smoke
+# Strength: Pupil Rim Weight Positive
+# Maximum positive Rim Weight. Energy should form a smooth, clearly readable bubble rim without dots or scalloping.
+apertureAspect=1
+apertureBokehSwirl=0
+apertureCatEye=0
+apertureRadius=24
+apertureResponse=1
+apertureRimWeight=1
+apertureShape=0
+apertureSoftness=0.12
+responseFieldFalloff=0.18
+responseFieldOnset=0

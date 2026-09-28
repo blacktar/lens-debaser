@@ -1,0 +1,26 @@
+LensDebaserPreset=2
+# Family: Rehoused-Still-Glass
+# Strength: Subtle
+# Decentered rehoused stills-lens character; edges and neutral surfaces reveal stable asymmetry.
+cornerSharpnessLoss=0.18
+distortionK1=0.006
+fieldCenterX=0.47
+fieldCenterY=0.53
+fieldCurvature=0.12
+lateralCABlue=-0.2
+lateralCARed=0.16
+microContrast=-0.06
+refractiveEdgeBias=0.72
+refractiveIrregularity=0.08
+refractiveScale=3.1
+refractiveSeed=13579
+responseFieldFalloff=1.64
+responseFieldOnset=0.22
+transmissionB=0.84
+transmissionColorAmount=0.06
+transmissionG=0.95
+transmissionR=1
+variationAmount=0.18
+variationChromaticAsymmetry=0.2
+variationFieldAsymmetry=0.18
+variationSeed=13579

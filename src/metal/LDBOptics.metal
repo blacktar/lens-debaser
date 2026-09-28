@@ -201,6 +201,78 @@ static float variationPhase(uint seed) {
     return float(h&0x00ffffffu)/float(0x01000000u)*M_PI_F*2.0f;
 }
 
+static uint dirtHash(uint value) {
+    value ^= value >> 16u;
+    value *= 0x7feb352du;
+    value ^= value >> 15u;
+    value *= 0x846ca68bu;
+    return value ^ (value >> 16u);
+}
+
+static float dirtRandom(int2 cell,uint seed,uint salt) {
+    uint x=as_type<uint>(cell.x),y=as_type<uint>(cell.y);
+    uint h=dirtHash(x*0x9e3779b9u^y*0x85ebca6bu^seed^salt*0xc2b2ae35u);
+    return float(h&0x00ffffffu)/float(0x01000000u);
+}
+
+static float internalContaminationPattern(float2 uv,float scale,float smear,float amount,
+                                          float softness,float complexity,uint seed,
+                                          float imageAspect) {
+    if(amount<=0.0f) return 0.0f;
+    float smearMix=clamp(smear,0.0f,1.0f);
+    float2 q=float2((uv.x-.5f)*imageAspect,uv.y-.5f);
+    // Internal contamination is a continuous optical-density field, not
+    // resolved debris. Overlapping lobes at several scales avoid both tiled
+    // noise and the obvious three-blob structure of the earlier model.
+    float broadClouds=0.0f,broadNormalization=0.0f;
+    float soft=clamp(softness,0.0f,1.0f);
+    float detail=clamp(complexity,0.0f,1.0f);
+    // Six mutually-overlapping analytic lobes establish the low-frequency
+    // density envelope. Complexity is generated separately as a continuous
+    // domain-warped field, so it cannot expose individual oval elements.
+    for(int i=0;i<6;++i) {
+        int2 key=int2(41+i*5,73+i*7);
+        float2 centre=float2(dirtRandom(key,seed,41u)-.5f,
+                             dirtRandom(key,seed,42u)-.5f);
+        centre.x*=imageAspect;
+        float a=dirtRandom(key,seed,43u)*M_PI_F*2.0f;
+        float cs=cos(a),sn=sin(a);
+        float2 d=q-centre;
+        float2 local=float2(cs*d.x+sn*d.y,-sn*d.x+cs*d.y);
+        float radius=mix(.68f,.22f,float(i)/5.0f)
+                    *mix(.72f,1.28f,dirtRandom(key,seed,44u))
+                    *clamp(scale,.25f,4.0f);
+        local.x/=mix(1.0f,2.8f,smearMix);
+        float exponent=mix(3.4f,.72f,soft);
+        float cloud=exp(-dot(local,local)/max(radius*radius,1e-4f)*exponent);
+        float weight=mix(.55f,1.0f,dirtRandom(key,seed,45u));
+        broadClouds+=cloud*weight;
+        broadNormalization+=weight;
+    }
+    float broadDensity=broadClouds/max(broadNormalization*.58f,1e-4f);
+    // Several non-axis-aligned waves are smoothly domain-warped by two lower-
+    // frequency waves. Randomized phases retain deterministic Seed behavior
+    // without a sampling lattice, cells, particles, or closed ring shapes.
+    float phase0=dirtRandom(int2(113,197),seed,61u)*M_PI_F*2.0f;
+    float phase1=dirtRandom(int2(127,211),seed,62u)*M_PI_F*2.0f;
+    float phase2=dirtRandom(int2(139,223),seed,63u)*M_PI_F*2.0f;
+    float2 fieldQ=q/max(clamp(scale,.25f,4.0f),.25f);
+    fieldQ.x/=mix(1.0f,1.85f,smearMix);
+    float2 warp=float2(sin(dot(fieldQ,float2(1.73f,2.41f))+phase0),
+                       sin(dot(fieldQ,float2(-2.16f,1.37f))+phase1));
+    float2 warped=fieldQ+warp*mix(.10f,.22f,soft);
+    float continuousDetail=.50f
+        +.24f*sin(dot(warped,float2(4.21f,2.63f))+phase1)
+        +.16f*sin(dot(warped,float2(-3.17f,5.09f))+phase2)
+        +.10f*sin(dot(warped,float2(7.13f,-2.29f))+phase0);
+    continuousDetail=clamp(continuousDetail,0.0f,1.0f);
+    // Complexity reshapes the broad field instead of adding standalone marks.
+    float detailFactor=clamp(1.0f+(continuousDetail-.5f)*detail*.92f,.56f,1.46f);
+    float density=broadDensity*detailFactor;
+    density=smoothstep(0.0f,mix(.88f,.54f,soft),density);
+    return clamp(density*mix(.48f,.66f,smearMix),0.0f,.72f);
+}
+
 static float normalizedDepth(float4 sample,constant LDBOpticsParameters& p) {
     float raw=p.depthChannel==1u?sample.r:(p.depthChannel==2u?sample.g:(p.depthChannel==3u?sample.b:(p.depthChannel==4u?sample.a:dot(sample.rgb,float3(.272229f,.674082f,.053689f)))));
     float n=clamp((raw-p.depthNear)/max(abs(p.depthFar-p.depthNear),1e-6f),0.0f,1.0f);
@@ -256,8 +328,51 @@ static float3 smoothIsotropicBlur(device const float4* image,float2 pixel,float 
     return result;
 }
 
-static float2 distortCoordinate(float2 uv, constant LDBOpticsParameters& p) {
-    float2 q = uv - p.opticalCenter;
+static float2 refractiveOffsetAt(float2 uv, constant LDBOpticsParameters& p) {
+    float amount=clamp(p.refractiveIrregularity,0.0f,2.0f);
+    if(amount<=0.0f) return 0.0f;
+    float phase=variationPhase(p.refractiveSeed+1709u);
+    float angle=p.refractiveRotation*(M_PI_F/180.0f);
+    float s=sin(angle),c=cos(angle);
+    float2 q=uv-.5f;
+    float2 local=float2(c*q.x+s*q.y,-s*q.x+c*q.y);
+    float anisotropy=clamp(p.refractiveAnisotropy,0.0f,1.0f);
+    local.x*=mix(1.0f,.28f,anisotropy);
+    float frequency=9.0f/clamp(p.refractiveScale,.25f,4.0f);
+    float2 gradient=float2(
+        sin(local.y*frequency+phase)+.52f*sin((local.x+local.y)*frequency*.63f-phase*.71f),
+        cos(local.x*frequency-phase*.83f)+.47f*cos((local.x-local.y)*frequency*.71f+phase*1.19f));
+    float radius=clamp(length(q)*2.0f,0.0f,1.5f);
+    float edge=mix(1.0f,smoothstep(.18f,1.05f,radius),
+                   clamp(p.refractiveEdgeBias,0.0f,1.0f));
+    float2 imageGradient=float2(c*gradient.x-s*gradient.y,
+                                s*gradient.x+c*gradient.y);
+    return imageGradient*amount*edge*.0075f;
+}
+
+// A prism is a coherent wedge, not a noise field. Its displacement follows a
+// single direction and enters smoothly from the selected edge. Direction is
+// also the physical refraction axis; dispersion is applied later around the
+// green-channel base sample.
+static float2 prismOffsetAt(float2 uv, constant LDBOpticsParameters& p) {
+    float amount=clamp(p.prismAmount,0.0f,2.0f);
+    if(amount<=0.0f)return 0.0f;
+    float angle=p.prismDirection*(M_PI_F/180.0f);
+    float2 axis=float2(cos(angle),sin(angle));
+    float edgeCoordinate=clamp(dot(uv-p.fieldCenter,axis)+.5f,0.0f,1.0f);
+    float onset=clamp(p.prismEdgeBias,0.0f,.98f);
+    float end=min(onset+max(p.prismSoftness,.01f),1.0f);
+    float envelope=smoothstep(onset,max(end,onset+.005f),edgeCoordinate);
+    // Sample back into the available frame from the selected glass edge.
+    // Sampling outward would clamp to one border pixel and turn it into an
+    // artificial solid streak at strong settings.
+    return -axis*(amount*envelope*.035f);
+}
+
+static float2 distortCoordinate(float2 uv, constant LDBOpticsParameters& p,
+                                thread float2& refractiveOffset) {
+    float2 originalQ = uv - p.opticalCenter;
+    float2 q = originalQ;
     // Squeeze describes an elliptical lens field, not a second image desqueeze.
     // It therefore changes the spatial response of off-axis characteristics
     // while leaving a completely neutral image untouched.
@@ -279,7 +394,51 @@ static float2 distortCoordinate(float2 uv, constant LDBOpticsParameters& p) {
                     1.0f - amount * r2 * .22f);
     }
     q.x /= fieldAspect;
-    return q + p.opticalCenter;
+
+    // Unlike the legacy polynomial mapping, these terms can preserve a clean
+    // central region and build smoothly only at the optical perimeter. The
+    // geometry envelope follows the independently shaped Field controls.
+    float2 shaped = uv - p.fieldCenter;
+    float angle = p.fieldRotation * (M_PI_F / 180.0f);
+    float fs = sin(angle), fc = cos(angle);
+    float2 local = float2(fc * shaped.x + fs * shaped.y,
+                         -fs * shaped.x + fc * shaped.y);
+    float aspect = sqrt(clamp(p.fieldAspect, .25f, 4.0f));
+    float fieldRadius = clamp(length(float2(local.x * aspect,
+                                            local.y / aspect)) * 2.0f,
+                              0.0f, 1.5f);
+    float onset = clamp(p.responseFieldOnset, 0.0f, 1.5f);
+    float fieldEnd = onset + max(clamp(p.responseFieldFalloff, 0.0f, 1.5f),
+                                 0.08f);
+    float envelope = smoothstep(onset, fieldEnd, fieldRadius);
+    float geometryGate = mix(1.0f, envelope,
+                             clamp(p.geometryFieldAmount, 0.0f, 1.0f));
+
+    float2 mapped = originalQ + (q - originalQ) * geometryGate;
+    float radialPower = envelope * envelope * (0.35f + 0.65f * fieldRadius);
+    mapped *= 1.0f + clamp(p.peripheralStretch, -2.0f, 2.0f)
+                     * radialPower * 0.34f;
+
+    float edgeWarp = clamp(p.peripheralWarp, -2.0f, 2.0f);
+    if (edgeWarp != 0.0f && fieldRadius > 1e-5f) {
+        float theta = atan2(local.y, local.x);
+        // Low angular harmonics approximate decentered, stressed or imperfect
+        // front groups without introducing high-frequency ripples.
+        float radialLobe = sin(theta * 2.0f + .73f)
+                         + .46f * sin(theta * 3.0f - 1.17f);
+        float tangentLobe = cos(theta * 2.0f - .31f)
+                          - .38f * cos(theta * 3.0f + .82f);
+        float2 localRadial = normalize(local + float2(1e-6f, 0.0f));
+        float2 localTangent = float2(-localRadial.y, localRadial.x);
+        float2 localOffset = (localRadial * radialLobe
+                            + localTangent * tangentLobe * .55f)
+                           * edgeWarp * radialPower * .018f;
+        float2 imageOffset = float2(fc * localOffset.x - fs * localOffset.y,
+                                    fs * localOffset.x + fc * localOffset.y);
+        mapped += imageOffset;
+    }
+    refractiveOffset=refractiveOffsetAt(uv,p);
+    return mapped + p.opticalCenter + refractiveOffset + prismOffsetAt(uv,p);
 }
 
 static float vignetteAt(float2 uv, constant LDBOpticsParameters& p) {
@@ -296,16 +455,57 @@ static float vignetteAt(float2 uv, constant LDBOpticsParameters& p) {
     return clamp(natural * optical * mechanical, 0.0f, 1.0f);
 }
 
+static float3 frontElementPattern(float2 uv, constant LDBOpticsParameters& p) {
+    float phase = variationPhase(p.damageSeed + 101u);
+    float angle = p.scratchDirection * (M_PI_F / 180.0f);
+    float s = sin(angle), c = cos(angle);
+    float2 q = uv - .5f;
+    float2 r = float2(c * q.x + s * q.y, -s * q.x + c * q.y);
+    float scale = clamp(p.damageScale, .25f, 4.0f);
+
+    // Repeated wiping produces broad arcs plus many fine, nearly parallel
+    // micro-marks. Sparse gating prevents a synthetic ruled-line overlay.
+    float arcA = abs(length(q - float2(.18f*cos(phase), .15f*sin(phase)))
+                   - (.28f + .05f*sin(phase*1.7f)));
+    float arcB = abs(length(q + float2(.14f*sin(phase), .20f*cos(phase)))
+                   - (.43f + .04f*cos(phase*1.3f)));
+    float arcs = 1.0f-smoothstep(.0015f*scale,.010f*scale,min(arcA,arcB));
+    float fineDistance = abs(fract((r.y + sin(r.x*19.0f+phase)*.006f)
+                                   * (72.0f/scale)+phase)-.5f);
+    float segment = .5f+.5f*sin(r.x*(31.0f/scale)+phase*2.3f);
+    float fine = smoothstep(.455f,.497f,fineDistance)
+               * smoothstep(.72f,.94f,segment);
+
+    // A few deeper scratches have unequal spacing and limited length.
+    float deepA = 1.0f-smoothstep(.0012f,.0055f,
+        abs(r.y-.12f*sin(phase)-r.x*.035f));
+    deepA *= smoothstep(.36f,.47f,.5f-abs(r.x+.08f*cos(phase)));
+    float deepB = 1.0f-smoothstep(.001f,.0045f,
+        abs(r.y+.19f*cos(phase)+r.x*.08f));
+    deepB *= smoothstep(.20f,.38f,.42f-abs(r.x-.13f*sin(phase)));
+    return float3(clamp(arcs+fine*.55f,0.0f,1.0f),
+                  clamp(max(deepA,deepB),0.0f,1.0f), 0.0f);
+}
+
+static float coatingWearPattern(float2 uv, constant LDBOpticsParameters& p) {
+    float phase=variationPhase(p.damageSeed+911u);
+    float scale=clamp(p.coatingWearScale,.25f,4.0f);
+    float2 q=(uv-.5f)*(2.2f/scale);
+    float broad=sin(q.x*3.1f+phase)+sin(q.y*2.7f-phase*.63f)
+               +.65f*sin((q.x+q.y)*4.3f+phase*1.4f);
+    return smoothstep(.35f,1.45f,broad);
+}
+
 kernel void ldbOpticsMain(device const float4* source [[buffer(0)]],
                           device float4* direct [[buffer(1)]],
-                          device float4* highlights [[buffer(2)]],
-                          constant LDBOpticsParameters& p [[buffer(3)]],
+                          constant LDBOpticsParameters& p [[buffer(2)]],
                           uint2 gid [[thread_position_in_grid]]) {
     uint width = uint(p.imageSize.x), height = uint(p.imageSize.y);
     if (gid.x >= width || gid.y >= height) return;
 
     float2 uv = (float2(gid) + 0.5f) / p.imageSize;
-    float2 warped = distortCoordinate(uv, p);
+    float2 refractiveOffset=0.0f;
+    float2 warped = distortCoordinate(uv, p, refractiveOffset);
     float2 basePixel = warped * p.imageSize - 0.5f;
     float2 opticalField = warped - p.opticalCenter;
     float fieldAspect = sqrt(max(p.anamorphicSqueeze, 0.001f));
@@ -351,43 +551,70 @@ kernel void ldbOpticsMain(device const float4* source [[buffer(0)]],
     float opticalRadius = clamp(length(fieldMetric) * 2.0f, 0.0f, 1.5f);
     float2 opticalRadial = normalize(float2(opticalField.x * fieldAspect * fieldAspect,
                                              opticalField.y) + float2(1e-6f, 0.0f));
-    float caR = p.lateralCARed * opticalRadius * opticalRadius;
-    float caB = p.lateralCABlue * opticalRadius * opticalRadius;
+    float fieldOnset=clamp(p.responseFieldOnset,0.0f,1.5f);
+    float fieldEnd=fieldOnset+max(clamp(p.responseFieldFalloff,0.0f,1.5f),0.08f);
+    float fieldEnvelope = smoothstep(fieldOnset,fieldEnd,clamp(radius,0.0f,1.5f));
+    float establishedFieldEnvelope=smoothstep(0.0f,1.0f,clamp(radius,0.0f,1.5f));
+    float fieldResponseScale=establishedFieldEnvelope>1e-6f
+        ?clamp(fieldEnvelope/establishedFieldEnvelope,0.0f,4.0f):0.0f;
+    float chromaticEnvelope=fieldEnvelope;
+    if (p.chromaticFieldOnset >= 0.0f) {
+        float onset=clamp(p.chromaticFieldOnset,0.0f,1.5f);
+        float end=onset+max(clamp(p.chromaticFieldFalloff,0.0f,1.5f),0.08f);
+        chromaticEnvelope=smoothstep(onset,end,clamp(radius,0.0f,1.5f));
+    }
+    float chromaticResponseScale=establishedFieldEnvelope>1e-6f
+        ?clamp(chromaticEnvelope/establishedFieldEnvelope,0.0f,4.0f):0.0f;
+    float caR = p.lateralCARed * opticalRadius * opticalRadius * chromaticResponseScale;
+    float caB = p.lateralCABlue * opticalRadius * opticalRadius * chromaticResponseScale;
     float2 pixelScale = p.imageSize;
     float4 center = sampleBilinear(source, basePixel, width, height);
+    float3 undispersedCenter = center.rgb;
     float2 redOffset=opticalRadial*caR*pixelScale*.002f;
     float2 blueOffset=opticalRadial*caB*pixelScale*.002f;
+    float irregularDispersion=clamp(p.refractiveDispersion,0.0f,2.0f);
+    redOffset+=refractiveOffset*pixelScale*irregularDispersion*.055f*chromaticEnvelope;
+    blueOffset-=refractiveOffset*pixelScale*irregularDispersion*.075f*chromaticEnvelope;
+    float2 prismOffset=prismOffsetAt(uv,p);
+    float prismDispersion=clamp(p.prismDispersion,0.0f,2.0f);
+    redOffset+=prismOffset*pixelScale*prismDispersion*.16f;
+    blueOffset-=prismOffset*pixelScale*prismDispersion*.22f;
     if(variation>0.0f&&p.variationChromaticAsymmetry!=0.0f) {
         float2 variationAxis=float2(cos(phase),sin(phase));
         float signedField=dot(opticalField,variationAxis)*2.0f;
         float shift=clamp(p.variationChromaticAsymmetry,-2.0f,2.0f)
-                   *variation*signedField*opticalRadius*p.imageSize.x*.0012f;
+                   *variation*signedField*opticalRadius*p.imageSize.x*.0012f
+                   *chromaticEnvelope;
         redOffset+=variationAxis*shift;
         blueOffset-=variationAxis*shift;
     }
     if (p.anamorphicAberration != 0.0f) {
         float amount = clamp(p.anamorphicAberration, -2.0f, 2.0f)
-                     * opticalRadius * opticalRadius;
+                     * opticalRadius * opticalRadius * chromaticResponseScale;
         float horizontalPixels = amount * p.imageSize.x * .0015f;
         redOffset+=float2(horizontalPixels,0.0f);
         blueOffset-=float2(horizontalPixels,0.0f);
     }
     center.r=sampleBilinear(source,basePixel+redOffset,width,height).r;
     center.b=sampleBilinear(source,basePixel+blueOffset,width,height).b;
+    float3 softenedChromatic=center.rgb;
+    float3 halfChromatic=undispersedCenter;
+    halfChromatic.r=sampleBilinear(source,basePixel+redOffset*.5f,width,height).r;
+    halfChromatic.b=sampleBilinear(source,basePixel+blueOffset*.5f,width,height).b;
+    // A short triangular footprint turns large peripheral channel offsets into
+    // optical colour spread instead of a second crisp copy of the subject.
+    softenedChromatic=(undispersedCenter+halfChromatic*2.0f+center.rgb)*.25f;
 
     // These are normalized perceptual controls. Each must remain independently
     // visible; earlier versions merely modulated an existing field blur by 1–2%,
     // making all three appear broken unless another control was already active.
-    float fieldOnset=clamp(p.responseFieldOnset,0.0f,1.5f);
-    float fieldFalloff=max(clamp(p.responseFieldFalloff,0.0f,1.5f),fieldOnset+1e-4f);
-    float fieldEnvelope = smoothstep(fieldOnset,fieldFalloff,clamp(radius,0.0f,1.5f));
+    // Falloff is a width, not a second absolute radius. The previous endpoint
+    // interpretation collapsed to a near-step whenever Falloff <= Onset,
+    // producing a visible ring. Retain a small perceptual feather at zero.
     // Corner loss and curvature predate the configurable envelope and were
     // expressed directly in powers of radius. Scale those established curves
     // relative to their original smoothstep(0,1) envelope so the defaults are
     // unchanged while custom onset/falloff values affect every field family.
-    float establishedFieldEnvelope=smoothstep(0.0f,1.0f,clamp(radius,0.0f,1.5f));
-    float fieldResponseScale=establishedFieldEnvelope>1e-6f
-        ?fieldEnvelope/establishedFieldEnvelope:0.0f;
     float curvatureBlur = clamp(p.fieldCurvature, 0.0f, 2.0f) * radius * radius * radius * radius * 2.4f;
     float fieldBlur = max(0.0f, clamp(p.cornerSharpnessLoss, 0.0f, 2.0f) * radius * radius * 2.4f + curvatureBlur);
     fieldBlur*=fieldResponseScale;
@@ -398,12 +625,13 @@ kernel void ldbOpticsMain(device const float4* source [[buffer(0)]],
     float tangentCharacter = max(-astigmatism, 0.0f) * 3.5f + tangentSmear * 4.5f;
     float radialWidth = fieldBlur + fieldEnvelope * radialCharacter;
     float tangentWidth = fieldBlur + fieldEnvelope * tangentCharacter;
-    float4 radialBlur = smoothAxisBlur(source, basePixel, radial, radialWidth, width, height);
-    float4 tangentBlur = smoothAxisBlur(source, basePixel, tangent, tangentWidth, width, height);
     float characterMix = fieldEnvelope * (abs(astigmatism) * 0.60f
                        + radialSmear * 0.45f + tangentSmear * 0.45f);
     float focusMix = clamp(fieldBlur * 0.32f + characterMix, 0.0f, 1.0f);
+    float4 radialBlur=smoothAxisBlur(source,basePixel,radial,radialWidth,width,height);
+    float4 tangentBlur=smoothAxisBlur(source,basePixel,tangent,tangentWidth,width,height);
     float4 optical = mix(center, (radialBlur + tangentBlur) * 0.5f, focusMix);
+    optical.rgb += (softenedChromatic - undispersedCenter) * focusMix;
 
     // A compact isotropic low-pass isolates focus-transition chroma. In the
     // default depth-free mode the image transition selects the tint, preserving
@@ -473,10 +701,24 @@ kernel void ldbOpticsMain(device const float4* source [[buffer(0)]],
         float3 mediumBand = center.rgb - mediumBase.rgb;
         float fieldWeight = fieldEnvelope;
         float edgeLoss = clamp(p.detailEdgeFalloff, 0.0f, 2.0f) * fieldWeight;
-        float3 transfer = fineBand * p.fineDetail * 0.35f
-                        + mediumBand * p.microContrast * 0.28f;
-        transfer += fieldWeight * (radialBand * p.sagittalDetail
-                                  + tangentBand * p.tangentialDetail) * 0.35f;
+        // Enhancement belongs before the field/pupil loss in the conceptual
+        // optical chain. This compact single-pass approximation evaluates it
+        // here, so taper only the positive (sharpening) side by the amount of
+        // defocus already reconstructed. Negative detail controls remain fully
+        // active and can continue to remove texture from a defocused image.
+        float focusPreservation=1.0f-focusMix;
+        float fineControl=min(p.fineDetail,0.0f)
+                         +max(p.fineDetail,0.0f)*focusPreservation;
+        float microControl=min(p.microContrast,0.0f)
+                          +max(p.microContrast,0.0f)*focusPreservation;
+        float sagittalControl=min(p.sagittalDetail,0.0f)
+                              +max(p.sagittalDetail,0.0f)*focusPreservation;
+        float tangentialControl=min(p.tangentialDetail,0.0f)
+                                +max(p.tangentialDetail,0.0f)*focusPreservation;
+        float3 transfer = fineBand * fineControl * 0.35f
+                        + mediumBand * microControl * 0.28f;
+        transfer += fieldWeight * (radialBand * sagittalControl
+                                  + tangentBand * tangentialControl) * 0.35f;
         transfer -= edgeLoss * (fineBand * 0.45f + mediumBand * 0.25f);
         float3 localMin = min(center.rgb, min(fineBase.rgb, outerBase.rgb));
         float3 localMax = max(center.rgb, max(fineBase.rgb, outerBase.rgb));
@@ -514,9 +756,6 @@ kernel void ldbOpticsMain(device const float4* source [[buffer(0)]],
         optical.rgb+=comaGlow/max(weightSum,1e-6f)*comaStrength*0.30f*radius*radius;
     }
 
-    float luminance = dot(max(center.rgb, float3(0.0f)), float3(0.2126f, 0.7152f, 0.0722f));
-    float highlight = max(0.0f, luminance - p.bloomThreshold);
-
     optical.rgb *= vignetteAt(uv, p);
     float3 transmission = mix(float3(1.0f), p.transmissionColor, p.transmissionColorAmount);
     optical.rgb *= transmission;
@@ -547,10 +786,59 @@ kernel void ldbOpticsMain(device const float4* source [[buffer(0)]],
                            *variation*broad*.35f;
         optical.rgb*=max(uneven,.2f);
     }
+    float haze=clamp(p.frontHaze,0.0f,2.0f);
+    float marks=clamp(p.cleaningMarks,0.0f,2.0f);
+    float scratches=clamp(p.scratchAmount,0.0f,2.0f);
+    float coating=clamp(p.coatingWear,0.0f,2.0f);
+    if(haze>0.0f||marks>0.0f||scratches>0.0f||coating>0.0f) {
+        float3 pattern=frontElementPattern(uv,p);
+        float wear=coatingWearPattern(uv,p);
+        // Spatial wear masks alter transmission here. Their illumination-driven
+        // scatter is composited later from the smooth separable scatter graph;
+        // direct sparse taps made their sampling lattice visible around points.
+        optical.rgb*=1.0f-clamp(pattern.x*marks*.003f+pattern.y*scratches*.005f,
+                                0.0f,.010f);
+        if(coating>0.0f) {
+            float coatingMask=wear*coating;
+            float3 wornTint=float3(1.035f,.985f,.94f);
+            optical.rgb*=mix(float3(1.0f),wornTint,clamp(coatingMask*.28f,0.0f,.55f));
+        }
+    }
+    float internalDirt=clamp(p.internalDirtAmount,0.0f,10.0f);
+    float imageAspect=p.imageSize.x/max(p.imageSize.y,1.0f);
+    if(internalDirt>0.0f) {
+        float mask=internalContaminationPattern(
+            uv,p.internalDirtScale,p.internalDirtSmear,internalDirt,
+            p.internalDirtSoftness,p.internalDirtComplexity,
+            p.internalDirtSeed,imageAspect);
+        if(mask>0.0f) {
+            // Preserve the established 0..2 response exactly. Above 2, add a
+            // smooth creative extension that approaches full attenuation
+            // without permitting negative transmission.
+            float naturalAmount=min(internalDirt,2.0f);
+            float naturalLoss=mask*naturalAmount*.14f;
+            float extendedAmount=max(internalDirt-2.0f,0.0f);
+            float extendedLoss=(1.0f-naturalLoss)
+                *(1.0f-exp(-mask*extendedAmount*.38f));
+            // Only density belongs in the direct optical stage. Highlight
+            // redistribution is composited later from the smooth separable
+            // scatter graph; sampling a wide kernel here exposed its lattice.
+            // Density must remain independently useful when illumination
+            // scatter is disabled. The former 2.2% coefficient made Cloud
+            // Softness and Complexity effectively invisible unless users also
+            // enabled scatter, which then obscured the controls with highlight
+            // diffusion. Keep this as smooth transmission attenuation, with a
+            // numerical ceiling that can approach opaque dirt creatively but
+            // cannot cross through zero transmission.
+            optical.rgb*=1.0f-clamp(naturalLoss+extendedLoss,0.0f,.98f);
+        }
+    }
     uint index = gid.y * width + gid.x;
-    direct[index] = float4(optical.rgb, source[index].a);
-    if ((p.processingFlags & 1u) != 0u)
-        highlights[index] = float4(max(center.rgb, float3(0.0f)) * highlight / max(luminance, 1e-6f), 1.0f);
+    // RGB has already been geometrically mapped, so its packed depth carrier
+    // must follow the same coordinate. Keeping source[index].a here made
+    // depth-aware aperture and scatter compare warped colour against an
+    // unwarped depth map near strong distortion and peripheral warps.
+    direct[index] = float4(optical.rgb, center.a);
 }
 
 static int scatterTapLimit(constant LDBOpticsParameters& p) {
@@ -574,6 +862,28 @@ static float4 blurLine(device const float4* image, float2 pixel, float2 axis, fl
         weightSum += weight;
     }
     return result / weightSum;
+}
+
+// Very long anamorphic streaks need near-continuous sampling. Keep the sample
+// interval below roughly 1.5 reduced-buffer pixels so compact sources cannot
+// resolve into the regularly spaced vertical cuts produced by sparse taps.
+// This path runs only on the reduced-resolution flare buffer.
+static float4 blurLineLongFlare(device const float4* image,float2 pixel,float2 axis,
+                                float radius,uint width,uint height) {
+    if(radius<=.001f)return sampleBilinear(image,pixel,width,height);
+    float4 result=0.0f;
+    float weightSum=0.0f;
+    constexpr float sigma=.45f;
+    int tapRadius=clamp(int(ceil(radius/1.35f)),64,192);
+    for(int tap=-192;tap<=192;++tap) {
+        if(abs(tap)>tapRadius)continue;
+        float normalizedOffset=float(tap)/float(tapRadius);
+        float weight=exp(-.5f*(normalizedOffset/sigma)*(normalizedOffset/sigma));
+        result+=sampleBilinear(image,pixel+axis*radius*normalizedOffset,
+                               width,height)*weight;
+        weightSum+=weight;
+    }
+    return result/max(weightSum,1e-6f);
 }
 
 static float scatterDepthAgreement(float targetDepth,float sampleDepth,
@@ -659,11 +969,32 @@ kernel void ldbBlurAperture(device const float4* source [[buffer(0)]],
         return;
     }
     float2 uv=(float2(gid)+0.5f)/scatter.imageSize;
-    float2 field=uv-p.opticalCenter;
-    float2 radial=normalize(field+float2(1e-6f,0.0f));
+    // Bokeh orientation follows the independently positionable Field Shape,
+    // not the distortion Optical Center. This lets a preset retain a clean
+    // focus island while the pupil becomes increasingly tangential off axis.
+    float2 field=uv-p.fieldCenter;
+    float fieldAngle=p.fieldRotation*(M_PI_F/180.0f);
+    float fs=sin(fieldAngle),fc=cos(fieldAngle);
+    float2 localField=float2(fc*field.x+fs*field.y,
+                            -fs*field.x+fc*field.y);
+    float fieldAspect=sqrt(clamp(p.fieldAspect,0.25f,4.0f));
+    float2 fieldMetric=float2(localField.x*fieldAspect,
+                              localField.y/fieldAspect);
+    float2 localRadial=normalize(float2(localField.x*fieldAspect*fieldAspect,
+                                        localField.y/(fieldAspect*fieldAspect))
+                                 +float2(1e-6f,0.0f));
+    float2 radial=float2(fc*localRadial.x-fs*localRadial.y,
+                         fs*localRadial.x+fc*localRadial.y);
     float2 tangent=float2(-radial.y,radial.x);
-    float fieldRadius=clamp(length(field)*2.0f,0.0f,1.0f);
+    float fieldRadius=clamp(length(fieldMetric)*2.0f,0.0f,1.5f);
+    float onset=clamp(p.responseFieldOnset,0.0f,1.5f);
+    float fieldEnd=onset+max(clamp(p.responseFieldFalloff,0.0f,1.5f),0.08f);
+    float fieldEnvelope=smoothstep(onset,fieldEnd,fieldRadius);
+    float bokehSwirl=clamp(p.apertureBokehSwirl,0.0f,6.0f)*fieldEnvelope;
     float catEye=clamp(p.apertureCatEye,0.0f,1.0f)*smoothstep(0.15f,1.0f,fieldRadius);
+    float pupilShift=clamp(p.aperturePupilShift,0.0f,1.0f)*fieldEnvelope;
+    float pupilClip=clamp(p.aperturePupilClip,0.0f,1.0f)*fieldEnvelope;
+    float rimWeight=clamp(p.apertureRimWeight,-1.0f,1.0f);
     float2 apertureX=normalize(float2(scatter.axisX,scatter.axisY)+float2(1e-6f,0.0f));
     float2 apertureY=float2(-apertureX.y,apertureX.x);
     float reconstructionRadius=clamp(scatter.radiusX*0.16f,0.75f,4.0f);
@@ -681,7 +1012,11 @@ kernel void ldbBlurAperture(device const float4* source [[buffer(0)]],
         }
     }
     float softness=clamp(scatter.threshold,0.0f,1.0f);
-    float aspect=p.apertureShape==2u?sqrt(clamp(p.apertureAspect,0.25f,4.0f)):1.0f;
+    // Pupil aspect is an independent optical control.  Restricting it to the
+    // Oval mode made it silently inert for polygonal pupils (including the
+    // Petzval factory family), even though real squeezed pupils can retain a
+    // bladed outline.  Circular remains circular at the neutral value of one.
+    float aspect=sqrt(clamp(p.apertureAspect,0.25f,4.0f));
     uint blades=clamp(p.apertureBladeCount,3u,32u);
     float curvature=clamp(p.apertureBladeCurvature,0.0f,1.0f);
     // Do not privilege a zero-offset source sample: it leaves a concentrated
@@ -718,14 +1053,46 @@ kernel void ldbBlurAperture(device const float4* source [[buffer(0)]],
         }
         float2 localPoint=direction*diskRadius*boundary;
         localPoint*=float2(aspect,1.0f/aspect);
+        float2 pupilRadial=float2(dot(radial,apertureX),dot(radial,apertureY));
+        pupilRadial=normalize(pupilRadial+float2(1e-6f,0.0f));
+        // Off-axis pupil images are displaced and clipped by the barrel. These
+        // independent terms allow asymmetric cat-eye footprints instead of
+        // reducing every lens to a centred ellipse.
+        localPoint-=pupilRadial*(pupilShift*.62f);
+        float clipCoordinate=dot(localPoint,pupilRadial);
+        float clipLimit=mix(1.2f,-.08f,pupilClip);
+        float clipFeather=mix(.018f,.10f,softness);
+        float clipWeight=1.0f-smoothstep(clipLimit-clipFeather,
+                                        clipLimit+clipFeather,clipCoordinate);
         float2 offset=(apertureX*localPoint.x+apertureY*localPoint.y)*radius;
         // Cat-eye deformation is a filled off-axis pupil compression. Keeping a
         // non-zero radial width prevents extreme settings from collapsing into arcs.
-        float radialScale=mix(1.0f,0.42f,catEye);
+        float radialScale=mix(1.0f,0.58f,catEye);
+        // Bokeh Swirl should read as a rotating off-axis pupil, not as a
+        // vanishingly thin tangential streak.  The former linear mapping grew
+        // a value of six to 6.7x by roughly 0.05x; that footprint was too large
+        // and thin for a 96-sample filled pupil and could expose sampling
+        // structure.  This rational response keeps the whole 0..6 creative
+        // range useful while asymptotically limiting the deformation.
+        float swirlResponse=bokehSwirl/(1.0f+0.75f*bokehSwirl);
+        radialScale*=1.0f/(1.0f+0.32f*swirlResponse);
+        float tangentialScale=1.0f+0.72f*swirlResponse;
         float radialComponent=dot(offset,radial);
         float tangentialComponent=dot(offset,tangent);
-        offset=radial*(radialComponent*radialScale)+tangent*tangentialComponent;
-        float edgeWeight=mix(1.0f,softProfile,softness);
+        offset=radial*(radialComponent*radialScale)
+              +tangent*(tangentialComponent*tangentialScale);
+        // Redistribute energy across a deliberately broad pupil band.  The
+        // earlier 0.62..1.48 profile largely disappeared after normalization,
+        // so maximum positive Rim Weight still looked like a filled disk.  A
+        // wider but smooth centre-to-edge ratio produces a readable bubble rim
+        // without concentrating energy into a narrow sampled ring.
+        float rimProfile=smoothstep(.16f,.94f,diskRadius);
+        float positiveRimProfile=mix(.16f,2.75f,rimProfile);
+        float negativeRimProfile=mix(2.20f,.24f,rimProfile);
+        float edgeWeight=mix(1.0f,softProfile,softness)
+                        *mix(1.0f,positiveRimProfile,max(rimWeight,0.0f))
+                        *mix(1.0f,negativeRimProfile,max(-rimWeight,0.0f))
+                        *clipWeight;
         float2 pupilPosition=float2(gid)+offset;
         float4 pupilSample=sampleBilinear(source,pupilPosition,width,height);
         if(p.depthMode>0u)
@@ -761,6 +1128,19 @@ kernel void ldbDownsampleHighlights(device const float4* source [[buffer(0)]],
                 float depth=normalizedDepth(sourceSample,p);
                 sourceWeight=defocusResponse(depth,p);
             }
+            if(scatter.axisY>2.5f) {
+                uint sourceWidth=uint(p.imageSize.x),sourceHeight=uint(p.imageSize.y);
+                int peakRadius=max(int(scale)*2,3);
+                float sourceLuma=dot(sourceSample.rgb,float3(.2126f,.7152f,.0722f));
+                float surroundLuma=(
+                    dot(sampleInteger(source,int2(sourcePosition)+int2(peakRadius,0),sourceWidth,sourceHeight).rgb,float3(.2126f,.7152f,.0722f))
+                   +dot(sampleInteger(source,int2(sourcePosition)-int2(peakRadius,0),sourceWidth,sourceHeight).rgb,float3(.2126f,.7152f,.0722f))
+                   +dot(sampleInteger(source,int2(sourcePosition)+int2(0,peakRadius),sourceWidth,sourceHeight).rgb,float3(.2126f,.7152f,.0722f))
+                   +dot(sampleInteger(source,int2(sourcePosition)-int2(0,peakRadius),sourceWidth,sourceHeight).rgb,float3(.2126f,.7152f,.0722f)))*.25f;
+                float compactGate=smoothstep(.05f,.32f,
+                    max(sourceLuma-surroundLuma*.90f,0.0f)/max(sourceLuma,1e-5f));
+                sourceWeight*=compactGate;
+            }
             sum+=thresholdHighlightResponse(sourceSample.rgb,scatter.threshold,
                                              p.responseHighlightKnee)*sourceWeight;
         }
@@ -769,6 +1149,85 @@ kernel void ldbDownsampleHighlights(device const float4* source [[buffer(0)]],
         uint2(uint(p.imageSize.x)-1,uint(p.imageSize.y)-1));
     float depthCarrier=source[depthPosition.y*uint(p.imageSize.x)+depthPosition.x].a;
     destination[gid.y * width + gid.x] = float4(sum / float(scale * scale),depthCarrier);
+}
+
+kernel void ldbDetectFlareSources(
+    device const float4* highlights [[buffer(0)]],
+    device LDBFlareSource* sources [[buffer(1)]],
+    constant LDBScatterParameters& scatter [[buffer(2)]],
+    uint gid [[thread_position_in_grid]]) {
+    if(gid!=0u)return;
+    // Runtime flare shaping follows the dominant coherent lamp.  The previous
+    // four-source search rescanned the reduced image four times on one GPU
+    // lane and allowed rows of practicals to compete with the photographed
+    // flare source.  A softly downsampled highlight covers multiple reduced
+    // pixels, so a two-pixel search stride retains sub-cell stability while
+    // cutting the serial reduction work to one eighth of that first version.
+    constexpr uint maximumSources=1u;
+    uint width=uint(scatter.imageSize.x),height=uint(scatter.imageSize.y);
+    for(uint slot=0u;slot<maximumSources;++slot) {
+        sources[slot].positionEnergyRadius=float4(0.0f);
+        sources[slot].colorActive=float4(0.0f);
+    }
+    const float3 lumaWeights=float3(.2126f,.7152f,.0722f);
+    float strongest=0.0f;
+    for(uint slot=0u;slot<maximumSources;++slot) {
+        float bestEnergy=0.0f;
+        uint2 bestPosition=uint2(0u);
+        float3 bestColor=0.0f;
+        for(uint y=1u;y+2u<height;y+=2u) {
+            for(uint x=1u;x+2u<width;x+=2u) {
+                // Retain the faster cell-stride reduction without assuming
+                // the highlight peak lands on one particular pixel parity.
+                uint2 candidatePosition=uint2(x,y);
+                float3 candidate=highlights[y*width+x].rgb;
+                float cellEnergy=dot(candidate,lumaWeights);
+                for(uint cellY=0u;cellY<2u;++cellY)
+                    for(uint cellX=0u;cellX<2u;++cellX) {
+                        uint2 position=uint2(x+cellX,y+cellY);
+                        float3 cellCandidate=highlights[position.y*width+position.x].rgb;
+                        float candidateEnergy=dot(cellCandidate,lumaWeights);
+                        if(candidateEnergy>cellEnergy) {
+                            candidatePosition=position;
+                            candidate=cellCandidate;
+                            cellEnergy=candidateEnergy;
+                        }
+                    }
+                float energy=dot(candidate,lumaWeights);
+                if(energy<=bestEnergy)continue;
+                bool separated=true;
+                for(uint previous=0u;previous<slot;++previous) {
+                    float2 previousReduced=sources[previous].positionEnergyRadius.xy
+                        /float(max(scatter.scale,1u));
+                    if(distance(float2(candidatePosition)+.5f,previousReduced)<6.0f) {
+                        separated=false;
+                        break;
+                    }
+                }
+                if(!separated)continue;
+                bool localMaximum=true;
+                for(int oy=-1;oy<=1&&localMaximum;++oy)
+                    for(int ox=-1;ox<=1;++ox) {
+                        if(ox==0&&oy==0)continue;
+                        float neighbor=dot(highlights[uint(int(candidatePosition.y)+oy)*width
+                            +uint(int(candidatePosition.x)+ox)].rgb,lumaWeights);
+                        if(neighbor>energy) { localMaximum=false; break; }
+                    }
+                if(localMaximum) {
+                    bestEnergy=energy;
+                    bestPosition=candidatePosition;
+                    bestColor=candidate;
+                }
+            }
+        }
+        if(slot==0u)strongest=bestEnergy;
+        if(bestEnergy<=1e-6f||bestEnergy<max(strongest*.16f,1e-5f))break;
+        float scale=float(max(scatter.scale,1u));
+        sources[slot].positionEnergyRadius=float4(
+            (float2(bestPosition)+.5f)*scale,bestEnergy,
+            clamp(sqrt(bestEnergy)*2.0f,1.0f,12.0f));
+        sources[slot].colorActive=float4(bestColor/max(bestEnergy,1e-5f),1.0f);
+    }
 }
 
 kernel void ldbBlurHorizontal(device const float4* source [[buffer(0)]],
@@ -782,7 +1241,9 @@ kernel void ldbBlurHorizontal(device const float4* source [[buffer(0)]],
     int maximumTaps=scatterTapLimit(p);
     destination[gid.y*width+gid.x]=depthAware
         ?blurLineDepthAware(source,float2(gid),float2(1,0),scatter.radiusX,width,height,p,maximumTaps)
-        :blurLine(source,float2(gid),float2(1,0),scatter.radiusX,width,height,maximumTaps);
+        :((scatter.axisY>2.5f||scatter.radiusX>24.0f)
+            ?blurLineLongFlare(source,float2(gid),float2(1,0),scatter.radiusX,width,height)
+            :blurLine(source,float2(gid),float2(1,0),scatter.radiusX,width,height,maximumTaps));
 }
 
 kernel void ldbBlurVertical(device const float4* source [[buffer(0)]],
@@ -796,7 +1257,261 @@ kernel void ldbBlurVertical(device const float4* source [[buffer(0)]],
     int maximumTaps=scatterTapLimit(p);
     destination[gid.y*width+gid.x]=depthAware
         ?blurLineDepthAware(source,float2(gid),float2(0,1),scatter.radiusY,width,height,p,maximumTaps)
-        :blurLine(source,float2(gid),float2(0,1),scatter.radiusY,width,height,maximumTaps);
+        :(scatter.radiusY>24.0f
+            ?blurLineLongFlare(source,float2(gid),float2(0,1),scatter.radiusY,width,height)
+            :blurLine(source,float2(gid),float2(0,1),scatter.radiusY,width,height,maximumTaps));
+}
+
+kernel void ldbReconstructAnamorphicFlare(
+    device const float4* highlightSource [[buffer(0)]],
+    device const float4* broadScatter [[buffer(1)]],
+    device float4* destination [[buffer(2)]],
+    constant LDBOpticsParameters& p [[buffer(3)]],
+    constant LDBScatterParameters& scatter [[buffer(4)]],
+    uint2 gid [[thread_position_in_grid]]) {
+    uint width=uint(scatter.imageSize.x),height=uint(scatter.imageSize.y);
+    if(gid.x>=width||gid.y>=height)return;
+    float2 pixel=float2(gid);
+
+    // The established long-radius scatter supplies only the broad streak.
+    // Integrate it continuously across both axes here so sparse blur taps do
+    // not resolve as dots or parallel rails in the final image.
+    float3 broad=0.0f;
+    float broadWeight=0.0f;
+    for(int y=-6;y<=6;++y) {
+        float wy=exp(-.5f*float(y*y)/7.5f);
+        for(int x=-2;x<=2;++x) {
+            float wx=exp(-.5f*float(x*x)/1.4f);
+            float w=wx*wy;
+            broad+=sampleBilinear(broadScatter,pixel+float2(x,y),width,height).rgb*w;
+            broadWeight+=w;
+        }
+    }
+    broad/=max(broadWeight,1e-6f);
+    float bandAmount=max(p.anamorphicFlareBandAmount,0.0f);
+    if(bandAmount>1e-6f) {
+        float spacing=max(p.anamorphicFlareBandSeparation,0.0f)
+                    /float(max(scatter.scale,1u));
+        float3 closeBands=
+            sampleBilinear(broadScatter,pixel+float2(0, spacing*.42f),width,height).rgb+
+            sampleBilinear(broadScatter,pixel-float2(0, spacing*.42f),width,height).rgb;
+        float3 outerBands=
+            sampleBilinear(broadScatter,pixel+float2(0, spacing),width,height).rgb+
+            sampleBilinear(broadScatter,pixel-float2(0, spacing),width,height).rgb;
+        broad+=bandAmount*(closeBands*.24f+outerBands*.13f);
+    }
+    float secondaryAmount=max(p.anamorphicFlareSecondaryAmount,0.0f);
+    if(secondaryAmount>1e-6f) {
+        float secondaryOffset=p.anamorphicFlareSecondaryOffset
+                            /float(max(scatter.scale,1u));
+        broad+=sampleBilinear(broadScatter,pixel-float2(0,secondaryOffset),width,height).rgb
+              *secondaryAmount*.62f;
+    }
+    float asymmetry=clamp(p.anamorphicFlareAsymmetry,-1.0f,1.0f);
+    if(abs(asymmetry)>1e-6f) {
+        float offset=max(scatter.radiusX*.14f,1.0f)*sign(asymmetry);
+        float3 tail=sampleBilinear(broadScatter,pixel+float2(offset,0),width,height).rgb;
+        broad=mix(broad,tail,abs(asymmetry)*.62f);
+    }
+
+    // A compact source-derived core remains independent of the long streak.
+    float3 core=0.0f;
+    float coreWeight=0.0f;
+    for(int x=-4;x<=4;++x) {
+        float w=exp(-.5f*float(x*x)/3.2f);
+        float2 corePosition=pixel+float2(x,0);
+        float3 coreSample=sampleBilinear(highlightSource,corePosition,width,height).rgb;
+        float coreLuma=dot(coreSample,float3(.2126f,.7152f,.0722f));
+        float surroundLuma=(
+            dot(sampleBilinear(highlightSource,corePosition+float2(3,0),width,height).rgb,float3(.2126f,.7152f,.0722f))
+           +dot(sampleBilinear(highlightSource,corePosition-float2(3,0),width,height).rgb,float3(.2126f,.7152f,.0722f))
+           +dot(sampleBilinear(highlightSource,corePosition+float2(0,3),width,height).rgb,float3(.2126f,.7152f,.0722f))
+           +dot(sampleBilinear(highlightSource,corePosition-float2(0,3),width,height).rgb,float3(.2126f,.7152f,.0722f)))*.25f;
+        float compactGate=smoothstep(.08f,.42f,
+            max(coreLuma-surroundLuma*.88f,0.0f)/max(coreLuma,1e-5f));
+        core+=coreSample*compactGate*w;
+        coreWeight+=w;
+    }
+    core/=max(coreWeight,1e-6f);
+    core=core/(float3(1.0f)+core*.22f);
+
+    // Source-derived vertical diffraction rays remain independent of the
+    // horizontal cylindrical streak. A normalized fixed-tap convolution keeps
+    // the ray continuous while Ray Length controls its output-space extent.
+    float3 verticalRay=0.0f;
+    float verticalRayWeight=0.0f;
+    // Shaped rays are now reconstructed analytically at full output
+    // resolution. Keep the reduced buffer responsible only for broad energy.
+    float rayAmount=0.0f;
+    if(rayAmount>1e-6f) {
+        float rayRadius=clamp(p.diffractionRayLength
+                            /float(max(scatter.scale,1u)),1.0f,float(height)*.5f);
+        // Long rays need a denser reconstruction than the compact flare core.
+        // With only 65 taps, long output-space rays exposed individual sample
+        // intervals as visible steps in smooth gradients. 129 normalized taps
+        // keep the falloff continuous in the reduced flare buffer.
+        constexpr int rayHalfSamples=64;
+        for(int i=-rayHalfSamples;i<=rayHalfSamples;++i) {
+            float normalizedOffset=float(i)/float(rayHalfSamples);
+            float weight=exp(-abs(normalizedOffset)*5.2f);
+            float2 rayPosition=pixel+float2(0.0f,normalizedOffset*rayRadius);
+            if(rayPosition.y>=0.0f&&rayPosition.y<=float(height-1)) {
+                float3 raySample=sampleBilinear(highlightSource,rayPosition,width,height).rgb;
+                float rayLuma=dot(raySample,float3(.2126f,.7152f,.0722f));
+                // Diffraction is driven by the compact source, not its broad
+                // photographic halo. This prevents a bright lamp from turning
+                // into a constant-width vertical light column.
+                float compactRayGate=smoothstep(.08f,.72f,rayLuma);
+                verticalRay+=raySample*compactRayGate*weight;
+                verticalRayWeight+=weight;
+            }
+        }
+        verticalRay/=max(verticalRayWeight,1e-6f);
+        verticalRay=verticalRay/(float3(1.0f)+verticalRay*.18f);
+    }
+
+    // Reproject the unblurred highlight field around Optical Center and use a
+    // filled elliptical footprint. This is a bounded internal reflection,
+    // never a transformed copy of the horizontal streak.
+    float3 ghost=0.0f;
+    // Internal ghosts are also full-resolution analytic primitives now. Image
+    // reprojection in this reduced buffer produced tiled practical-light blobs.
+    float ghostAmount=0.0f;
+    if(ghostAmount>1e-6f) {
+        float2 centre=clamp(p.opticalCenter,float2(0.0f),float2(1.0f))*float2(width,height);
+        float position=p.anamorphicFlareGhostPosition;
+        float signedPosition=abs(position)<.05f?(position<0.0f?-.05f:.05f):position;
+        float scale=clamp(p.anamorphicFlareGhostScale,.25f,3.0f);
+        float2 sourcePosition=centre+(pixel-centre)/(signedPosition*scale);
+        constexpr int ghostSamples=28;
+        constexpr float goldenAngle=2.39996323f;
+        float ghostWeight=0.0f;
+        for(int i=0;i<ghostSamples;++i) {
+            float radius=sqrt((float(i)+.5f)/float(ghostSamples));
+            float angle=float(i)*goldenAngle;
+            float2 offset=float2(cos(angle)*radius*3.2f*scale,
+                                 sin(angle)*radius*6.2f*scale);
+            float2 samplePosition=sourcePosition+offset;
+            // Do not let the sampler clamp an off-frame reflected source to
+            // the border. That turns a single edge highlight into a solid
+            // magenta bar spanning every output pixel that maps past it.
+            bool inside=samplePosition.x>=0.0f&&samplePosition.y>=0.0f
+                     &&samplePosition.x<=float(width-1u)
+                     &&samplePosition.y<=float(height-1u);
+            if(inside) {
+                float w=(1.0f-radius*.72f);
+                float3 ghostSample=sampleBilinear(highlightSource,samplePosition,width,height).rgb;
+                float ghostLuma=dot(ghostSample,float3(.2126f,.7152f,.0722f));
+                float surroundLuma=(
+                    dot(sampleBilinear(highlightSource,samplePosition+float2(3,0),width,height).rgb,float3(.2126f,.7152f,.0722f))
+                   +dot(sampleBilinear(highlightSource,samplePosition-float2(3,0),width,height).rgb,float3(.2126f,.7152f,.0722f))
+                   +dot(sampleBilinear(highlightSource,samplePosition+float2(0,3),width,height).rgb,float3(.2126f,.7152f,.0722f))
+                   +dot(sampleBilinear(highlightSource,samplePosition-float2(0,3),width,height).rgb,float3(.2126f,.7152f,.0722f)))*.25f;
+                float compactGate=smoothstep(.08f,.42f,
+                    max(ghostLuma-surroundLuma*.88f,0.0f)/max(ghostLuma,1e-5f));
+                // A flare ghost should be driven by the dominant compact lamp,
+                // not every small practical or bokeh point in the frame. The
+                // additional energy gate prevents dense highlight arrays from
+                // reappearing as a pixelated colored cluster.
+                float ghostEnergyGate=smoothstep(.18f,1.20f,ghostLuma);
+                ghost+=ghostSample*compactGate*ghostEnergyGate*w;
+                ghostWeight+=w;
+            }
+        }
+        ghost/=max(ghostWeight,1e-6f);
+        ghost=ghost/(float3(1.0f)+ghost*.30f);
+    }
+
+    float amount=max(p.anamorphicFlareAmount,0.0f);
+    float3 streakColor=max(p.anamorphicFlareColor,float3(0.0f));
+    float3 ghostColor=max(p.anamorphicFlareGhostColor,float3(0.0f));
+    float3 result=(broad*.82f+core*max(p.anamorphicFlareCoreAmount,0.0f))
+                    *amount*streakColor
+                 +ghost*ghostAmount*amount*ghostColor
+                 +verticalRay*rayAmount*amount*mix(float3(1.0f),streakColor,.28f);
+    destination[gid.y*width+gid.x]=float4(result,broadScatter[gid.y*width+gid.x].a);
+}
+
+static float3 analyticFlareElements(float2 pixel,
+                                    device const LDBFlareSource* sources,
+                                    constant LDBOpticsParameters& p) {
+    if(p.anamorphicFlareAmount<=1e-6f)return float3(0.0f);
+    float strongest=max(sources[0].positionEnergyRadius.z,1e-6f);
+    float2 opticalCentre=clamp(p.opticalCenter,float2(0.0f),float2(1.0f))
+                        *p.imageSize;
+    float3 result=0.0f;
+    for(uint index=0u;index<1u;++index) {
+        LDBFlareSource source=sources[index];
+        if(source.colorActive.w<.5f)continue;
+        float energy=source.positionEnergyRadius.z;
+        float relative=pow(clamp(energy/strongest,0.0f,1.0f),.72f);
+        float energyGain=energy/(1.0f+energy*.28f);
+        float3 sourceColor=clamp(source.colorActive.xyz,float3(.12f),float3(3.0f));
+        float2 sourcePosition=source.positionEnergyRadius.xy;
+        float sourceRadius=source.positionEnergyRadius.w;
+
+        // Two continuous analytic layers form a narrow bright diffraction ray
+        // with a long, very soft tail. No sampled convolution is stretched
+        // across the image, so the gradient cannot resolve into steps.
+        float rayAmount=max(p.diffractionRayAmount,0.0f);
+        if(rayAmount>1e-6f) {
+            float2 delta=pixel-sourcePosition;
+            float length=max(p.diffractionRayLength,1.0f);
+            float coreWidth=1.15f+sourceRadius*.36f;
+            float wingWidth=coreWidth*2.8f;
+            float core=exp(-.5f*(delta.x/coreWidth)*(delta.x/coreWidth))
+                      *exp(-abs(delta.y)/(length*.22f));
+            float wing=exp(-.5f*(delta.x/wingWidth)*(delta.x/wingWidth))
+                      *exp(-abs(delta.y)/(length*.62f))*.18f;
+            float sourceBloom=exp(-dot(delta,delta)
+                                  /max(sourceRadius*sourceRadius*5.0f,4.0f))*.22f;
+            float3 rayTint=mix(float3(1.0f),
+                               max(p.anamorphicFlareColor,float3(0.0f)),.22f);
+            result+=(core+wing+sourceBloom)*energyGain*relative*rayAmount
+                    *p.anamorphicFlareAmount*rayTint*sourceColor;
+        }
+
+        // One bounded reflection path, rendered as a soft filled ellipse plus
+        // a restrained rim. Position follows the source around Optical Center;
+        // the photographed scene itself is never copied into the primitive.
+        float ghostAmount=max(p.anamorphicFlareGhostAmount,0.0f);
+        // The dominant coherent source owns the internal-reflection path.
+        if(ghostAmount>1e-6f&&index==0u) {
+            float2 primaryGhostCentre=opticalCentre
+                +p.anamorphicFlareGhostPosition*(sourcePosition-opticalCentre);
+            float baseRadius=(24.0f+sourceRadius*3.0f)
+                *clamp(p.anamorphicFlareGhostScale,.25f,3.0f);
+            uint ghostCount=uint(clamp(round(p.anamorphicFlareGhostCount),1.0f,6.0f));
+            float2 pathDirection=normalize(sourcePosition-opticalCentre+float2(1e-4f,0.0f));
+            float spacing=max(p.anamorphicFlareGhostSpacing,0.0f);
+            float scaleDecay=clamp(p.anamorphicFlareGhostScaleDecay,.35f,1.0f);
+            float energyDecay=clamp(p.anamorphicFlareGhostEnergyDecay,.15f,1.0f);
+            for(uint path=0u;path<ghostCount;++path) {
+                float ordinal=float((path+1u)/2u)*(path%2u?1.0f:-1.0f);
+                float pathScale=pow(scaleDecay,float(path));
+                float pathEnergy=pow(energyDecay,float(path));
+                float2 ghostCentre=primaryGhostCentre+pathDirection*spacing*ordinal;
+                float2 ghostDelta=pixel-ghostCentre;
+                float2 axes=float2(baseRadius*1.55f,baseRadius*.82f)*pathScale;
+                float radiusSquared=dot(ghostDelta/axes,ghostDelta/axes);
+                if(radiusSquared<9.0f) {
+                    float fill=exp(-radiusSquared*2.35f);
+                    float radius=sqrt(max(radiusSquared,0.0f));
+                    float rim=exp(-.5f*pow((radius-.82f)/.16f,2.0f))*.16f;
+                    float inner=exp(-radiusSquared*7.5f)*.10f;
+                    float tintPhase=float(path)*1.73f;
+                    float3 tintVariation=float3(.92f+.08f*sin(tintPhase),
+                                                .92f+.08f*sin(tintPhase+2.1f),
+                                                1.0f);
+                    float3 ghostTint=max(p.anamorphicFlareGhostColor,float3(0.0f))*tintVariation;
+                    result+=(fill+rim+inner)*energyGain*relative*ghostAmount
+                            *p.anamorphicFlareAmount*ghostTint*pathEnergy
+                            *mix(float3(1.0f),sourceColor,.18f)*.42f;
+                }
+            }
+        }
+    }
+    return result;
 }
 
 kernel void ldbComposite(device const float4* source [[buffer(0)]],
@@ -812,6 +1527,7 @@ kernel void ldbComposite(device const float4* source [[buffer(0)]],
                          constant LDBScatterParameters& glareScatter [[buffer(10)]],
                          constant LDBScatterParameters& haloScatter [[buffer(11)]],
                          constant LDBScatterParameters& flareScatter [[buffer(12)]],
+                         device const LDBFlareSource* flareSources [[buffer(13)]],
                          uint2 gid [[thread_position_in_grid]]) {
     uint width = uint(p.imageSize.x), height = uint(p.imageSize.y);
     if (gid.x >= width || gid.y >= height) return;
@@ -827,8 +1543,9 @@ kernel void ldbComposite(device const float4* source [[buffer(0)]],
     float3 halo = sampleBilinear(haloScattered, haloPixel,
                                  uint(haloScatter.imageSize.x), uint(haloScatter.imageSize.y)).rgb;
     float2 flarePixel = (float2(gid) + 0.5f) / float(flareScatter.scale) - 0.5f;
-    float3 flare = sampleBilinear(flareScattered, flarePixel,
-                                  uint(flareScatter.imageSize.x), uint(flareScatter.imageSize.y)).rgb;
+    float3 flare=sampleBilinear(flareScattered,flarePixel,
+        uint(flareScatter.imageSize.x),uint(flareScatter.imageSize.y)).rgb;
+    flare+=analyticFlareElements(float2(gid)+.5f,flareSources,p);
     if(p.depthMode>0u) {
         float targetDepth=normalizedDepth(source[index],p);
         float bloomDepth=normalizedDepth(sampleNearest(bloomScattered,bloomPixel,
@@ -848,22 +1565,67 @@ kernel void ldbComposite(device const float4* source [[buffer(0)]],
         flare*=protectedLayerAgreement(targetDepth,flareDepth,p);
     }
     float apertureMix=clamp(p.apertureResponse,0.0f,1.0f);
+    // Without external depth, the shaped optical field is the focus model:
+    // retain a usable centre and progressively blend the reconstructed pupil
+    // toward the edge. Previously this happened only when Bokeh Swirl was
+    // nonzero, so ordinary depth-free aperture blur was global and Field
+    // Onset/Falloff could not create spherical edge defocus.
+    if(p.depthMode==0u&&apertureMix>0.0f) {
+        float2 uv=(float2(gid)+0.5f)/p.imageSize;
+        float2 field=uv-p.fieldCenter;
+        float angle=p.fieldRotation*(M_PI_F/180.0f);
+        float s=sin(angle),c=cos(angle);
+        float2 local=float2(c*field.x+s*field.y,-s*field.x+c*field.y);
+        float aspect=sqrt(clamp(p.fieldAspect,0.25f,4.0f));
+        float radius=length(float2(local.x*aspect,local.y/aspect))*2.0f;
+        float onset=clamp(p.responseFieldOnset,0.0f,1.5f);
+        float fieldEnd=onset+max(clamp(p.responseFieldFalloff,0.0f,1.5f),0.08f);
+        float envelope=smoothstep(onset,fieldEnd,clamp(radius,0.0f,1.5f));
+        apertureMix*=envelope;
+    }
     float3 directOptics=mix(direct[index].rgb,apertureScattered[index].rgb,apertureMix);
+    float2 wearUV=(float2(gid)+0.5f)/p.imageSize;
+    float3 wearPattern=frontElementPattern(wearUV,p);
+    float coatingPattern=coatingWearPattern(wearUV,p);
+    float marksAmount=clamp(p.cleaningMarks,0.0f,2.0f);
+    float scratchesAmount=clamp(p.scratchAmount,0.0f,2.0f);
+    float coatingAmount=clamp(p.coatingWear,0.0f,2.0f);
+    // Damage primarily changes the amount and tint of forward scatter. The
+    // procedural masks add restrained unevenness; they must never read as
+    // bright scratch artwork laid over the photographed scene.
+    float wearScatterGain=clamp(p.frontHaze,0.0f,2.0f)*.075f
+        +marksAmount*(.035f+wearPattern.x*.025f)
+        +scratchesAmount*(.020f+wearPattern.y*.035f)
+        +coatingAmount*(.025f+coatingPattern*.020f);
+    float internalScatterGain=0.0f;
+    if(p.internalDirtAmount>0.0f&&p.internalDirtScatter>0.0f) {
+        float imageAspect=p.imageSize.x/max(p.imageSize.y,1.0f);
+        float internalMask=internalContaminationPattern(
+            wearUV,p.internalDirtScale,p.internalDirtSmear,p.internalDirtAmount,
+            p.internalDirtSoftness,p.internalDirtComplexity,
+            p.internalDirtSeed,imageAspect);
+        float dirtAmount=clamp(p.internalDirtAmount,0.0f,10.0f);
+        float scatterAmount=min(dirtAmount,2.0f)
+            +2.0f*(1.0f-exp(-max(dirtAmount-2.0f,0.0f)*.35f));
+        internalScatterGain=clamp(internalMask*scatterAmount
+            *clamp(p.internalDirtScatter,0.0f,2.0f)*.16f,0.0f,1.0f);
+    }
     float3 result = directOptics
                   + bloom * max(0.0f, p.bloomEnergy)
+                  + bloom * wearScatterGain
+                  + bloom * internalScatterGain
                   + glare * max(0.0f, p.glareEnergy) * glareTint
                   + halo * clamp(p.sphericalHalo, 0.0f, 2.0f) * 0.22f
-                  + flare * max(0.0f, p.anamorphicFlareAmount)
-                    * max(p.anamorphicFlareColor, float3(0.0f));
+                  + flare;
     uint diagnostic = p.processingFlags & LDBDiagnosticMask;
     if (diagnostic == LDBDiagnosticDifference)
         result = float3(0.18f) + (result - source[index].rgb) * 2.0f;
     else if (diagnostic == LDBDiagnosticScatter)
-        result = (bloom * max(0.0f, p.bloomEnergy)
+        result = (bloom * (max(0.0f, p.bloomEnergy)
+                         + wearScatterGain + internalScatterGain)
                 + glare * max(0.0f, p.glareEnergy) * glareTint
                 + halo * clamp(p.sphericalHalo, 0.0f, 2.0f) * 0.22f
-                + flare * max(0.0f, p.anamorphicFlareAmount)
-                  * max(p.anamorphicFlareColor, float3(0.0f))) * 2.0f;
+                + flare) * 2.0f;
     else if (diagnostic == LDBDiagnosticDirectOptics)
         result = directOptics;
     else if (diagnostic == LDBDiagnosticDepth) {

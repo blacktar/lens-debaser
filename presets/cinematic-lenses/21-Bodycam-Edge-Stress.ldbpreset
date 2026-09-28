@@ -1,0 +1,39 @@
+LensDebaserPreset=2
+# Family: Bodycam Edge Stress
+# Strength: Signature
+# Heavy but gradual bodycam edge stress: protected centre, local glass deformation, colored edge separation and mechanical image-circle pressure.
+apertureCatEye=0.3
+apertureRadius=20
+apertureResponse=1
+chromaticFieldFalloff=0.68
+chromaticFieldOnset=0.22
+coatingWear=0.12
+cornerSharpnessLoss=2
+damageScale=1.6
+damageSeed=28052023
+distortionK1=-0.012
+distortionK2=0.04
+fieldCurvature=1.75
+frontHaze=0.12
+geometryFieldAmount=1
+imageCircleAspect=1
+imageCircleSize=1.28
+imageCircleSoftness=0.06
+lateralCABlue=-3.35
+lateralCARed=2.65
+longitudinalCA=0.3
+moustacheK3=0.06
+peripheralStretch=0.03
+peripheralWarp=0.03
+radialSmear=0.55
+refractiveAnisotropy=0.25
+refractiveDispersion=0.32
+refractiveEdgeBias=0.9
+refractiveIrregularity=0.15
+refractiveRotation=-12
+refractiveScale=1.45
+refractiveSeed=28052023
+responseFieldFalloff=1.1
+responseFieldOnset=0.16
+tangentialSmear=0.72
+vignetteMechanical=1

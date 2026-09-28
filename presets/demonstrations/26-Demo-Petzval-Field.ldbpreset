@@ -1,0 +1,21 @@
+LensDebaserPreset=2
+# Family: Demo-Petzval-Field
+# Strength: Educational
+# A central subject remains legible while curved focus and clear off-axis pupil shaping reinforce one another.
+apertureAspect=1.08
+apertureBladeCount=8
+apertureBladeCurvature=0.72
+apertureBokehSwirl=2
+apertureCatEye=0.46
+apertureRadius=11
+apertureResponse=0.46
+apertureShape=1
+apertureSoftness=0.25
+astigmatism=0.26
+cornerSharpnessLoss=0.75
+fieldCenterX=0.49
+fieldCenterY=0.51
+fieldCurvature=0.88
+responseFieldFalloff=1.26
+responseFieldOnset=0.18
+tangentialSmear=0.24

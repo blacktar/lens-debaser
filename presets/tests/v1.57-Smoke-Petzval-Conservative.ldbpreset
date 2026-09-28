@@ -1,0 +1,18 @@
+LensDebaserPreset=2
+# Family: ABI v16 Smoke
+# Strength: Petzval Conservative
+# Use a portrait or detailed central subject with peripheral lights. Look for a protected subject island, gradual curved focus and restrained rotating pupils.
+apertureAspect=1.04
+apertureBladeCount=8
+apertureBladeCurvature=0.72
+apertureBokehSwirl=1.2
+apertureCatEye=0.24
+apertureRadius=9
+apertureResponse=0.3
+apertureShape=1
+astigmatism=0.1
+cornerSharpnessLoss=0.42
+fieldCurvature=0.38
+responseFieldFalloff=1.16
+responseFieldOnset=0.18
+tangentialSmear=0.08

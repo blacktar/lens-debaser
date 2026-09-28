@@ -1,0 +1,17 @@
+LensDebaserPreset=2
+# Family: Close-Focus-Macro
+# Strength: Subtle
+# Close-focus macro character with crisp central texture, rapidly curving focus and longitudinal color.
+astigmatism=0.1
+captureAperture=2
+captureFocalLength=100
+captureFocusDistance=28
+captureInfluence=0.7
+cornerSharpnessLoss=0.48
+fieldCurvature=0.4
+fineDetail=0.1
+longitudinalCA=0.28
+microContrast=0.12
+responseFieldFalloff=1.52
+responseFieldOnset=0.18
+sphericalHalo=0.12

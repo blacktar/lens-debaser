@@ -1,0 +1,39 @@
+LensDebaserPreset=2
+# Family: Decentered-Dream-Glass
+# Strength: Caricature
+# Decentered dream glass combining a displaced focus island, asymmetric clipped pupil, warm transmission and irregular seven-blade bokeh.
+apertureAspect=1.28
+apertureBladeCount=7
+apertureBladeCurvature=0.48
+apertureBokehSwirl=4.8
+apertureCatEye=0.78
+aperturePupilClip=0.26
+aperturePupilShift=0.24
+apertureRadius=16
+apertureResponse=0.78
+apertureRimWeight=0.48
+apertureShape=1
+apertureSoftness=0.16
+astigmatism=0.72
+cornerSharpnessLoss=1.25
+fieldCenterX=0.43
+fieldCenterY=0.56
+fieldCurvature=1.22
+glareEnergy=0.28
+lateralCABlue=-1.16
+lateralCARed=0.88
+longitudinalCA=0.72
+radialSmear=0.28
+responseFieldFalloff=1.14
+responseFieldOnset=0.14
+sphericalHalo=0.62
+tangentialSmear=0.62
+transmissionB=0.76
+transmissionColorAmount=0.38
+transmissionG=0.88
+transmissionR=1
+variationAmount=0.72
+variationChromaticAsymmetry=0.54
+variationFieldAsymmetry=0.82
+variationPupilIrregularity=0.78
+variationSeed=24571

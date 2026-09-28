@@ -1,0 +1,16 @@
+LensDebaserPreset=2
+# Family: Demo-Aperture
+# Strength: Educational
+# Point highlights clearly reveal a softly shaped seven-blade pupil, Cat-Eye and controlled tangential rotation.
+apertureAspect=1.16
+apertureBladeCount=7
+apertureBladeCurvature=0.56
+apertureBokehSwirl=1.65
+apertureCatEye=0.4
+apertureRadius=11
+apertureResponse=0.54
+apertureRotation=14
+apertureShape=1
+apertureSoftness=0.25
+responseFieldFalloff=1.18
+responseFieldOnset=0.18

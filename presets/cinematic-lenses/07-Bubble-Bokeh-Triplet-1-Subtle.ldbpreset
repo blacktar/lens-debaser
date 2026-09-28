@@ -1,0 +1,16 @@
+LensDebaserPreset=2
+# Family: Bubble-Bokeh-Triplet
+# Strength: Subtle
+# Firm round defocus highlights; isolated bright points reveal the soap-bubble footprint.
+apertureCatEye=0.08
+apertureRadius=6.3
+apertureResponse=0.12
+apertureShape=0
+apertureSoftness=0.08
+cornerSharpnessLoss=0.28
+fieldCurvature=0.26
+longitudinalCA=0.1
+microContrast=-0.06
+responseFieldFalloff=1.58
+responseFieldOnset=0.24
+sphericalHalo=0.12

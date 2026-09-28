@@ -1,0 +1,36 @@
+LensDebaserPreset=2
+# Family: Bent-Glass-Scope
+# Strength: Medium
+# Pronounced scope edge character around a protected elliptical centre; lines and highlights reveal it.
+anamorphicAberration=1.05
+anamorphicDistortion=0.022
+anamorphicFlareAmount=0.6
+anamorphicFlareRadius=205
+anamorphicFlareThreshold=0.42
+anamorphicSqueeze=2
+apertureAspect=2.2
+apertureBokehSwirl=2.5
+apertureCatEye=0.42
+apertureRadius=7.2
+apertureResponse=0.2
+apertureShape=2
+astigmatism=0.3
+cornerSharpnessLoss=0.88
+fieldAspect=1.75
+fieldCurvature=0.68
+geometryFieldAmount=1
+lateralCABlue=-0.82
+lateralCARed=0.62
+longitudinalCA=0.16
+peripheralWarp=0.2
+radialSmear=0.16
+refractiveAnisotropy=0.52
+refractiveDispersion=0.18
+refractiveEdgeBias=0.68
+refractiveIrregularity=0.22
+refractiveRotation=4
+refractiveScale=2.3
+refractiveSeed=1958
+responseFieldFalloff=1.54
+responseFieldOnset=0.15
+tangentialSmear=0.55

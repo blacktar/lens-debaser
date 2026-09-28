@@ -1,0 +1,35 @@
+LensDebaserPreset=2
+# Family: Rehoused-Still-Glass
+# Strength: Caricature
+# Decentered rehoused stills-lens character; edges and neutral surfaces reveal stable asymmetry.
+astigmatism=0.34
+cleaningMarks=0.12
+coatingWear=0.2
+cornerSharpnessLoss=1.2
+damageSeed=13579
+distortionK1=0.026
+fieldCenterX=0.47
+fieldCenterY=0.53
+fieldCurvature=0.95
+frontHaze=0.12
+lateralCABlue=-0.98
+lateralCARed=0.78
+microContrast=-0.28
+refractiveAnisotropy=0.38
+refractiveDispersion=0.24
+refractiveEdgeBias=0.54
+refractiveIrregularity=0.34
+refractiveScale=1.9
+refractiveSeed=13579
+responseFieldFalloff=1.64
+responseFieldOnset=0.22
+transmissionB=0.84
+transmissionColorAmount=0.24
+transmissionG=0.95
+transmissionR=1
+variationAmount=1
+variationChromaticAsymmetry=1.35
+variationFieldAsymmetry=1
+variationPupilIrregularity=0.8
+variationSeed=13579
+variationTransmissionUnevenness=0.42

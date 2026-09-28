@@ -1,0 +1,11 @@
+LensDebaserPreset=2
+# Family: Demo-Focus-And-Field
+# Strength: Educational
+# Fine texture reveals a clear gradual loss of peripheral definition and directional detail.
+astigmatism=0.44
+cornerSharpnessLoss=0.92
+fieldCurvature=0.74
+radialSmear=0.32
+responseFieldFalloff=1.28
+responseFieldOnset=0.22
+tangentialSmear=0.54

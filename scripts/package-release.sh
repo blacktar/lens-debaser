@@ -15,17 +15,16 @@ cleanup() {
 trap cleanup EXIT
 
 make -C "$project_dir" ofx presets
-"$project_dir/scripts/build-user-guide.py"
 mkdir -p "$stage_dir/Presets" "$release_root"
 ditto "$project_dir/build/LensDebaser.ofx.bundle" "$stage_dir/LensDebaser.ofx.bundle"
 cp -R "$project_dir/presets/demonstrations" "$stage_dir/Presets/Demonstrations"
 cp -R "$project_dir/presets/cinematic-lenses" "$stage_dir/Presets/Cinematic Lenses"
 cp "$project_dir/presets/README.md" "$stage_dir/Presets/README.md"
-cp "$project_dir/docs/user-guide/Lens-Debaser-User-Guide.html" "$stage_dir/Lens Debaser User Guide.html"
 cp "$project_dir/scripts/install-release.sh" "$stage_dir/Install Lens Debaser.command"
 chmod +x "$stage_dir/Install Lens Debaser.command"
 
 cp "$project_dir/resources/Release-README.txt" "$stage_dir/README.txt"
+cp "$project_dir/resources/THIRD-PARTY-NOTICES.txt" "$stage_dir/THIRD-PARTY-NOTICES.txt"
 
 xattr -cr "$stage_dir/LensDebaser.ofx.bundle"
 codesign --force --deep --sign - "$stage_dir/LensDebaser.ofx.bundle"

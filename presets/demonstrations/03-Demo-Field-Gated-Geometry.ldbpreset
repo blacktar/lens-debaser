@@ -1,0 +1,15 @@
+LensDebaserPreset=2
+# Family: Demo-Field-Gated-Geometry
+# Strength: Educational
+# A grid exposes controlled distortion developing gradually outside a protected centre.
+distortionK1=0.016
+distortionK2=0.03
+fieldAspect=1
+fieldCenterX=0.5
+fieldCenterY=0.5
+geometryFieldAmount=0.82
+moustacheK3=0.038
+opticalCenterX=0.48
+opticalCenterY=0.52
+responseFieldFalloff=1.58
+responseFieldOnset=0.26

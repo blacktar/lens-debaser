@@ -1,0 +1,44 @@
+LensDebaserPreset=2
+# Family: Improvised-Projector-Lens
+# Strength: Medium
+# Improvised projection glass with an irregular five-sided pupil, colored glow and an off-axis focus island.
+apertureAspect=1.42
+apertureBladeCount=5
+apertureBladeCurvature=0.15
+apertureBokehSwirl=2.8
+aperturePupilShift=0.1
+apertureRadius=12
+apertureResponse=0.52
+apertureRimWeight=0.28
+apertureRotation=37
+apertureShape=1
+astigmatism=0.42
+cleaningMarks=0.14
+coatingWear=0.22
+cornerSharpnessLoss=0.95
+damageSeed=20020
+fieldCenterX=0.54
+fieldCenterY=0.46
+fieldCurvature=0.88
+frontHaze=0.18
+glareEnergy=0.55
+lateralCABlue=-0.96
+lateralCARed=0.72
+longitudinalCA=0.48
+refractiveAnisotropy=0.42
+refractiveDispersion=0.14
+refractiveEdgeBias=0.58
+refractiveIrregularity=0.24
+refractiveScale=2
+refractiveSeed=20020
+responseFieldFalloff=1.44
+responseFieldOnset=0.12
+sphericalHalo=0.8
+transmissionB=0.62
+transmissionColorAmount=0.28
+transmissionG=0.82
+transmissionR=1
+variationAmount=0.46
+variationPupilIrregularity=0.85
+variationSeed=20020
+variationTransmissionUnevenness=0.34

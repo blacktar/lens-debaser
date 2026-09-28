@@ -1,0 +1,26 @@
+LensDebaserPreset=2
+# Family: Neon-Radiance-Prime
+# Strength: Caricature
+# Clean blue highlight radiance; lamps, reflections and bright windows are required to drive it.
+anamorphicAberration=0.42
+anamorphicFlareAmount=2.5
+anamorphicFlareB=1
+anamorphicFlareG=0.38
+anamorphicFlareR=0.12
+anamorphicFlareRadius=185
+anamorphicFlareThreshold=0.1
+bloomEnergy=0.7
+bloomRadius=40
+bloomThreshold=0.28
+glareB=1
+glareColorAmount=0.9
+glareEnergy=0.9
+glareG=0.55
+glareR=0.28
+glareRadius=58
+transmissionB=1
+transmissionColorAmount=0.14
+transmissionContrast=0.06
+transmissionG=0.97
+transmissionHighlightSoftness=0.36
+transmissionR=0.9

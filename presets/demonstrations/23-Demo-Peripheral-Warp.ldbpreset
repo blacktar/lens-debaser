@@ -1,0 +1,8 @@
+LensDebaserPreset=2
+# Family: Demo-Peripheral-Warp
+# Strength: Educational
+# A grid exposes clear nonuniform edge bending while preserving the centre.
+geometryFieldAmount=0.82
+peripheralWarp=0.4
+responseFieldFalloff=1.58
+responseFieldOnset=0.24

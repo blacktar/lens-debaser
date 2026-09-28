@@ -1,8 +1,0 @@
-LensDebaserPreset=2
-# Family: Demo-Geometry
-# Strength: Caricature
-distortionK1=0.08
-distortionK2=0.18
-moustacheK3=0.22
-opticalCenterX=0.47
-opticalCenterY=0.53

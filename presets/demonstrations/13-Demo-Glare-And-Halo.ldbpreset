@@ -1,0 +1,11 @@
+LensDebaserPreset=2
+# Family: Demo-Glare-And-Halo
+# Strength: Educational
+# Bright practicals and windows reveal warm glare and a soft spherical halo.
+glareB=0.46
+glareColorAmount=0.34
+glareEnergy=0.58
+glareG=0.72
+glareR=1
+glareRadius=74
+sphericalHalo=0.58

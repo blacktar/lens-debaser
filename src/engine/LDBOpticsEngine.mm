@@ -56,6 +56,8 @@ struct LDBOpticsEngine::Impl {
   id<MTLComputePipelineState> downsamplePipeline = nil;
   id<MTLComputePipelineState> horizontalBlurPipeline = nil;
   id<MTLComputePipelineState> verticalBlurPipeline = nil;
+  id<MTLComputePipelineState> flareReconstructionPipeline = nil;
+  id<MTLComputePipelineState> flareSourceDetectionPipeline = nil;
   id<MTLComputePipelineState> apertureBlurPipeline = nil;
   id<MTLComputePipelineState> compositePipeline = nil;
   id<MTLComputePipelineState> encodePipeline = nil;
@@ -100,6 +102,24 @@ static id<MTLComputePipelineState> makePipeline(id<MTLDevice> device,
     errorText = error ? error.localizedDescription.UTF8String
                       : "Unable to create Metal pipeline";
   return pipeline;
+}
+
+static MTLSize threadgroupSizeForPipeline(id<MTLComputePipelineState> pipeline) {
+  // Match the scheduled SIMD width and use the largest legal two-dimensional
+  // group for this particular kernel. A fixed 16x16 group underfilled the
+  // 32-wide SIMD groups used by Apple Silicon and ignored the fact that heavy
+  // and light kernels can report different occupancy limits.
+  const NSUInteger width = std::max<NSUInteger>(1, pipeline.threadExecutionWidth);
+  const NSUInteger height = std::max<NSUInteger>(
+      1, pipeline.maxTotalThreadsPerThreadgroup / width);
+  return MTLSizeMake(width, height, 1);
+}
+
+static void dispatchImage(id<MTLComputeCommandEncoder> encoder,
+                          id<MTLComputePipelineState> pipeline,
+                          NSUInteger width, NSUInteger height) {
+  [encoder dispatchThreads:MTLSizeMake(width, height, 1)
+      threadsPerThreadgroup:threadgroupSizeForPipeline(pipeline)];
 }
 
 static void applyCaptureAndLookMappings(LDBOpticsParameters &p) {
@@ -255,6 +275,10 @@ LDBOpticsEngine::LDBOpticsEngine(id<MTLDevice> device, NSURL *metallibURL)
       makePipeline(device, library, @"ldbBlurHorizontal", impl_->error);
   impl_->verticalBlurPipeline =
       makePipeline(device, library, @"ldbBlurVertical", impl_->error);
+  impl_->flareReconstructionPipeline =
+      makePipeline(device, library, @"ldbReconstructAnamorphicFlare", impl_->error);
+  impl_->flareSourceDetectionPipeline =
+      makePipeline(device, library, @"ldbDetectFlareSources", impl_->error);
   impl_->apertureBlurPipeline =
       makePipeline(device, library, @"ldbBlurAperture", impl_->error);
   impl_->compositePipeline =
@@ -273,7 +297,9 @@ bool LDBOpticsEngine::valid() const {
   return impl_->decodePipeline && impl_->opticsPipeline &&
          impl_->packDepthPipeline &&
          impl_->downsamplePipeline && impl_->horizontalBlurPipeline &&
-         impl_->verticalBlurPipeline && impl_->apertureBlurPipeline &&
+         impl_->verticalBlurPipeline && impl_->flareReconstructionPipeline &&
+         impl_->flareSourceDetectionPipeline &&
+         impl_->apertureBlurPipeline &&
          impl_->compositePipeline && impl_->encodePipeline &&
          impl_->zeroScatterBuffer;
 }
@@ -306,9 +332,6 @@ void LDBOpticsEngine::encode(id<MTLCommandBuffer> commandBuffer,
     opticalSource = scratch(byteCount);
     if (!opticalSource)
       throw std::runtime_error("Unable to allocate depth-carrier buffer");
-    MTLSize depthThreads = MTLSizeMake(16, 16, 1);
-    MTLSize depthGroups =
-        MTLSizeMake((width + 15) / 16, (height + 15) / 16, 1);
     id<MTLComputeCommandEncoder> depthEncoder =
         [commandBuffer computeCommandEncoder];
     [depthEncoder setComputePipelineState:impl_->packDepthPipeline];
@@ -316,8 +339,7 @@ void LDBOpticsEngine::encode(id<MTLCommandBuffer> commandBuffer,
     [depthEncoder setBuffer:depthSource offset:0 atIndex:1];
     [depthEncoder setBuffer:opticalSource offset:0 atIndex:2];
     [depthEncoder setBytes:&p length:sizeof(p) atIndex:3];
-    [depthEncoder dispatchThreadgroups:depthGroups
-                 threadsPerThreadgroup:depthThreads];
+    dispatchImage(depthEncoder, impl_->packDepthPipeline, width, height);
     [depthEncoder endEncoding];
     // All downstream depth sampling reads the packed alpha carrier.
     p.depthChannel = 4u;
@@ -340,6 +362,8 @@ void LDBOpticsEngine::encode(id<MTLCommandBuffer> commandBuffer,
   }
   const bool noOpticalEffect =
       p.distortionK1 == 0 && p.distortionK2 == 0 && p.moustacheK3 == 0 &&
+      p.geometryFieldAmount == 0 && p.peripheralStretch == 0 &&
+      p.peripheralWarp == 0 &&
       p.lateralCARed == 0 && p.lateralCABlue == 0 && p.longitudinalCA == 0 &&
       p.vignetteNatural == 0 && p.vignetteOptical == 0 &&
       p.vignetteMechanical == 0 && p.cornerSharpnessLoss == 0 &&
@@ -354,7 +378,11 @@ void LDBOpticsEngine::encode(id<MTLCommandBuffer> commandBuffer,
       p.transmissionDensity == 0.0f && p.transmissionContrast == 0.0f &&
       p.transmissionHighlightSoftness == 0.0f &&
       p.anamorphicDistortion == 0.0f && p.anamorphicAberration == 0.0f &&
-      p.anamorphicFlareAmount == 0.0f && p.variationAmount == 0.0f;
+      p.anamorphicFlareAmount == 0.0f && p.variationAmount == 0.0f &&
+      p.frontHaze == 0.0f && p.cleaningMarks == 0.0f &&
+      p.scratchAmount == 0.0f && p.coatingWear == 0.0f &&
+      p.internalDirtAmount == 0.0f &&
+      p.refractiveIrregularity == 0.0f && p.prismAmount == 0.0f;
   bool diagnosticActive = (p.processingFlags & LDBDiagnosticMask) != 0;
   if (noOpticalEffect && !diagnosticActive) {
     copySource();
@@ -365,7 +393,13 @@ void LDBOpticsEngine::encode(id<MTLCommandBuffer> commandBuffer,
   // per Metal device so those graphs cannot multiply unified-memory pressure.
   LDBRenderGateLease renderLease(impl_->renderGate);
   bool linearAP1Input = p.workingColorSpace == LDBWorkingColorSpaceACEScg;
-  bool scatterActive[4] = {p.bloomEnergy > 0.0f, p.glareEnergy > 0.0f,
+  const bool wearScatterActive = p.frontHaze > 0.0f || p.cleaningMarks > 0.0f ||
+                                 p.scratchAmount > 0.0f || p.coatingWear > 0.0f;
+  const bool internalScatterActive =
+      p.internalDirtAmount > 0.0f && p.internalDirtScatter > 0.0f;
+  const bool opticalScatterActive = wearScatterActive || internalScatterActive;
+  bool scatterActive[4] = {p.bloomEnergy > 0.0f || opticalScatterActive,
+                           p.glareEnergy > 0.0f,
                            p.sphericalHalo > 0.0f,
                            p.anamorphicFlareAmount > 0.0f};
   bool apertureActive = p.apertureResponse > 0.0f && p.apertureRadius > 0.0f;
@@ -374,7 +408,6 @@ void LDBOpticsEngine::encode(id<MTLCommandBuffer> commandBuffer,
   id<MTLBuffer> linearSource =
       linearAP1Input ? opticalSource : scratch(byteCount);
   id<MTLBuffer> direct = scratch(byteCount);
-  id<MTLBuffer> highlights = impl_->zeroScatterBuffer;
   auto scatterScale = [](float radius) -> uint32_t {
     if (radius > 48.0f)
       return 8;
@@ -405,16 +438,38 @@ void LDBOpticsEngine::encode(id<MTLCommandBuffer> commandBuffer,
       break;
     memoryScale *= 2;
   }
-  float bloomRadiusX = p.bloomRadius * std::max(1.0f, p.bloomHorizontalStretch);
+  const float wearRadius = wearScatterActive
+      ? 8.0f + std::clamp(p.damageScale, .25f, 4.0f) * 8.0f
+      : 0.0f;
+  const float internalRadius = internalScatterActive
+      ? 12.0f + std::clamp(p.internalDirtScatter, 0.0f, 2.0f) * 18.0f
+      : 0.0f;
+  const float effectiveBloomRadius =
+      std::max({p.bloomRadius, wearRadius, internalRadius});
+  float bloomRadiusX = effectiveBloomRadius *
+                       std::max(1.0f, p.bloomHorizontalStretch);
   uint32_t bloomScale = std::max(
       memoryScale,
-      scatterScale(std::max(bloomRadiusX, p.bloomRadius)));
+      scatterScale(std::max(bloomRadiusX, effectiveBloomRadius)));
+  // Internal-element diffusion is often judged from very small practicals.
+  // Radius-based quarter-resolution processing turned those weak sources into
+  // visible bilinear blocks, while full-resolution reconstruction made the
+  // 1080p path roughly five times slower.  Cap this isolated family at 2x:
+  // enough samples to remove the former 4x lattice without sacrificing the
+  // responsive operating target. The aggregate memory guard may still select
+  // a coarser scale for very large frames or concurrent scatter families.
+  if (internalScatterActive && p.bloomEnergy <= 0.0f && !wearScatterActive)
+    bloomScale = std::max(memoryScale, 2u);
   uint32_t glareScale =
       std::max(memoryScale, scatterScale(p.glareRadius));
   float haloRadius = 2.0f + std::clamp(p.sphericalHalo, 0.0f, 2.0f) * 16.0f;
   uint32_t haloScale =
       std::max(memoryScale, scatterScale(haloRadius));
-  float flareRadius = std::clamp(p.anamorphicFlareRadius, 0.0f, 400.0f);
+  // Long anamorphic streaks can span most of a 2K/4K gate.  The former
+  // 400-pixel ceiling forced physically long flares into a short glow patch.
+  // Scatter processing is already downsampled for radii above 48 pixels, so
+  // extending the optical reach does not allocate a larger working image.
+  float flareRadius = std::clamp(p.anamorphicFlareRadius, 0.0f, 2400.0f);
   uint32_t flareScale =
       std::max(memoryScale, scatterScale(flareRadius));
   uint32_t bloomWidth =
@@ -444,9 +499,11 @@ void LDBOpticsEngine::encode(id<MTLCommandBuffer> commandBuffer,
   LDBScatterParameters scatterParameters[4] = {
       {{float(bloomWidth), float(bloomHeight)},
        bloomRadiusX / bloomScale,
-       p.bloomRadius / bloomScale,
+       effectiveBloomRadius / bloomScale,
        bloomScale,
-       p.bloomThreshold,
+       opticalScatterActive && p.bloomEnergy <= 0.0f
+           ? (internalScatterActive ? .18f : 1.5f)
+           : p.bloomThreshold,
        1,
        0},
       {{float(glareWidth), float(glareHeight)},
@@ -465,11 +522,13 @@ void LDBOpticsEngine::encode(id<MTLCommandBuffer> commandBuffer,
        0},
       {{float(flareWidth), float(flareHeight)},
        flareRadius / flareScale,
-       std::max(1.0f, flareRadius * .018f) / flareScale,
+       std::max(1.0f, flareRadius * .018f *
+                          std::clamp(p.anamorphicFlareThickness, .1f, 4.0f)) /
+           flareScale,
        flareScale,
        std::clamp(p.anamorphicFlareThreshold, 0.0f, 16.0f),
-       1,
-       0}};
+       3,
+       3}};
   NSUInteger bloomBytes =
       NSUInteger(bloomWidth) * NSUInteger(bloomHeight) * sizeof(simd_float4);
   NSUInteger glareBytes =
@@ -502,6 +561,12 @@ void LDBOpticsEngine::encode(id<MTLCommandBuffer> commandBuffer,
       scatterActive[3] ? scratch(flareBytes) : impl_->zeroScatterBuffer;
   id<MTLBuffer> flareScattered =
       scatterActive[3] ? scratch(flareBytes) : impl_->zeroScatterBuffer;
+  id<MTLBuffer> flareReconstructed =
+      scatterActive[3] ? scratch(flareBytes) : impl_->zeroScatterBuffer;
+  constexpr uint32_t maximumFlareSources = 4u;
+  id<MTLBuffer> flareSources = scatterActive[3]
+      ? scratch(sizeof(LDBFlareSource) * maximumFlareSources)
+      : impl_->zeroScatterBuffer;
   id<MTLBuffer> apertureTemporary1 =
       apertureActive ? scratch(byteCount) : impl_->zeroScatterBuffer;
   id<MTLBuffer> apertureTemporary2 =
@@ -512,16 +577,14 @@ void LDBOpticsEngine::encode(id<MTLCommandBuffer> commandBuffer,
       apertureActive ? apertureTemporary1 : direct;
   id<MTLBuffer> linearResult =
       linearAP1Input ? destination : scratch(byteCount);
-  if (!linearSource || !direct || !highlights || !bloomSource ||
+  if (!linearSource || !direct || !bloomSource ||
       !bloomTemporary || !bloomScattered || !glareSource || !glareTemporary ||
       !glareScattered || !haloSource || !haloTemporary || !haloScattered ||
-      !flareSource || !flareTemporary || !flareScattered ||
+      !flareSource || !flareTemporary || !flareScattered || !flareReconstructed ||
+      !flareSources ||
       !apertureTemporary1 || !apertureTemporary2 || !apertureScattered ||
       !linearResult)
     throw std::runtime_error("Unable to allocate Metal scratch buffers");
-
-  MTLSize threads = MTLSizeMake(16, 16, 1);
-  MTLSize groups = MTLSizeMake((width + 15) / 16, (height + 15) / 16, 1);
 
   id<MTLComputeCommandEncoder> encoder = nil;
   if (!linearAP1Input) {
@@ -530,7 +593,7 @@ void LDBOpticsEngine::encode(id<MTLCommandBuffer> commandBuffer,
     [encoder setBuffer:opticalSource offset:0 atIndex:0];
     [encoder setBuffer:linearSource offset:0 atIndex:1];
     [encoder setBytes:&p length:sizeof(p) atIndex:2];
-    [encoder dispatchThreadgroups:groups threadsPerThreadgroup:threads];
+    dispatchImage(encoder, impl_->decodePipeline, width, height);
     [encoder endEncoding];
   }
 
@@ -538,9 +601,8 @@ void LDBOpticsEngine::encode(id<MTLCommandBuffer> commandBuffer,
   [encoder setComputePipelineState:impl_->opticsPipeline];
   [encoder setBuffer:linearSource offset:0 atIndex:0];
   [encoder setBuffer:direct offset:0 atIndex:1];
-  [encoder setBuffer:highlights offset:0 atIndex:2];
-  [encoder setBytes:&p length:sizeof(p) atIndex:3];
-  [encoder dispatchThreadgroups:groups threadsPerThreadgroup:threads];
+  [encoder setBytes:&p length:sizeof(p) atIndex:2];
+  dispatchImage(encoder, impl_->opticsPipeline, width, height);
   [encoder endEncoding];
 
   for (uint32_t scatterKind = 0; scatterKind < 4; ++scatterKind) {
@@ -565,9 +627,8 @@ void LDBOpticsEngine::encode(id<MTLCommandBuffer> commandBuffer,
             : (scatterKind == 1
                    ? glareScattered
                    : (scatterKind == 2 ? haloScattered : flareScattered));
-    MTLSize scatterGroups =
-        MTLSizeMake((uint32_t(scatter.imageSize.x) + 15) / 16,
-                    (uint32_t(scatter.imageSize.y) + 15) / 16, 1);
+    const uint32_t scatterWidth = uint32_t(scatter.imageSize.x);
+    const uint32_t scatterHeight = uint32_t(scatter.imageSize.y);
     encoder = [commandBuffer computeCommandEncoder];
     [encoder setComputePipelineState:impl_->downsamplePipeline];
     // Scatter from the geometrically processed direct image. Sampling the
@@ -577,7 +638,8 @@ void LDBOpticsEngine::encode(id<MTLCommandBuffer> commandBuffer,
     [encoder setBuffer:scatterSource offset:0 atIndex:1];
     [encoder setBytes:&p length:sizeof(p) atIndex:2];
     [encoder setBytes:&scatter length:sizeof(scatter) atIndex:3];
-    [encoder dispatchThreadgroups:scatterGroups threadsPerThreadgroup:threads];
+    dispatchImage(encoder, impl_->downsamplePipeline,
+                  scatterWidth, scatterHeight);
     [encoder endEncoding];
 
     encoder = [commandBuffer computeCommandEncoder];
@@ -586,7 +648,8 @@ void LDBOpticsEngine::encode(id<MTLCommandBuffer> commandBuffer,
     [encoder setBuffer:temporary offset:0 atIndex:1];
     [encoder setBytes:&scatter length:sizeof(scatter) atIndex:2];
     [encoder setBytes:&p length:sizeof(p) atIndex:3];
-    [encoder dispatchThreadgroups:scatterGroups threadsPerThreadgroup:threads];
+    dispatchImage(encoder, impl_->horizontalBlurPipeline,
+                  scatterWidth, scatterHeight);
     [encoder endEncoding];
 
     encoder = [commandBuffer computeCommandEncoder];
@@ -595,7 +658,36 @@ void LDBOpticsEngine::encode(id<MTLCommandBuffer> commandBuffer,
     [encoder setBuffer:scattered offset:0 atIndex:1];
     [encoder setBytes:&scatter length:sizeof(scatter) atIndex:2];
     [encoder setBytes:&p length:sizeof(p) atIndex:3];
-    [encoder dispatchThreadgroups:scatterGroups threadsPerThreadgroup:threads];
+    dispatchImage(encoder, impl_->verticalBlurPipeline,
+                  scatterWidth, scatterHeight);
+    [encoder endEncoding];
+  }
+
+  if (scatterActive[3]) {
+    const LDBScatterParameters &flareScatter = scatterParameters[3];
+    const uint32_t flareWidth = uint32_t(flareScatter.imageSize.x);
+    const uint32_t flareHeight = uint32_t(flareScatter.imageSize.y);
+    // A tiny deterministic reduction identifies coherent practical sources.
+    // The reduced flare buffer is used only for detection; shaped elements are
+    // evaluated analytically at full output resolution in the composite pass.
+    encoder = [commandBuffer computeCommandEncoder];
+    [encoder setComputePipelineState:impl_->flareSourceDetectionPipeline];
+    [encoder setBuffer:flareSource offset:0 atIndex:0];
+    [encoder setBuffer:flareSources offset:0 atIndex:1];
+    [encoder setBytes:&flareScatter length:sizeof(flareScatter) atIndex:2];
+    [encoder dispatchThreads:MTLSizeMake(1, 1, 1)
+       threadsPerThreadgroup:MTLSizeMake(1, 1, 1)];
+    [encoder endEncoding];
+
+    encoder = [commandBuffer computeCommandEncoder];
+    [encoder setComputePipelineState:impl_->flareReconstructionPipeline];
+    [encoder setBuffer:flareSource offset:0 atIndex:0];
+    [encoder setBuffer:flareScattered offset:0 atIndex:1];
+    [encoder setBuffer:flareReconstructed offset:0 atIndex:2];
+    [encoder setBytes:&p length:sizeof(p) atIndex:3];
+    [encoder setBytes:&flareScatter length:sizeof(flareScatter) atIndex:4];
+    dispatchImage(encoder, impl_->flareReconstructionPipeline,
+                  flareWidth, flareHeight);
     [encoder endEncoding];
   }
 
@@ -622,7 +714,7 @@ void LDBOpticsEngine::encode(id<MTLCommandBuffer> commandBuffer,
       [encoder setBuffer:passDestinations[pass] offset:0 atIndex:1];
       [encoder setBytes:&aperturePass length:sizeof(aperturePass) atIndex:2];
       [encoder setBytes:&p length:sizeof(p) atIndex:3];
-      [encoder dispatchThreadgroups:groups threadsPerThreadgroup:threads];
+      dispatchImage(encoder, impl_->apertureBlurPipeline, width, height);
       [encoder endEncoding];
     }
   }
@@ -635,7 +727,7 @@ void LDBOpticsEngine::encode(id<MTLCommandBuffer> commandBuffer,
   [encoder setBuffer:glareScattered offset:0 atIndex:3];
   [encoder setBuffer:haloScattered offset:0 atIndex:4];
   [encoder setBuffer:apertureScattered offset:0 atIndex:5];
-  [encoder setBuffer:flareScattered offset:0 atIndex:6];
+  [encoder setBuffer:flareReconstructed offset:0 atIndex:6];
   [encoder setBuffer:linearResult offset:0 atIndex:7];
   [encoder setBytes:&p length:sizeof(p) atIndex:8];
   [encoder setBytes:&scatterParameters[0]
@@ -650,7 +742,8 @@ void LDBOpticsEngine::encode(id<MTLCommandBuffer> commandBuffer,
   [encoder setBytes:&scatterParameters[3]
              length:sizeof(LDBScatterParameters)
             atIndex:12];
-  [encoder dispatchThreadgroups:groups threadsPerThreadgroup:threads];
+  [encoder setBuffer:flareSources offset:0 atIndex:13];
+  dispatchImage(encoder, impl_->compositePipeline, width, height);
   [encoder endEncoding];
 
   if (!linearAP1Input) {
@@ -660,7 +753,7 @@ void LDBOpticsEngine::encode(id<MTLCommandBuffer> commandBuffer,
     [encoder setBuffer:linearResult offset:0 atIndex:1];
     [encoder setBuffer:destination offset:0 atIndex:2];
     [encoder setBytes:&p length:sizeof(p) atIndex:3];
-    [encoder dispatchThreadgroups:groups threadsPerThreadgroup:threads];
+    dispatchImage(encoder, impl_->encodePipeline, width, height);
     [encoder endEncoding];
   }
 

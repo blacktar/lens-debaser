@@ -1,0 +1,23 @@
+LensDebaserPreset=2
+# Family: Tilted-Freelens
+# Strength: Caricature
+# A deliberately tilted, decentered focus plane; faces and texture reveal its diagonal island of focus.
+astigmatism=1.45
+cornerSharpnessLoss=1.85
+fieldAspect=2.35
+fieldCenterX=0.38
+fieldCenterY=0.59
+fieldCurvature=1.7
+fieldRotation=-31
+lateralCABlue=-2.8
+lateralCARed=2.2
+longitudinalCA=0.68
+radialSmear=0.48
+responseFieldFalloff=1.4
+responseFieldOnset=0.13
+sphericalHalo=0.35
+tangentialSmear=1.35
+variationAmount=0.82
+variationChromaticAsymmetry=0.88
+variationFieldAsymmetry=1
+variationSeed=19019

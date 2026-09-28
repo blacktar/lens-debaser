@@ -18,12 +18,17 @@
 /outputs/
 /work/
 /docs/user-guide/guide-*-preview.webp
+/docs/user-guide/
 *.tif
 *.tiff
 *.png
 !resources/ldb.png
+!resources/ldb-project-logo.png
 !references/*.tif
 !references/*.tiff
+!inputs/redistributable/*.tif
+!inputs/redistributable/*.tiff
+!inputs/redistributable/*.png
 
 # User presets and host diagnostics
 *.ldbpreset
@@ -35,9 +40,12 @@
 
 # External colour and camera assets
 *.cube
+!inputs/redistributable/*.cube
 *.mov
 *.mp4
 *.mxf
 *.braw
 *.ari
 *.arx
+/inputs/Reference_Lenses/
+/LDB_HANDOFF.md

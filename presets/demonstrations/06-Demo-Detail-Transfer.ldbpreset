@@ -1,0 +1,10 @@
+LensDebaserPreset=2
+# Family: Demo-Detail-Transfer
+# Strength: Educational
+# Fabric, foliage and resolution charts expose a visible directional detail response.
+detailEdgeFalloff=0.76
+detailScale=2
+fineDetail=-0.34
+microContrast=-0.5
+sagittalDetail=0.38
+tangentialDetail=-0.34

@@ -1,0 +1,13 @@
+LensDebaserPreset=2
+# Family: Demo-Anamorphic
+# Strength: Educational
+# Lines reveal cylindrical geometry while strong highlights reveal a controlled blue streak.
+anamorphicAberration=0.76
+anamorphicDistortion=0.034
+anamorphicFlareAmount=0.92
+anamorphicFlareB=1
+anamorphicFlareG=0.46
+anamorphicFlareR=0.18
+anamorphicFlareRadius=240
+anamorphicFlareThreshold=0.42
+anamorphicSqueeze=2

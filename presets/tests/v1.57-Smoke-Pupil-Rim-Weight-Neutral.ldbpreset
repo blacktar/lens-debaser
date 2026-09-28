@@ -1,0 +1,14 @@
+LensDebaserPreset=2
+# Family: ABI v16 Smoke
+# Strength: Pupil Rim Weight Neutral
+# Neutral comparison for the two Rim Weight extremes on the same isolated pupil chart.
+apertureAspect=1
+apertureBokehSwirl=0
+apertureCatEye=0
+apertureRadius=24
+apertureResponse=1
+apertureRimWeight=0
+apertureShape=0
+apertureSoftness=0.12
+responseFieldFalloff=0.18
+responseFieldOnset=0

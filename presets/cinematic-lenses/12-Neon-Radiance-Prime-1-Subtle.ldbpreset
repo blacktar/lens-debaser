@@ -1,0 +1,24 @@
+LensDebaserPreset=2
+# Family: Neon-Radiance-Prime
+# Strength: Subtle
+# Clean blue highlight radiance; lamps, reflections and bright windows are required to drive it.
+anamorphicAberration=0.1
+anamorphicFlareAmount=0.55
+anamorphicFlareB=1
+anamorphicFlareG=0.38
+anamorphicFlareR=0.12
+anamorphicFlareRadius=105
+anamorphicFlareThreshold=0.62
+bloomEnergy=0.08
+bloomRadius=24
+bloomThreshold=0.66
+glareB=1
+glareColorAmount=0.14
+glareEnergy=0.1
+glareG=0.55
+glareR=0.28
+glareRadius=34
+transmissionB=1
+transmissionColorAmount=0.04
+transmissionG=0.97
+transmissionR=0.9

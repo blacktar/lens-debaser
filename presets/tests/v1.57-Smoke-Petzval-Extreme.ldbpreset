@@ -1,0 +1,18 @@
+LensDebaserPreset=2
+# Family: ABI v16 Smoke
+# Strength: Petzval Extreme
+# Use a portrait or textured centre plus peripheral point highlights. This creative extreme should retain a readable central island and smooth edge transition.
+apertureAspect=1.18
+apertureBladeCount=8
+apertureBladeCurvature=0.66
+apertureBokehSwirl=6
+apertureCatEye=0.88
+apertureRadius=16
+apertureResponse=0.78
+apertureShape=1
+astigmatism=0.65
+cornerSharpnessLoss=1.32
+fieldCurvature=1.35
+responseFieldFalloff=1.1
+responseFieldOnset=0.12
+tangentialSmear=0.58

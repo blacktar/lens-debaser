@@ -1,0 +1,9 @@
+LensDebaserPreset=2
+# Family: ABI v16 Smoke
+# Strength: Prism Medium
+# Use a high-contrast chart and real footage. The prism edge should be obvious but continuous, without duplicated tiles, banding or a hard boundary.
+prismAmount=0.9
+prismDirection=16
+prismDispersion=0.75
+prismEdgeBias=0.52
+prismSoftness=0.32

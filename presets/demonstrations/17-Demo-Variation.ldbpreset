@@ -1,0 +1,16 @@
+LensDebaserPreset=2
+# Family: Demo-Variation
+# Strength: Educational
+# Compatible field, pupil, chromatic and transmission responses are enabled at clearly visible strengths; change Seed.
+apertureRadius=9
+apertureResponse=0.28
+fieldCurvature=0.5
+lateralCABlue=-0.94
+lateralCARed=0.76
+transmissionColorAmount=0.26
+variationAmount=0.6
+variationChromaticAsymmetry=0.55
+variationFieldAsymmetry=0.46
+variationPupilIrregularity=0.42
+variationSeed=27183
+variationTransmissionUnevenness=0.4

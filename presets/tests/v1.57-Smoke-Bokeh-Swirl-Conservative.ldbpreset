@@ -1,0 +1,12 @@
+LensDebaserPreset=2
+# Family: ABI v16 Smoke
+# Strength: Bokeh Swirl Conservative
+# Use the isolated point-highlight chart. A restrained tangential pupil rotation should emerge smoothly outside the protected centre.
+apertureBokehSwirl=1.2
+apertureCatEye=0.22
+apertureRadius=14
+apertureResponse=1
+apertureShape=0
+apertureSoftness=0.16
+responseFieldFalloff=0.72
+responseFieldOnset=0.16

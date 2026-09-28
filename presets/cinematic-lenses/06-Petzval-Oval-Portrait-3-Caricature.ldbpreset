@@ -1,0 +1,30 @@
+LensDebaserPreset=2
+# Family: Petzval-Oval-Portrait
+# Strength: Caricature
+# Warm asymmetric historical portrait glass; points and textured edges show its shaped pupil.
+apertureAspect=1.22
+apertureBladeCount=8
+apertureBladeCurvature=0.68
+apertureBokehSwirl=6
+apertureCatEye=0.88
+apertureRadius=16
+apertureResponse=0.8
+apertureShape=1
+astigmatism=0.95
+cornerSharpnessLoss=1.22
+fieldCenterX=0.47
+fieldCenterY=0.52
+fieldCurvature=1.2
+glareEnergy=0.28
+longitudinalCA=0.5
+responseFieldFalloff=1.52
+responseFieldOnset=0.16
+tangentialSmear=0.88
+transmissionB=0.72
+transmissionColorAmount=0.32
+transmissionG=0.9
+transmissionR=1
+variationAmount=0.5
+variationFieldAsymmetry=0.44
+variationPupilIrregularity=0.34
+variationSeed=1860

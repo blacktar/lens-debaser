@@ -1,0 +1,8 @@
+LensDebaserPreset=2
+# Family: Demo-Image-Circle
+# Strength: Educational
+# Mechanical Vignette is enabled so Size, Aspect and Softness clearly shape coverage without producing a hard tunnel.
+imageCircleAspect=1.42
+imageCircleSize=0.9
+imageCircleSoftness=0.26
+vignetteMechanical=0.62

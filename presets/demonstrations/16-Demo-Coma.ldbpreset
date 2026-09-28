@@ -1,0 +1,7 @@
+LensDebaserPreset=2
+# Family: Demo-Coma
+# Strength: Educational
+# Isolated bright points away from Field Center reveal a clear controlled asymmetric coma tail.
+coma=0.82
+comaThreshold=0.4
+sphericalHalo=0.16

@@ -1,0 +1,12 @@
+LensDebaserPreset=2
+# Family: Demo-Front-Element-Wear
+# Strength: Educational
+# Highlights reveal cleaning and coating wear while ordinary detail retains useful contrast.
+cleaningMarks=0.44
+coatingWear=0.38
+coatingWearScale=1.65
+damageScale=1.55
+damageSeed=31415
+frontHaze=0.4
+scratchAmount=0.22
+scratchDirection=28

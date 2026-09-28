@@ -1,0 +1,22 @@
+LensDebaserPreset=2
+# Family: Golden-Portrait-Prime
+# Strength: Medium
+# Warm dimensional separation; texture and bright edges reveal its field and glare character.
+astigmatism=0.08
+cornerSharpnessLoss=0.58
+fieldCurvature=0.34
+fineDetail=0.09
+glareEnergy=0.18
+glareRadius=40
+lateralCABlue=-0.3
+lateralCARed=0.24
+longitudinalCA=0.1
+microContrast=0.25
+responseFieldFalloff=1.62
+responseFieldOnset=0.28
+sphericalHalo=0.07
+transmissionB=0.86
+transmissionColorAmount=0.28
+transmissionG=0.96
+transmissionHighlightSoftness=0.22
+transmissionR=1

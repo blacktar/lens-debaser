@@ -5,15 +5,17 @@
 using namespace metal;
 typedef float2 LDBFloat2;
 typedef float3 LDBFloat3;
+typedef float4 LDBFloat4;
 #else
 #include <simd/simd.h>
 #include <cstddef>
 #include <type_traits>
 typedef simd_float2 LDBFloat2;
 typedef simd_float3 LDBFloat3;
+typedef simd_float4 LDBFloat4;
 #endif
 
-enum : uint32_t { LDBOpticsParameterABIVersion = 4 };
+enum : uint32_t { LDBOpticsParameterABIVersion = 16 };
 
 enum LDBWorkingColorSpace : uint32_t {
     LDBWorkingColorSpaceACEScg = 0,
@@ -101,13 +103,13 @@ struct alignas(16) LDBOpticsParameters {
 
     float apertureCatEye;
     float apertureAspect;
-    uint32_t reserved2;
-    uint32_t reserved3;
+    float aperturePupilShift;
+    float aperturePupilClip;
 
     float longitudinalCA;
     float longitudinalCARadius;
     float depthFocus;
-    uint32_t reserved5;
+    float apertureRimWeight;
 
     LDBFloat3 nearFocusColor;
     float reserved6;
@@ -177,6 +179,100 @@ struct alignas(16) LDBOpticsParameters {
     float lookInfluence;
     float lookAnamorphicBias;
     float lookVintageCaricatureBias;
+
+    // ABI v5: spatially varying pupil response. Zero retains the established
+    // uniform aperture response; one progressively introduces the configured
+    // off-axis field envelope and tangential pupil deformation.
+    float apertureBokehSwirl;
+    // Geometry extension using formerly reserved ABI-v5 slots. Existing
+    // offsets and total structure size remain unchanged.
+    float geometryFieldAmount;
+    float peripheralStretch;
+    float peripheralWarp;
+
+    // ABI v6: deterministic, lens-space front-element wear. These control
+    // illumination-responsive scatter and transmission, never an overlay.
+    float frontHaze;
+    float cleaningMarks;
+    float scratchAmount;
+    float scratchDirection;
+
+    float damageScale;
+    float coatingWear;
+    float coatingWearScale;
+    uint32_t damageSeed;
+
+    // ABI v7: low-cost stable refractive-index/thickness irregularity.
+    float refractiveIrregularity;
+    float refractiveScale;
+    float refractiveEdgeBias;
+    float refractiveAnisotropy;
+
+    float refractiveRotation;
+    float refractiveDispersion;
+    uint32_t refractiveSeed;
+    uint32_t reservedV7_0;
+
+    // ABI v8: -1 onset links chromatic response to the shared Field envelope.
+    // Nonnegative onset uses an independent radial chromatic envelope.
+    float chromaticFieldOnset;
+    float chromaticFieldFalloff;
+    float reservedV8_0;
+    float reservedV8_1;
+
+    // ABI v16: coherent directional prism refraction. These reuse the five
+    // slots retained from an unreleased front-dirt experiment, preserving the
+    // established 784-byte layout. Zero amount is exactly neutral.
+    float prismAmount;
+    float prismDirection;
+    float prismDispersion;
+    float prismEdgeBias;
+
+    float prismSoftness;
+    float internalDirtAmount;
+    float internalDirtScale;
+    float internalDirtSmear;
+
+    float internalDirtScatter;
+    uint32_t internalDirtSeed;
+    float internalDirtSoftness;
+    float internalDirtComplexity;
+
+    // ABI v10: structured anamorphic flare. These refine the existing flare
+    // buffer in the composite stage, so legacy presets remain bit-identical
+    // while new looks can add a hot core, asymmetric tail and optical ghost.
+    LDBFloat3 anamorphicFlareGhostColor;
+    float anamorphicFlareGhostAmount;
+
+    float anamorphicFlareCoreAmount;
+    float anamorphicFlareAsymmetry;
+    float anamorphicFlareGhostPosition;
+    float anamorphicFlareGhostScale;
+
+    // ABI v11: layered anamorphic flare structure. Amount controls remain
+    // neutral at zero so every v10 look retains its established rendering.
+    float anamorphicFlareBandAmount;
+    float anamorphicFlareBandSeparation;
+    float anamorphicFlareSecondaryAmount;
+    float anamorphicFlareSecondaryOffset;
+
+    // ABI v12: independent vertical thickness for the primary, layered and
+    // secondary streaks. One preserves the v11 rendering exactly.
+    float anamorphicFlareThickness;
+
+    // ABI v13: source-derived vertical diffraction rays. These occupy two
+    // previously reserved v12 slots, preserving the 784-byte buffer layout.
+    float diffractionRayAmount;
+    float diffractionRayLength;
+    // ABI v14: bounded analytic internal-reflection train. Count 1 preserves
+    // the v13 single-ellipse model; higher values add smooth optical paths.
+    float anamorphicFlareGhostCount;
+    float anamorphicFlareGhostSpacing;
+    float anamorphicFlareGhostScaleDecay;
+    float anamorphicFlareGhostEnergyDecay;
+    // ABI v15 reuses established reserved slots for general pupil clipping,
+    // rim energy and multi-scale internal optical-density fields. The buffer
+    // layout and size remain stable; zero values retain the v14 response.
 };
 
 struct alignas(16) LDBScatterParameters {
@@ -189,9 +285,17 @@ struct alignas(16) LDBScatterParameters {
     float axisY;
 };
 
+// Internal GPU exchange record for the bounded analytic-flare source list.
+// positionEnergyRadius = full-resolution x/y, source energy, source radius.
+// colorActive = energy-normalized linear AP1 source color and active flag.
+struct alignas(16) LDBFlareSource {
+    LDBFloat4 positionEnergyRadius;
+    LDBFloat4 colorActive;
+};
+
 #ifndef __METAL_VERSION__
 static_assert(std::is_standard_layout_v<LDBOpticsParameters>);
-static_assert(sizeof(LDBOpticsParameters) == 560, "LDB optics ABI v4 size changed");
+static_assert(sizeof(LDBOpticsParameters) == 784, "LDB optics ABI v15 size changed");
 static_assert(alignof(LDBOpticsParameters) == 16, "LDB optics ABI v2 alignment changed");
 static_assert(offsetof(LDBOpticsParameters, distortionK1) == 16);
 static_assert(offsetof(LDBOpticsParameters, cornerSharpnessLoss) == 64);
@@ -224,7 +328,26 @@ static_assert(offsetof(LDBOpticsParameters, captureFocalLength) == 512);
 static_assert(offsetof(LDBOpticsParameters, lookExoticBias) == 544);
 static_assert(offsetof(LDBOpticsParameters, lookAnamorphicBias) == 552);
 static_assert(offsetof(LDBOpticsParameters, lookVintageCaricatureBias) == 556);
+static_assert(offsetof(LDBOpticsParameters, apertureBokehSwirl) == 560);
+static_assert(offsetof(LDBOpticsParameters, frontHaze) == 576);
+static_assert(offsetof(LDBOpticsParameters, damageScale) == 592);
+static_assert(offsetof(LDBOpticsParameters, refractiveIrregularity) == 608);
+static_assert(offsetof(LDBOpticsParameters, refractiveRotation) == 624);
+static_assert(offsetof(LDBOpticsParameters, chromaticFieldOnset) == 640);
+static_assert(offsetof(LDBOpticsParameters, prismAmount) == 656);
+static_assert(offsetof(LDBOpticsParameters, prismSoftness) == 672);
+static_assert(offsetof(LDBOpticsParameters, internalDirtAmount) == 676);
+static_assert(offsetof(LDBOpticsParameters, internalDirtScatter) == 688);
+static_assert(offsetof(LDBOpticsParameters, anamorphicFlareGhostColor) == 704);
+static_assert(offsetof(LDBOpticsParameters, anamorphicFlareCoreAmount) == 724);
+static_assert(offsetof(LDBOpticsParameters, anamorphicFlareBandAmount) == 740);
+static_assert(offsetof(LDBOpticsParameters, anamorphicFlareThickness) == 756);
+static_assert(offsetof(LDBOpticsParameters, diffractionRayAmount) == 760);
+static_assert(offsetof(LDBOpticsParameters, diffractionRayLength) == 764);
+static_assert(offsetof(LDBOpticsParameters, anamorphicFlareGhostCount) == 768);
+static_assert(offsetof(LDBOpticsParameters, anamorphicFlareGhostEnergyDecay) == 780);
 static_assert(sizeof(LDBScatterParameters) == 32, "LDB scatter ABI v1 size changed");
+static_assert(sizeof(LDBFlareSource) == 32, "LDB flare-source layout changed");
 #endif
 
 static inline LDBOpticsParameters LDBNeutralOpticsParameters(float width, float height) {
@@ -247,6 +370,10 @@ static inline LDBOpticsParameters LDBNeutralOpticsParameters(float width, float 
     p.apertureBladeCurvature = 0.5f;
     p.apertureSoftness = 0.5f;
     p.apertureAspect = 1.0f;
+    p.internalDirtSoftness = 0.5f;
+    p.internalDirtComplexity = 0.5f;
+    p.prismEdgeBias = 0.65f;
+    p.prismSoftness = 0.3f;
     p.longitudinalCARadius = 4.0f;
     p.depthFocus = 0.5f;
     p.nearFocusColor = {1.0f, 0.35f, 0.75f};
@@ -259,7 +386,20 @@ static inline LDBOpticsParameters LDBNeutralOpticsParameters(float width, float 
     p.anamorphicFlareRadius = 80.0f;
     p.anamorphicFlareThreshold = 1.0f;
     p.anamorphicFlareColor = {0.35f, 0.55f, 1.0f};
+    p.anamorphicFlareGhostColor = {0.55f, 0.25f, 1.0f};
+    p.anamorphicFlareGhostPosition = -0.72f;
+    p.anamorphicFlareGhostScale = 1.0f;
+    p.anamorphicFlareBandSeparation = 48.0f;
+    p.anamorphicFlareSecondaryOffset = 180.0f;
+    p.anamorphicFlareThickness = 1.0f;
+    p.diffractionRayLength = 180.0f;
+    p.anamorphicFlareGhostCount = 1.0f;
+    p.anamorphicFlareGhostSpacing = 90.0f;
+    p.anamorphicFlareGhostScaleDecay = 0.82f;
+    p.anamorphicFlareGhostEnergyDecay = 0.62f;
     p.responseFieldOnset = 0.0f;
+    p.chromaticFieldOnset = -1.0f;
+    p.chromaticFieldFalloff = 1.0f;
     p.responseFieldFalloff = 1.0f;
     p.responseDefocusOnset = 0.018f;
     p.responseDefocusFalloff = 0.36f;
@@ -270,5 +410,9 @@ static inline LDBOpticsParameters LDBNeutralOpticsParameters(float width, float 
     p.captureFocusDistance = 3.0f;
     p.captureGateWidth = 36.0f;
     p.captureGateHeight = 24.0f;
+    p.damageScale = 1.0f;
+    p.coatingWearScale = 1.0f;
+    p.refractiveScale = 1.0f;
+    p.internalDirtScale = 1.0f;
     return p;
 }

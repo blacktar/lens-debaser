@@ -1,0 +1,34 @@
+LensDebaserPreset=2
+# Family: Breathing-Documentary-Zoom
+# Strength: Caricature
+# Uneven vintage zoom character; lines, fabric and edge detail reveal it best.
+astigmatism=0.62
+bloomEnergy=0.28
+cornerSharpnessLoss=1.2
+detailEdgeFalloff=1.15
+distortionK1=0.032
+distortionK2=0.085
+fineDetail=-0.34
+geometryFieldAmount=1
+glareEnergy=0.24
+lateralCABlue=-1.85
+lateralCARed=1.45
+microContrast=-0.58
+peripheralWarp=0.42
+radialSmear=0.52
+refractiveAnisotropy=0.25
+refractiveDispersion=0.12
+refractiveEdgeBias=0.62
+refractiveIrregularity=0.34
+refractiveRotation=7
+refractiveScale=2.1
+refractiveSeed=1977
+responseFieldFalloff=1.66
+responseFieldOnset=0.24
+transmissionB=0.74
+transmissionColorAmount=0.34
+transmissionG=0.91
+transmissionR=1
+variationAmount=0.82
+variationSeed=1977
+variationTransmissionUnevenness=0.42

@@ -1,0 +1,18 @@
+LensDebaserPreset=2
+# Family: ABI v16 Smoke
+# Strength: Petzval Medium
+# Use a portrait or textured centre plus peripheral point highlights. Curved focus and pupil rotation should reinforce one another without globally smearing the subject.
+apertureAspect=1.1
+apertureBladeCount=8
+apertureBladeCurvature=0.72
+apertureBokehSwirl=3.2
+apertureCatEye=0.52
+apertureRadius=12
+apertureResponse=0.52
+apertureShape=1
+astigmatism=0.3
+cornerSharpnessLoss=0.82
+fieldCurvature=0.82
+responseFieldFalloff=1.16
+responseFieldOnset=0.16
+tangentialSmear=0.24

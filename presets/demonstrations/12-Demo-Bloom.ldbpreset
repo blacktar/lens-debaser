@@ -1,0 +1,8 @@
+LensDebaserPreset=2
+# Family: Demo-Bloom
+# Strength: Educational
+# Scene-linear highlights spread into a clearly visible bloom that preserves surrounding contrast.
+bloomEnergy=0.65
+bloomHorizontalStretch=1.5
+bloomRadius=54
+bloomThreshold=0.5

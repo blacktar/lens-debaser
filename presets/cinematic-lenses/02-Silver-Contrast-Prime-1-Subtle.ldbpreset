@@ -1,0 +1,18 @@
+LensDebaserPreset=2
+# Family: Silver-Contrast-Prime
+# Strength: Subtle
+# Panchro-inspired warmth and restrained softness; fine edges and highlights reveal the response.
+cornerSharpnessLoss=0.22
+fieldCurvature=0.14
+fineDetail=-0.06
+lateralCABlue=-0.2
+lateralCARed=0.15
+microContrast=-0.1
+responseFieldFalloff=1.68
+responseFieldOnset=0.25
+sphericalHalo=0.05
+transmissionB=0.76
+transmissionColorAmount=0.1
+transmissionContrast=-0.05
+transmissionG=0.92
+transmissionR=1

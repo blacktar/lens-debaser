@@ -1,0 +1,9 @@
+LensDebaserPreset=2
+# Family: ABI v16 Smoke
+# Strength: Prism Conservative
+# Use a high-contrast chart and real footage with edge detail. Look for a restrained, smooth one-sided bend with light spectral separation.
+prismAmount=0.35
+prismDirection=12
+prismDispersion=0.25
+prismEdgeBias=0.62
+prismSoftness=0.38

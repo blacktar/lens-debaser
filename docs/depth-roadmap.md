@@ -158,7 +158,7 @@ better performed by the generator or Resolve upstream.
 
 ### Phase A — current plugin
 
-Version 1.35 supports the verified optional RGB Depth Map image input. It is
+Version 1.36 supports the verified optional RGB Depth Map image input. It is
 packed internally while the primary image remains the RGB source. It also adds
 explicit boundary conditioning and diagnostics without changing the approved
 default response.

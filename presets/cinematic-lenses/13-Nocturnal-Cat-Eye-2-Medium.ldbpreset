@@ -1,0 +1,22 @@
+LensDebaserPreset=2
+# Family: Nocturnal-Cat-Eye
+# Strength: Medium
+# Peripheral cat-eye bokeh; small edge highlights are necessary to see the pupil footprint.
+apertureAspect=1.14
+apertureBladeCount=9
+apertureBladeCurvature=0.82
+apertureBokehSwirl=2.2
+apertureCatEye=0.62
+aperturePupilClip=0.12
+aperturePupilShift=0.1
+apertureRadius=11
+apertureResponse=0.5
+apertureShape=1
+apertureSoftness=0.2
+coma=0.42
+comaThreshold=0.28
+cornerSharpnessLoss=0.42
+fieldCurvature=0.28
+longitudinalCA=0.18
+responseFieldFalloff=1.52
+responseFieldOnset=0.18

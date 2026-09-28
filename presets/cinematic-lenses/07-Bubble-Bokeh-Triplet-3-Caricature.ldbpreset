@@ -1,0 +1,20 @@
+LensDebaserPreset=2
+# Family: Bubble-Bokeh-Triplet
+# Strength: Caricature
+# Firm round defocus highlights; isolated bright points reveal the soap-bubble footprint.
+apertureCatEye=0.3
+apertureRadius=15
+apertureResponse=0.75
+apertureRimWeight=0.55
+apertureShape=0
+apertureSoftness=0.08
+astigmatism=0.34
+cornerSharpnessLoss=0.94
+fieldCurvature=1.35
+longitudinalCA=0.75
+microContrast=-0.3
+radialSmear=0.28
+responseFieldFalloff=1.58
+responseFieldOnset=0.24
+sphericalHalo=1.2
+tangentialSmear=0.22

@@ -1,0 +1,11 @@
+LensDebaserPreset=2
+# Family: Demo-Refractive-Irregularity
+# Strength: Educational
+# A grid and high-contrast detail show clear stable local magnification variation with controlled wavelength separation.
+refractiveAnisotropy=0.42
+refractiveDispersion=0.24
+refractiveEdgeBias=0.56
+refractiveIrregularity=0.64
+refractiveRotation=18
+refractiveScale=1.3
+refractiveSeed=27182

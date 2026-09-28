@@ -1,0 +1,39 @@
+LensDebaserPreset=2
+# Family: C-Mount-CCTV
+# Strength: Caricature
+# Small-format CCTV glass: visible image-circle pressure, green cast, colored edges and off-axis coma.
+coma=0.95
+comaThreshold=0.18
+cornerSharpnessLoss=1.65
+distortionK1=0.12
+distortionK2=0.09
+fieldCurvature=1.25
+geometryFieldAmount=1
+imageCircleAspect=1.18
+imageCircleSize=0.76
+imageCircleSoftness=0.28
+lateralCABlue=-3.8
+lateralCARed=3.1
+longitudinalCA=0.75
+peripheralStretch=0.24
+peripheralWarp=0.52
+radialSmear=0.62
+refractiveAnisotropy=0.35
+refractiveDispersion=0.48
+refractiveEdgeBias=0.46
+refractiveIrregularity=0.48
+refractiveScale=0.95
+refractiveSeed=42424
+responseFieldFalloff=1.48
+responseFieldOnset=0.12
+sphericalHalo=1
+tangentialSmear=0.42
+transmissionB=0.76
+transmissionColorAmount=0.4
+transmissionG=1
+transmissionR=0.82
+variationAmount=0.78
+variationChromaticAsymmetry=1.2
+variationFieldAsymmetry=0.74
+variationSeed=42424
+vignetteMechanical=0.52

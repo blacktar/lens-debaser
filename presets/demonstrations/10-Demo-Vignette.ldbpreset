@@ -1,0 +1,7 @@
+LensDebaserPreset=2
+# Family: Demo-Vignette
+# Strength: Educational
+# The three attenuation types combine into a clear but grade-friendly edge falloff.
+vignetteMechanical=0.15
+vignetteNatural=0.46
+vignetteOptical=0.3

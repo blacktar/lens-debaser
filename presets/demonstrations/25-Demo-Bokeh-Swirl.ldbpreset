@@ -1,0 +1,12 @@
+LensDebaserPreset=2
+# Family: Demo-Bokeh-Swirl
+# Strength: Educational
+# Point highlights clearly reveal filled outer pupils with controlled tangential rotation.
+apertureBokehSwirl=1.9
+apertureCatEye=0.36
+apertureRadius=11
+apertureResponse=0.54
+apertureShape=0
+apertureSoftness=0.25
+responseFieldFalloff=1.15
+responseFieldOnset=0.18

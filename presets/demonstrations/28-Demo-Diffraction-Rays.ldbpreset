@@ -1,0 +1,11 @@
+LensDebaserPreset=2
+# Family: Demo-Diffraction-Rays
+# Strength: Educational
+# Compact clipped highlights produce visible vertical diffraction rays with a continuous taper.
+anamorphicFlareAmount=0.16
+anamorphicFlareCoreAmount=0.3
+anamorphicFlareThreshold=0.54
+diffractionRayAmount=0.46
+diffractionRayLength=260
+glareEnergy=0.11
+glareRadius=62

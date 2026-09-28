@@ -1,0 +1,15 @@
+LensDebaserPreset=2
+# Family: Demo-Depth-Input
+# Strength: Educational
+# Connect a depth map to Second RGB; the recipe produces a neutral, clearly readable and protected depth transition without chromatic aberration.
+apertureRadius=11
+apertureResponse=0.5
+depthEdgeSoftness=0.55
+depthFar=1
+depthFocus=0.38
+depthMode=2
+depthNear=0
+responseDefocusFalloff=0.4
+responseDefocusOnset=0.07
+responseScatterEdgeProtection=1
+sphericalHalo=0.24

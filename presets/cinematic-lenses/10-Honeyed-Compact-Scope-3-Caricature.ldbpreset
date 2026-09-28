@@ -1,0 +1,30 @@
+LensDebaserPreset=2
+# Family: Honeyed-Compact-Scope
+# Strength: Caricature
+# Warm 1.55x anamorphic response; highlights reveal amber streaks and elliptical bokeh.
+anamorphicAberration=1.35
+anamorphicDistortion=0.022
+anamorphicFlareAmount=1.8
+anamorphicFlareB=0.12
+anamorphicFlareG=0.5
+anamorphicFlareR=1
+anamorphicFlareRadius=205
+anamorphicFlareThreshold=0.16
+anamorphicSqueeze=1.55
+apertureAspect=2.4
+apertureBokehSwirl=3.4
+apertureCatEye=0.44
+apertureRadius=8
+apertureResponse=0.28
+apertureShape=2
+cornerSharpnessLoss=0.6
+fieldAspect=1.42
+fieldCurvature=0.3
+glareEnergy=0.22
+longitudinalCA=0.3
+responseFieldFalloff=1.62
+responseFieldOnset=0.22
+transmissionB=0.74
+transmissionColorAmount=0.5
+transmissionG=0.92
+transmissionR=1

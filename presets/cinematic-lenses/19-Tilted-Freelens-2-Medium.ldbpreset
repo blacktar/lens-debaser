@@ -1,0 +1,22 @@
+LensDebaserPreset=2
+# Family: Tilted-Freelens
+# Strength: Medium
+# A deliberately tilted, decentered focus plane; faces and texture reveal its diagonal island of focus.
+astigmatism=0.95
+cornerSharpnessLoss=1.35
+fieldAspect=2.35
+fieldCenterX=0.38
+fieldCenterY=0.59
+fieldCurvature=1.2
+fieldRotation=-31
+lateralCABlue=-1.18
+lateralCARed=0.88
+longitudinalCA=0.3
+radialSmear=0.22
+responseFieldFalloff=1.4
+responseFieldOnset=0.13
+tangentialSmear=0.8
+variationAmount=0.48
+variationChromaticAsymmetry=0.42
+variationFieldAsymmetry=0.9
+variationSeed=19019

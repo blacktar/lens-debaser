@@ -6,18 +6,21 @@ same folder.
 
 ## demonstrations
 
-Sixteen control-group families, each supplied as Subtle, Medium and
-Caricature. Dependencies are intentionally enabled where a control would be
+Thirty-one single, moderate educational presets. Dependencies are intentionally enabled where a control would be
 neutral on its own. `Demo-Depth-Input` requires a depth map on the dedicated
 Depth Map RGB connector and assumes `Near Black` interpretation.
 
 ## cinematic-lenses
 
-Sixteen useful optical-character families, each supplied at three strengths.
+Twenty-four optical-character families, normally supplied at three strengths,
+including reference-inspired Hawk V-Lite Vintage '74 and Cooke Anamorphic /i
+Special Flare families, the current-model Decentered Dream Glass family, plus one
+independently authored Bodycam Edge Stress signature preset.
 They are visual, behavior-inspired approximations rather than scientific lens
 profiles or claims of exact matching. Caricature variants are diagnostic and
 creative extremes; Medium is the best starting point; Subtle is intended for
-ordinary finishing.
+ordinary finishing. Each strength is authored independently rather than made
+by applying one global multiplier to a family recipe.
 
 Processing settings such as Input Working Space and Diagnostic View are not
 stored in these presets. Always set Input Working Space to match the image

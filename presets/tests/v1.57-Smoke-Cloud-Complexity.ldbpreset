@@ -1,0 +1,11 @@
+LensDebaserPreset=2
+# Family: ABI v16 Smoke
+# Strength: Cloud Complexity
+# Use a scene with bright windows or practicals. Complexity should modulate the broad density and veil without revealing individual blobs, noise or a sampling grid; compare 0 and 1.
+internalDirtAmount=1.85
+internalDirtComplexity=1
+internalDirtScale=1
+internalDirtScatter=0
+internalDirtSeed=16180
+internalDirtSmear=0.34
+internalDirtSoftness=0.72

@@ -1,9 +1,0 @@
-LensDebaserPreset=2
-depthMode=2
-depthNear=0
-depthFar=1
-depthFocus=0.5
-apertureResponse=1
-apertureRadius=24
-responseScatterEdgeProtection=1
-depthEdgeSoftness=0.5

@@ -1,0 +1,11 @@
+LensDebaserPreset=2
+# Family: Demo-Transmission
+# Strength: Educational
+# Neutral greys, skin and highlights show a visible warm transmission bias and softer shoulder.
+transmissionB=0.68
+transmissionColorAmount=0.4
+transmissionContrast=-0.3
+transmissionDensity=0.22
+transmissionG=0.84
+transmissionHighlightSoftness=0.72
+transmissionR=1

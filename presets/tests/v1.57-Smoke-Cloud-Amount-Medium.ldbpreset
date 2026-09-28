@@ -1,0 +1,11 @@
+LensDebaserPreset=2
+# Family: ABI v16 Smoke
+# Strength: Cloud Amount Medium
+# Pronounced extended-range density. It should remain smooth and retain image structure without Internal Scatter.
+internalDirtAmount=5
+internalDirtComplexity=0.75
+internalDirtScale=1
+internalDirtScatter=0
+internalDirtSeed=16180
+internalDirtSmear=0.34
+internalDirtSoftness=0.72

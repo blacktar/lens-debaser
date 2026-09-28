@@ -1,0 +1,19 @@
+LensDebaserPreset=2
+# Family: Pearlescent-Diffusion
+# Strength: Medium
+# Luminous soft-focus response; bright edges drive glow while the centre remains usable.
+bloomEnergy=0.4
+bloomRadius=40
+bloomThreshold=0.48
+cornerSharpnessLoss=0.34
+fieldCurvature=0.22
+fineDetail=-0.16
+glareEnergy=0.48
+glareRadius=62
+longitudinalCA=0.14
+microContrast=-0.34
+responseFieldFalloff=1.72
+responseFieldOnset=0.24
+sphericalHalo=0.9
+transmissionContrast=-0.18
+transmissionHighlightSoftness=0.9

@@ -1,9 +1,0 @@
-LensDebaserPreset=2
-# Family: Demo-Detail-Transfer
-# Strength: Subtle
-detailEdgeFalloff=0.4375
-detailScale=1.7
-fineDetail=-0.2275
-microContrast=-0.28
-sagittalDetail=0.1925
-tangentialDetail=-0.21

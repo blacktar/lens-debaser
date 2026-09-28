@@ -1,0 +1,30 @@
+LensDebaserPreset=2
+# Family: Uncoated-Newsreel
+# Strength: Medium
+# Uncoated low-contrast glow; lamps, windows and reflections drive the strongest character.
+bloomEnergy=0.46
+bloomRadius=46
+bloomThreshold=0.4
+cleaningMarks=0.16
+coatingWear=0.24
+cornerSharpnessLoss=0.34
+damageScale=1.45
+damageSeed=1934
+fieldCurvature=0.18
+fineDetail=-0.18
+frontHaze=0.22
+glareEnergy=0.55
+glareRadius=88
+lateralCABlue=-0.38
+lateralCARed=0.28
+microContrast=-0.55
+responseFieldFalloff=1.72
+responseFieldOnset=0.22
+sphericalHalo=0.38
+transmissionB=0.66
+transmissionColorAmount=0.28
+transmissionContrast=-0.3
+transmissionDensity=0.06
+transmissionG=0.88
+transmissionHighlightSoftness=0.5
+transmissionR=1

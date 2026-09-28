@@ -1,0 +1,23 @@
+LensDebaserPreset=2
+# Family: Silver-Contrast-Prime
+# Strength: Caricature
+# Panchro-inspired warmth and restrained softness; fine edges and highlights reveal the response.
+astigmatism=0.2
+bloomEnergy=0.42
+cornerSharpnessLoss=1.12
+fieldCurvature=0.48
+fineDetail=-0.42
+glareEnergy=0.18
+lateralCABlue=-0.72
+lateralCARed=0.55
+longitudinalCA=0.52
+microContrast=-0.72
+responseFieldFalloff=1.68
+responseFieldOnset=0.25
+sphericalHalo=0.55
+transmissionB=0.76
+transmissionColorAmount=0.52
+transmissionContrast=-0.22
+transmissionG=0.92
+transmissionHighlightSoftness=0.55
+transmissionR=1

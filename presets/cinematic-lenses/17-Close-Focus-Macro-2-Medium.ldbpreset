@@ -1,0 +1,20 @@
+LensDebaserPreset=2
+# Family: Close-Focus-Macro
+# Strength: Medium
+# Close-focus macro character with crisp central texture, rapidly curving focus and longitudinal color.
+apertureRadius=10
+apertureResponse=0.42
+astigmatism=0.26
+captureAperture=2
+captureFocalLength=100
+captureFocusDistance=28
+captureInfluence=0.9
+cornerSharpnessLoss=1.1
+fieldCurvature=1.05
+fineDetail=0.18
+longitudinalCA=0.82
+microContrast=0.22
+radialSmear=0.15
+responseFieldFalloff=1.52
+responseFieldOnset=0.18
+sphericalHalo=0.3

@@ -1,0 +1,19 @@
+LensDebaserPreset=2
+# Family: Pearlescent-Diffusion
+# Strength: Caricature
+# Luminous soft-focus response; bright edges drive glow while the centre remains usable.
+bloomEnergy=0.8
+bloomRadius=52
+bloomThreshold=0.3
+cornerSharpnessLoss=0.82
+fieldCurvature=0.38
+fineDetail=-0.32
+glareEnergy=0.95
+glareRadius=76
+longitudinalCA=0.3
+microContrast=-0.62
+responseFieldFalloff=1.72
+responseFieldOnset=0.24
+sphericalHalo=1.8
+transmissionContrast=-0.38
+transmissionHighlightSoftness=1.8

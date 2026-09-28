@@ -1,9 +1,0 @@
-LensDebaserPreset=2
-# Family: Demo-Detail-Transfer
-# Strength: Caricature
-detailEdgeFalloff=1.25
-detailScale=3
-fineDetail=-0.65
-microContrast=-0.8
-sagittalDetail=0.55
-tangentialDetail=-0.6

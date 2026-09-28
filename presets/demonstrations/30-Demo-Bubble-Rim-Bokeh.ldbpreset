@@ -1,0 +1,13 @@
+LensDebaserPreset=2
+# Family: Demo-Bubble-Rim-Bokeh
+# Strength: Educational
+# Point highlights form a clear bubble rim around a filled pupil without overpowering the scene.
+apertureBokehSwirl=0.72
+apertureCatEye=0.2
+apertureRadius=12
+apertureResponse=0.54
+apertureRimWeight=0.16
+apertureShape=0
+apertureSoftness=0.22
+responseFieldFalloff=1.15
+responseFieldOnset=0.16

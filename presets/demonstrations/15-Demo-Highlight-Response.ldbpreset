@@ -1,0 +1,14 @@
+LensDebaserPreset=2
+# Family: Demo-Highlight-Response
+# Strength: Educational
+# A clear Highlight Knee coordinates several enabled highlight effects without flattening the frame.
+anamorphicFlareAmount=0.3
+anamorphicFlareThreshold=0.54
+bloomEnergy=0.45
+bloomThreshold=0.54
+coma=0.22
+comaThreshold=0.46
+glareEnergy=0.32
+glareRadius=56
+responseHighlightKnee=1.6
+sphericalHalo=0.28

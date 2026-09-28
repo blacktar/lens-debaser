@@ -1,0 +1,23 @@
+LensDebaserPreset=2
+# Family: Breathing-Documentary-Zoom
+# Strength: Subtle
+# Uneven vintage zoom character; lines, fabric and edge detail reveal it best.
+cornerSharpnessLoss=0.22
+detailEdgeFalloff=0.18
+distortionK1=0.008
+distortionK2=0.018
+fineDetail=-0.08
+geometryFieldAmount=1
+lateralCABlue=-0.24
+lateralCARed=0.18
+microContrast=-0.14
+peripheralWarp=0.1
+responseFieldFalloff=1.66
+responseFieldOnset=0.24
+transmissionB=0.74
+transmissionColorAmount=0.1
+transmissionG=0.91
+transmissionR=1
+variationAmount=0.12
+variationSeed=1977
+variationTransmissionUnevenness=0.18

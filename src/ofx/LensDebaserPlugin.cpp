@@ -14,7 +14,7 @@
 #include <vector>
 
 namespace {
-constexpr const char *kName = "Lens Debaser 1.35";
+constexpr const char *kName = "Lens Debaser 1.57";
 constexpr const char *kIdentifier = "com.ldb.LensDebaser";
 constexpr const char *kDepthClipName = "Depth";
 struct DoubleSpec {
@@ -30,6 +30,12 @@ const DoubleSpec kSpecs[] = {
      "Higher-order edge distortion."},
     {"moustacheK3", "Moustache", 0, -1, 1, .001,
      "Complex wave-shaped radial distortion."},
+    {"geometryFieldAmount", "Field-Gated Geometry", 0, 0, 1, .001,
+     "Confines geometry progressively to the shaped Field Onset and Falloff; zero preserves the established full-field mapping."},
+    {"peripheralStretch", "Peripheral Stretch", 0, -2, 2, .001,
+     "Expands or compresses image structure toward the perimeter inside the geometry field."},
+    {"peripheralWarp", "Peripheral Warp", 0, -2, 2, .001,
+     "Adds smooth irregular optical edge deformation instead of a purely radial barrel curve."},
     {"anamorphicSqueeze", "Anamorphic Field", 1, .25, 4, .001,
      "Shapes the complete off-axis lens field; this is not an image "
      "desqueeze."},
@@ -60,6 +66,10 @@ const DoubleSpec kSpecs[] = {
      "Radial red-channel displacement."},
     {"lateralCABlue", "Blue Fringing", 0, -10, 10, .01,
      "Radial blue-channel displacement."},
+    {"chromaticFieldOnset", "Chromatic Onset", -1, -1, 1.5, .001,
+     "-1 follows the shared Field envelope. Set 0 or higher to begin chromatic separation at an independent radius."},
+    {"chromaticFieldFalloff", "Chromatic Falloff", 1, 0, 1.5, .001,
+     "Transition width from independent Chromatic Onset to full separation; inactive while Onset is -1."},
     {"longitudinalCA", "Longitudinal Amount", 0, 0, 2, .001,
      "Near/far focus color separation around local focus transitions."},
     {"longitudinalCARadius", "Longitudinal Radius", 4, .5, 12, .01,
@@ -91,7 +101,17 @@ const DoubleSpec kSpecs[] = {
     {"apertureCatEye", "Cat-Eye", 0, 0, 1, .001,
      "Compresses the pupil radially toward the frame edge."},
     {"apertureAspect", "Pupil Aspect", 1, .25, 4, .001,
-     "Oval pupil aspect and cat-eye tangential shape."},
+     "Stretches any circular, polygonal or oval pupil before off-axis Cat-Eye "
+     "and Bokeh Swirl deformation."},
+    {"apertureBokehSwirl", "Bokeh Swirl", 0, 0, 6, .001,
+     "Tangentially reshapes off-axis aperture footprints with a smooth, "
+     "bounded response. Values above 1 extend through the creative range."},
+    {"aperturePupilShift", "Pupil Shift", 0, 0, 1, .001,
+     "Displaces the off-axis pupil along the radial field direction."},
+    {"aperturePupilClip", "Pupil Clipping", 0, 0, 1, .001,
+     "Asymmetrically clips the off-axis pupil at the lens-barrel boundary."},
+    {"apertureRimWeight", "Pupil Rim Weight", 0, -1, 1, .001,
+     "Moves bokeh energy between a soft centre and a brighter pupil rim."},
     {"cornerSharpnessLoss", "Corner Detail Loss", 0, 0, 2, .001,
      "Progressive off-axis focus loss."},
     {"astigmatism", "Astigmatism", 0, -2, 2, .001,
@@ -139,13 +159,45 @@ const DoubleSpec kSpecs[] = {
      "Independent signed horizontal chromatic separation."},
     {"anamorphicFlareAmount", "Flare Amount", 0, 0, 2, .001,
      "Amount of dedicated horizontal highlight flare."},
-    {"anamorphicFlareRadius", "Flare Radius", 80, 0, 400, .1,
+    {"anamorphicFlareRadius", "Flare Radius", 80, 0, 2400, .1,
      "Horizontal extent of Anamorphic Flare."},
+    {"anamorphicFlareThickness", "Flare Thickness", 1, .1, 4, .001,
+     "Vertical thickness of primary, layered and secondary flare streaks."},
+    {"diffractionRayAmount", "Vertical Rays", 0, 0, 2, .001,
+     "Adds smooth full-resolution analytic diffraction rays to coherent flare sources."},
+    {"diffractionRayLength", "Ray Length", 180, 0, 1200, .1,
+     "Vertical extent of diffraction rays in output pixels."},
     {"anamorphicFlareThreshold", "Flare Threshold", 1, 0, 16, .001,
      "Scene-linear highlight threshold for Anamorphic Flare."},
+    {"anamorphicFlareCoreAmount", "Flare Core", 0, 0, 2, .001,
+     "Adds a concentrated high-energy core inside the broader streak."},
+    {"anamorphicFlareAsymmetry", "Flare Asymmetry", 0, -1, 1, .001,
+     "Biases the streak tail to one side of each highlight."},
+    {"anamorphicFlareGhostAmount", "Ghost Amount", 0, 0, 2, .001,
+     "Adds a bounded analytic internal reflection for the dominant coherent source."},
+    {"anamorphicFlareGhostPosition", "Ghost Position", -.72, -2, 2, .001,
+     "Positions the ghost relative to the optical centre; negative values invert its movement."},
+    {"anamorphicFlareGhostScale", "Ghost Scale", 1, .25, 3, .001,
+     "Scales the filled elliptical reflection primitive."},
+    {"anamorphicFlareGhostCount", "Ghost Paths", 1, 1, 6, 1,
+     "Number of bounded analytic internal-reflection paths."},
+    {"anamorphicFlareGhostSpacing", "Ghost Spacing", 90, 0, 500, .1,
+     "Spacing between analytic reflection paths in output pixels."},
+    {"anamorphicFlareGhostScaleDecay", "Ghost Size Decay", .82, .35, 1, .001,
+     "Relative size retained by each successive reflection path."},
+    {"anamorphicFlareGhostEnergyDecay", "Ghost Energy Decay", .62, .15, 1, .001,
+     "Relative energy retained by each successive reflection path."},
+    {"anamorphicFlareBandAmount", "Flare Bands", 0, 0, 2, .001,
+     "Adds layered horizontal streaks around the primary flare."},
+    {"anamorphicFlareBandSeparation", "Band Separation", 48, 0, 300, .1,
+     "Vertical spacing between the layered flare bands in output pixels."},
+    {"anamorphicFlareSecondaryAmount", "Secondary Streak", 0, 0, 2, .001,
+     "Adds an independently displaced secondary horizontal streak."},
+    {"anamorphicFlareSecondaryOffset", "Secondary Offset", 180, -800, 800, .1,
+     "Vertical displacement of Secondary Streak in output pixels."},
     {"glareEnergy", "Glare Amount", 0, 0, 2, .001,
      "Energy added by veiling glare."},
-    {"glareRadius", "Glare Radius", 24, 0, 200, .01,
+    {"glareRadius", "Glare Radius", 24, 0, 1200, .01,
      "Glare spread; requires Glare Amount."},
     {"depthNear", "Input Near", 0, 0, 1, .001,
      "Input-map value remapped to the normalized near endpoint."},
@@ -176,12 +228,67 @@ const DoubleSpec kSpecs[] = {
      "Seeded decentered chromatic response."},
     {"variationTransmissionUnevenness", "Transmission Unevenness", 0, -1, 1,
      .001, "Broad stable transmission variation."},
+    {"frontHaze", "Cleaning Haze", 0, 0, 2, .001,
+     "Broad forward scatter from accumulated micro-abrasion and polishing haze."},
+    {"cleaningMarks", "Cleaning Marks", 0, 0, 2, .001,
+     "Curved directional wiping traces that locally increase highlight scatter."},
+    {"scratchAmount", "Deep Scratches", 0, 0, 2, .001,
+     "Sparse persistent scratches that flare under strong illumination."},
+    {"scratchDirection", "Scratch Direction", 0, -180, 180, .1,
+     "Dominant cleaning and scratch direction in degrees."},
+    {"damageScale", "Mark Scale", 1, .25, 4, .001,
+     "Spatial scale of cleaning marks and scratches."},
+    {"coatingWear", "Coating Wear", 0, 0, 2, .001,
+     "Patchy loss of anti-reflective coating, changing local contrast, color and flare."},
+    {"coatingWearScale", "Wear Patch Scale", 1, .25, 4, .001,
+     "Size of stable coating-wear regions."},
+    {"damageSeed", "Damage Seed", 0, 0, 65535, 1,
+     "Whole-number selector for a stable front-element damage pattern."},
+    {"internalDirtAmount", "Internal Dirt Amount", 0, 0, 10, .001,
+     "Amount of softer deposits trapped between internal lens elements. Values through 2 cover the natural range; 2 to 10 progressively extends into pronounced and extreme density."},
+    {"internalDirtScale", "Internal Dirt Size", 1, .25, 4, .001,
+     "Spatial size of internal dirt and residue regions."},
+    {"internalDirtSmear", "Internal Smear", 0, 0, 1, .001,
+     "Elongates internal deposits into soft displaced residue."},
+    {"internalDirtScatter", "Internal Scatter", .5, 0, 2, .001,
+     "Veiling scatter and softened highlight structure caused by internal dirt."},
+    {"internalDirtSoftness", "Cloud Softness", .5, 0, 1, .001,
+     "Controls the boundary softness of internal optical-density clouds."},
+    {"internalDirtComplexity", "Cloud Complexity", .5, 0, 1, .001,
+     "Adds progressively smaller overlapping density structures without image-plane noise."},
+    {"internalDirtSeed", "Internal Dirt Seed", 0, 0, 65535, 1,
+     "Whole-number selector for a stable internal-element dirt distribution."},
+    {"refractiveIrregularity", "Irregularity Amount", 0, 0, 2, .001,
+     "Stable local magnification and displacement from uneven glass thickness or refractive index."},
+    {"refractiveScale", "Irregularity Scale", 1, .25, 4, .001,
+     "Spatial size of refractive pockets and waves."},
+    {"refractiveEdgeBias", "Edge Bias", 0, 0, 1, .001,
+     "Moves refractive irregularity from the full glass toward the perimeter."},
+    {"refractiveAnisotropy", "Directionality", 0, 0, 1, .001,
+     "Stretches refractive variation along one direction."},
+    {"refractiveRotation", "Direction", 0, -180, 180, .1,
+     "Orientation of directional refractive variation."},
+    {"refractiveDispersion", "Irregular Dispersion", 0, 0, 2, .001,
+     "Adds wavelength-dependent separation along the local refractive displacement."},
+    {"refractiveSeed", "Irregularity Seed", 0, 0, 65535, 1,
+     "Whole-number selector for a stable refractive field."},
+    {"prismAmount", "Prism Amount", 0, 0, 2, .001,
+     "Strength of smooth directional refraction entering from the selected edge."},
+    {"prismDirection", "Prism Direction", 0, -180, 180, .1,
+     "Direction from the protected side toward the refracted edge, in degrees."},
+    {"prismDispersion", "Prism Dispersion", 0, 0, 2, .001,
+     "Wavelength separation along the coherent prism displacement."},
+    {"prismEdgeBias", "Prism Edge Bias", .65, 0, .98, .001,
+     "Moves the prism transition toward the selected edge."},
+    {"prismSoftness", "Prism Softness", .3, .01, 1, .001,
+     "Width of the smooth transition into the refracted region."},
     {"responseHighlightKnee", "Highlight Knee", 0, 0, 4, .001,
      "Softens highlight eligibility around active scatter thresholds."},
     {"responseFieldOnset", "Field Onset", 0, 0, 1.5, .001,
      "Normalized radius where active off-axis responses begin."},
     {"responseFieldFalloff", "Field Falloff", 1, 0, 1.5, .001,
-     "Normalized radius where active off-axis responses reach full strength."},
+     "Normalized transition width over which active off-axis responses build "
+     "from Field Onset to full strength."},
     {"responseDefocusOnset", "Defocus Onset", .018, 0, 1, .001,
      "Depth distance where active defocus responses begin."},
     {"responseDefocusFalloff", "Defocus Falloff", .36, 0, 1, .001,
@@ -199,7 +306,7 @@ struct Preset {
   std::array<double, 2> center{.5, .5}, fieldCenter{.5, .5};
   std::array<double, 3> transmission{1, 1, 1}, glare{1, 1, 1},
       nearFocus{1, .35, .75}, farFocus{.35, 1, .65},
-      anamorphicFlare{.35, .55, 1};
+      anamorphicFlare{.35, .55, 1}, anamorphicFlareGhost{.55, .25, 1};
   int apertureShape = 0, apertureBladeCount = 6, depthMode = 0,
       captureGate = 0;
 };
@@ -251,6 +358,7 @@ public:
     nearFocus = fetchRGBParam("nearFocusColor");
     farFocus = fetchRGBParam("farFocusColor");
     anamorphicFlare = fetchRGBParam("anamorphicFlareColor");
+    anamorphicFlareGhost = fetchRGBParam("anamorphicFlareGhostColor");
     updateApertureControls();
     updateChromaticControls();
     updateDepthControls();
@@ -320,14 +428,19 @@ public:
         apply(loaded[index - 2], false, index);
       return;
     }
-    if (name == "apertureShape" || name == "apertureCatEye")
+    if (name == "apertureShape" || name == "apertureCatEye" ||
+        name == "apertureBokehSwirl" || name == "apertureResponse")
       updateApertureControls();
     if (name == "longitudinalCA")
       updateChromaticControls();
     if (name == "depthMode")
       updateDepthControls();
     if (name == "captureInfluence" || name == "lookInfluence" ||
-        name == "variationAmount" || name == "anamorphicFlareAmount")
+        name == "variationAmount" || name == "anamorphicFlareAmount" ||
+        name == "anamorphicFlareGhostAmount" ||
+        name == "anamorphicFlareBandAmount" ||
+        name == "anamorphicFlareSecondaryAmount" ||
+        name == "diffractionRayAmount")
       updateV4Controls();
     if (isPresetControl(name)) {
       inPresetChange = true;
@@ -350,9 +463,14 @@ private:
     D(distortionK1);
     D(distortionK2);
     D(moustacheK3);
+    D(geometryFieldAmount);
+    D(peripheralStretch);
+    D(peripheralWarp);
     D(anamorphicSqueeze);
     D(lateralCARed);
     D(lateralCABlue);
+    D(chromaticFieldOnset);
+    D(chromaticFieldFalloff);
     D(longitudinalCA);
     D(longitudinalCARadius);
     D(vignetteNatural);
@@ -392,6 +510,10 @@ private:
     D(apertureSoftness);
     D(apertureCatEye);
     D(apertureAspect);
+    D(apertureBokehSwirl);
+    D(aperturePupilShift);
+    D(aperturePupilClip);
+    D(apertureRimWeight);
     D(fieldAspect);
     D(fieldRotation);
     D(transmissionDensity);
@@ -402,11 +524,51 @@ private:
     D(anamorphicFlareAmount);
     D(anamorphicFlareRadius);
     D(anamorphicFlareThreshold);
+    D(anamorphicFlareCoreAmount);
+    D(anamorphicFlareAsymmetry);
+    D(anamorphicFlareGhostAmount);
+    D(anamorphicFlareGhostPosition);
+    D(anamorphicFlareGhostScale);
+    D(anamorphicFlareGhostCount);
+    D(anamorphicFlareGhostSpacing);
+    D(anamorphicFlareGhostScaleDecay);
+    D(anamorphicFlareGhostEnergyDecay);
+    D(anamorphicFlareBandAmount);
+    D(anamorphicFlareBandSeparation);
+    D(anamorphicFlareSecondaryAmount);
+    D(anamorphicFlareSecondaryOffset);
+    D(anamorphicFlareThickness);
+    D(diffractionRayAmount);
+    D(diffractionRayLength);
     D(variationAmount);
     D(variationFieldAsymmetry);
     D(variationPupilIrregularity);
     D(variationChromaticAsymmetry);
     D(variationTransmissionUnevenness);
+    D(frontHaze);
+    D(cleaningMarks);
+    D(scratchAmount);
+    D(scratchDirection);
+    D(damageScale);
+    D(coatingWear);
+    D(coatingWearScale);
+    D(internalDirtAmount);
+    D(internalDirtScale);
+    D(internalDirtSmear);
+    D(internalDirtScatter);
+    D(internalDirtSoftness);
+    D(internalDirtComplexity);
+    D(refractiveIrregularity);
+    D(refractiveScale);
+    D(refractiveEdgeBias);
+    D(refractiveAnisotropy);
+    D(refractiveRotation);
+    D(refractiveDispersion);
+    D(prismAmount);
+    D(prismDirection);
+    D(prismDispersion);
+    D(prismEdgeBias);
+    D(prismSoftness);
     D(responseHighlightKnee);
     D(responseFieldOnset);
     D(responseFieldFalloff);
@@ -455,6 +617,12 @@ private:
             : float(value("captureFocusDistance", t) * .01);
     p.variationSeed = uint32_t(
         std::clamp(std::llround(value("variationSeed", t)), 0ll, 65535ll));
+    p.damageSeed = uint32_t(
+        std::clamp(std::llround(value("damageSeed", t)), 0ll, 65535ll));
+    p.refractiveSeed = uint32_t(
+        std::clamp(std::llround(value("refractiveSeed", t)), 0ll, 65535ll));
+    p.internalDirtSeed = uint32_t(
+        std::clamp(std::llround(value("internalDirtSeed", t)), 0ll, 65535ll));
     double bladeValue = 6;
     apertureBladeCount->getValueAtTime(t, bladeValue);
     int blades = std::clamp(int(std::lround(bladeValue)), 3, 32);
@@ -473,6 +641,8 @@ private:
     p.farFocusColor = {float(r), float(g), float(b)};
     anamorphicFlare->getValueAtTime(t, r, g, b);
     p.anamorphicFlareColor = {float(r), float(g), float(b)};
+    anamorphicFlareGhost->getValueAtTime(t, r, g, b);
+    p.anamorphicFlareGhostColor = {float(r), float(g), float(b)};
     return p;
   }
   Preset neutralPreset() const {
@@ -497,6 +667,9 @@ private:
     farFocus->getValueAtTime(time, p.farFocus[0], p.farFocus[1], p.farFocus[2]);
     anamorphicFlare->getValueAtTime(time, p.anamorphicFlare[0],
                                     p.anamorphicFlare[1], p.anamorphicFlare[2]);
+    anamorphicFlareGhost->getValueAtTime(time, p.anamorphicFlareGhost[0],
+                                         p.anamorphicFlareGhost[1],
+                                         p.anamorphicFlareGhost[2]);
     apertureShape->getValueAtTime(time, p.apertureShape);
     depthMode->getValueAtTime(time, p.depthMode);
     captureGate->getValueAtTime(time, p.captureGate);
@@ -509,7 +682,7 @@ private:
     for (const auto &s : kSpecs)
       if (name == s.id)
         return true;
-    static const std::array<const char *, 17> otherControls = {
+    static const std::array<const char *, 18> otherControls = {
         "opticalCenter",
         "fieldCenter",
         "transmissionColor",
@@ -517,6 +690,7 @@ private:
         "nearFocusColor",
         "farFocusColor",
         "anamorphicFlareColor",
+        "anamorphicFlareGhostColor",
         "apertureShape",
         "apertureBladeCount",
         "depthMode",
@@ -554,6 +728,8 @@ private:
            arrayClose(current.nearFocus, target.nearFocus) &&
            arrayClose(current.farFocus, target.farFocus) &&
            arrayClose(current.anamorphicFlare, target.anamorphicFlare) &&
+           arrayClose(current.anamorphicFlareGhost,
+                      target.anamorphicFlareGhost) &&
            current.apertureShape == target.apertureShape &&
            current.apertureBladeCount == target.apertureBladeCount &&
            current.depthMode == target.depthMode &&
@@ -564,11 +740,17 @@ private:
     apertureShape->getValue(shape);
     double catEye = 0;
     doubles.at("apertureCatEye")->getValue(catEye);
+    double response = 0;
+    doubles.at("apertureResponse")->getValue(response);
     bool polygon = shape == 1, oval = shape == 2;
     apertureBladeCount->setEnabled(polygon);
     doubles.at("apertureBladeCurvature")->setEnabled(polygon);
     doubles.at("apertureRotation")->setEnabled(polygon || oval);
     doubles.at("apertureAspect")->setEnabled(oval || catEye > 1e-8);
+    doubles.at("apertureBokehSwirl")->setEnabled(response > 1e-8);
+    doubles.at("aperturePupilShift")->setEnabled(response > 1e-8);
+    doubles.at("aperturePupilClip")->setEnabled(response > 1e-8);
+    doubles.at("apertureRimWeight")->setEnabled(response > 1e-8);
   }
   void updateChromaticControls() {
     double amount = 0;
@@ -586,6 +768,8 @@ private:
     doubles.at("depthNear")->setEnabled(active);
     doubles.at("depthFar")->setEnabled(active);
     doubles.at("depthFocus")->setEnabled(active);
+    doubles.at("responseDefocusOnset")->setEnabled(active);
+    doubles.at("responseDefocusFalloff")->setEnabled(active);
     doubles.at("responseScatterEdgeProtection")->setEnabled(active);
     doubles.at("depthEdgeSoftness")->setEnabled(active);
   }
@@ -610,10 +794,36 @@ private:
                "variationPupilIrregularity", "variationChromaticAsymmetry",
                "variationTransmissionUnevenness"});
     enabledBy("anamorphicFlareAmount",
-              {"anamorphicFlareRadius", "anamorphicFlareThreshold"});
+              {"anamorphicFlareRadius", "anamorphicFlareThickness",
+               "anamorphicFlareThreshold",
+               "anamorphicFlareCoreAmount", "anamorphicFlareAsymmetry",
+               "anamorphicFlareGhostAmount", "anamorphicFlareBandAmount",
+               "anamorphicFlareSecondaryAmount", "diffractionRayAmount"});
     double flareAmount = 0;
     doubles.at("anamorphicFlareAmount")->getValue(flareAmount);
     anamorphicFlare->setEnabled(flareAmount > 1e-8);
+    double ghostAmount = 0;
+    doubles.at("anamorphicFlareGhostAmount")->getValue(ghostAmount);
+    doubles.at("anamorphicFlareGhostPosition")
+        ->setEnabled(flareAmount > 1e-8 && ghostAmount > 1e-8);
+    double rayAmount = 0;
+    doubles.at("diffractionRayAmount")->getValue(rayAmount);
+    doubles.at("diffractionRayLength")
+        ->setEnabled(flareAmount > 1e-8 && rayAmount > 1e-8);
+    doubles.at("anamorphicFlareGhostScale")
+        ->setEnabled(flareAmount > 1e-8 && ghostAmount > 1e-8);
+    for(const char* id:{"anamorphicFlareGhostCount","anamorphicFlareGhostSpacing",
+                        "anamorphicFlareGhostScaleDecay","anamorphicFlareGhostEnergyDecay"})
+      doubles.at(id)->setEnabled(flareAmount > 1e-8 && ghostAmount > 1e-8);
+    double bandAmount = 0;
+    doubles.at("anamorphicFlareBandAmount")->getValue(bandAmount);
+    doubles.at("anamorphicFlareBandSeparation")
+        ->setEnabled(flareAmount > 1e-8 && bandAmount > 1e-8);
+    double secondaryAmount = 0;
+    doubles.at("anamorphicFlareSecondaryAmount")->getValue(secondaryAmount);
+    doubles.at("anamorphicFlareSecondaryOffset")
+        ->setEnabled(flareAmount > 1e-8 && secondaryAmount > 1e-8);
+    anamorphicFlareGhost->setEnabled(flareAmount > 1e-8 && ghostAmount > 1e-8);
   }
   void setGroupOpen(const char *name, bool open) {
     OfxParamSetHandle set = nullptr;
@@ -637,7 +847,8 @@ private:
     };
     setGroupOpen("geometry",
                  active({"distortionK1", "distortionK2", "moustacheK3",
-                         "anamorphicSqueeze", "swirl"}) ||
+                         "geometryFieldAmount", "peripheralStretch",
+                         "peripheralWarp", "anamorphicSqueeze", "swirl"}) ||
                      p.center != std::array<double, 2>{.5, .5});
     setGroupOpen("focusField",
                  active({"cornerSharpnessLoss", "fieldCurvature", "astigmatism",
@@ -647,12 +858,15 @@ private:
                          "sagittalDetail", "tangentialDetail", "detailScale"}));
     setGroupOpen("chromatic",
                  active({"lateralCARed", "lateralCABlue", "longitudinalCA",
-                         "longitudinalCARadius"}));
+                         "longitudinalCARadius", "chromaticFieldOnset",
+                         "chromaticFieldFalloff"}));
     setGroupOpen("vignette", active({"vignetteNatural", "vignetteOptical"}));
     setGroupOpen("aperture", active({"apertureResponse", "apertureRadius",
                                      "apertureBladeCurvature",
                                      "apertureRotation", "apertureSoftness",
-                                     "apertureCatEye", "apertureAspect"}) ||
+                                     "apertureCatEye", "apertureAspect",
+                                     "apertureBokehSwirl", "aperturePupilShift",
+                                     "aperturePupilClip", "apertureRimWeight"}) ||
                                  p.apertureShape != 0 ||
                                  p.apertureBladeCount != 6);
     setGroupOpen("bloom", active({"bloomEnergy", "bloomThreshold",
@@ -667,7 +881,8 @@ private:
     setGroupOpen("capture", active({"captureInfluence"}));
     setGroupOpen("look", active({"lookInfluence"}));
     setGroupOpen("fieldShape",
-                 active({"fieldAspect", "fieldRotation", "swirl"}) ||
+                 active({"fieldAspect", "fieldRotation", "swirl",
+                         "responseFieldOnset", "responseFieldFalloff"}) ||
                      p.fieldCenter != std::array<double, 2>{.5, .5});
     setGroupOpen("anamorphic",
                  active({"anamorphicSqueeze", "anamorphicDistortion",
@@ -676,15 +891,18 @@ private:
                  active({"vignetteMechanical", "imageCircleSize",
                          "imageCircleAspect", "imageCircleSoftness"}));
     setGroupOpen("variation", active({"variationAmount"}));
-    setGroupOpen(
-        "responses",
-        active({"responseHighlightKnee", "responseFieldOnset",
-                "responseFieldFalloff", "responseDefocusOnset",
-                "responseDefocusFalloff"}));
+    setGroupOpen("frontWear", active({"frontHaze", "cleaningMarks",
+                                      "scratchAmount", "coatingWear"}));
+    setGroupOpen("lensDirt", active({"internalDirtAmount"}));
+    setGroupOpen("refractive", active({"refractiveIrregularity"}));
+    setGroupOpen("highlightResponse", active({"responseHighlightKnee"}));
     setGroupOpen("opticsSection",
                  active({"distortionK1",
                          "distortionK2",
                          "moustacheK3",
+                         "geometryFieldAmount",
+                         "peripheralStretch",
+                         "peripheralWarp",
                          "anamorphicSqueeze",
                          "swirl",
                          "cornerSharpnessLoss",
@@ -713,7 +931,9 @@ private:
         "pupilSection",
         active({"apertureResponse", "apertureRadius", "apertureBladeCurvature",
                 "apertureRotation", "apertureSoftness", "apertureCatEye",
-                "apertureAspect", "vignetteNatural", "vignetteOptical",
+                "apertureAspect", "apertureBokehSwirl", "aperturePupilShift",
+                "aperturePupilClip", "apertureRimWeight", "vignetteNatural",
+                "vignetteOptical",
                 "vignetteMechanical", "imageCircleSize", "imageCircleAspect",
                 "imageCircleSoftness"}) ||
             p.apertureShape != 0 || p.apertureBladeCount != 6);
@@ -723,15 +943,15 @@ private:
                 "bloomHorizontalStretch", "glareEnergy", "glareRadius",
                 "glareColorAmount", "sphericalHalo", "transmissionColorAmount",
                 "transmissionDensity", "transmissionContrast",
-                "transmissionHighlightSoftness"}));
+                "transmissionHighlightSoftness", "responseHighlightKnee"}));
     setGroupOpen("depthGroup", p.depthMode > 0);
     setGroupOpen(
         "advancedSection",
         active({"coma", "comaThreshold", "variationAmount",
-                "responseHighlightKnee", "responseFieldOnset",
-                "responseFieldFalloff", "responseDefocusOnset",
-                "responseDefocusFalloff", "responseScatterEdgeProtection",
-                "depthEdgeSoftness"}) ||
+                "frontHaze", "cleaningMarks", "scratchAmount", "coatingWear",
+                "internalDirtAmount",
+                "responseDefocusOnset", "responseDefocusFalloff",
+                "responseScatterEdgeProtection", "depthEdgeSoftness"}) ||
             p.depthMode > 0);
   }
   void selectPresetIfNeeded(int desired) {
@@ -760,6 +980,9 @@ private:
     farFocus->setValue(p.farFocus[0], p.farFocus[1], p.farFocus[2]);
     anamorphicFlare->setValue(p.anamorphicFlare[0], p.anamorphicFlare[1],
                               p.anamorphicFlare[2]);
+    anamorphicFlareGhost->setValue(p.anamorphicFlareGhost[0],
+                                   p.anamorphicFlareGhost[1],
+                                   p.anamorphicFlareGhost[2]);
     apertureShape->setValue(std::clamp(p.apertureShape, 0, 2));
     apertureBladeCount->setValue(std::clamp(p.apertureBladeCount, 3, 32));
     depthMode->setValue(std::clamp(p.depthMode, 0, 5));
@@ -834,6 +1057,12 @@ private:
           p.anamorphicFlare[1] = n;
         else if (key == "anamorphicFlareB")
           p.anamorphicFlare[2] = n;
+        else if (key == "anamorphicFlareGhostR")
+          p.anamorphicFlareGhost[0] = n;
+        else if (key == "anamorphicFlareGhostG")
+          p.anamorphicFlareGhost[1] = n;
+        else if (key == "anamorphicFlareGhostB")
+          p.anamorphicFlareGhost[2] = n;
         else if (key == "transmissionR")
           p.transmission[0] = n;
         else if (key == "transmissionG")
@@ -933,6 +1162,9 @@ private:
       << "anamorphicFlareR=" << p.anamorphicFlare[0]
       << "\nanamorphicFlareG=" << p.anamorphicFlare[1]
       << "\nanamorphicFlareB=" << p.anamorphicFlare[2] << '\n'
+      << "anamorphicFlareGhostR=" << p.anamorphicFlareGhost[0]
+      << "\nanamorphicFlareGhostG=" << p.anamorphicFlareGhost[1]
+      << "\nanamorphicFlareGhostB=" << p.anamorphicFlareGhost[2] << '\n'
       << "transmissionR=" << p.transmission[0]
       << "\ntransmissionG=" << p.transmission[1]
       << "\ntransmissionB=" << p.transmission[2] << '\n'
@@ -956,7 +1188,8 @@ private:
   OFX::DoubleParam *apertureBladeCount = nullptr;
   OFX::Double2DParam *opticalCenter = nullptr, *fieldCenter = nullptr;
   OFX::RGBParam *transmission = nullptr, *glare = nullptr, *nearFocus = nullptr,
-                *farFocus = nullptr, *anamorphicFlare = nullptr;
+                *farFocus = nullptr, *anamorphicFlare = nullptr,
+                *anamorphicFlareGhost = nullptr;
   std::unordered_map<std::string, OFX::DoubleParam *> doubles;
   std::vector<Preset> loaded;
   bool inPresetChange = false;
@@ -990,7 +1223,7 @@ OFX::GroupParamDescriptor *addGroup(OFX::ImageEffectDescriptor &d,
 } // namespace
 
 LensDebaserPluginFactory::LensDebaserPluginFactory()
-    : PluginFactoryHelper(kIdentifier, 1, 35) {}
+    : PluginFactoryHelper(kIdentifier, 1, 39) {}
 void LensDebaserPluginFactory::describe(OFX::ImageEffectDescriptor &d) {
   d.setLabels(kName, kName, kName);
   d.getPropertySet().propSetString(kOfxPropIcon, "com.ldb.LensDebaser.png", 1,
@@ -1106,15 +1339,24 @@ void LensDebaserPluginFactory::describeInContext(OFX::ImageEffectDescriptor &d,
   auto *bloom = addGroup(d, *light, "bloom", "Bloom");
   auto *glareHalo = addGroup(d, *light, "glareHalo", "Glare & Halo");
   auto *transmissionGroup = addGroup(d, *light, "transmission", "Transmission");
+  auto *highlightResponse =
+      addGroup(d, *light, "highlightResponse", "Highlight Response");
   bloom->setParent(*lightSection);
   glareHalo->setParent(*lightSection);
   transmissionGroup->setParent(*lightSection);
+  highlightResponse->setParent(*lightSection);
   auto *offAxis = addGroup(d, *advanced, "offAxis", "Off-Axis Character");
   offAxis->setParent(*advancedSection);
   auto *variation = addGroup(d, *advanced, "variation", "Variation");
   variation->setParent(*advancedSection);
-  auto *responses = addGroup(d, *advanced, "responses", "Advanced Responses");
-  responses->setParent(*advancedSection);
+  auto *frontWear = addGroup(d, *advanced, "frontWear", "Front Element Wear");
+  frontWear->setParent(*advancedSection);
+  auto *lensDirt = addGroup(d, *advanced, "lensDirt", "Internal Element Contamination");
+  lensDirt->setParent(*advancedSection);
+  auto *refractive = addGroup(d, *optics, "refractive", "Refractive Irregularity");
+  refractive->setParent(*opticsSection);
+  auto *prism = addGroup(d, *optics, "prism", "Prism Refraction");
+  prism->setParent(*opticsSection);
   auto *depthGroup = addGroup(d, *advanced, "depthGroup", "Depth Input");
   depthGroup->setParent(*advancedSection);
   auto *dm = d.defineChoiceParam("depthMode");
@@ -1167,7 +1409,8 @@ void LensDebaserPluginFactory::describeInContext(OFX::ImageEffectDescriptor &d,
     } else if (id.rfind("look", 0) == 0) {
       g = look;
       p = setup;
-    } else if (id == "fieldAspect" || id == "fieldRotation" || id == "swirl")
+    } else if (id == "fieldAspect" || id == "fieldRotation" || id == "swirl" ||
+               id == "responseFieldOnset" || id == "responseFieldFalloff")
       g = fieldShape;
     else if (id == "cornerSharpnessLoss" || id == "fieldCurvature" ||
              id == "astigmatism" || id == "radialSmear" ||
@@ -1178,12 +1421,15 @@ void LensDebaserPluginFactory::describeInContext(OFX::ImageEffectDescriptor &d,
              id == "tangentialDetail" || id == "detailScale")
       g = detail;
     else if (id == "lateralCARed" || id == "lateralCABlue" ||
-             id == "longitudinalCA" || id == "longitudinalCARadius")
+             id == "longitudinalCA" || id == "longitudinalCARadius" ||
+             id == "chromaticFieldOnset" || id == "chromaticFieldFalloff")
       g = chromatic;
     else if (id.rfind("anamorphic", 0) == 0) {
       g = anamorphic;
       p = optics;
     } else if (id == "depthNear" || id == "depthFar" || id == "depthFocus" ||
+               id == "responseDefocusOnset" ||
+               id == "responseDefocusFalloff" ||
                id == "responseScatterEdgeProtection" ||
                id == "depthEdgeSoftness") {
       g = depthGroup;
@@ -1206,12 +1452,27 @@ void LensDebaserPluginFactory::describeInContext(OFX::ImageEffectDescriptor &d,
     } else if (id.rfind("transmission", 0) == 0) {
       g = transmissionGroup;
       p = light;
+    } else if (id == "responseHighlightKnee") {
+      g = highlightResponse;
+      p = light;
     } else if (id.rfind("variation", 0) == 0) {
       g = variation;
       p = advanced;
-    } else if (id.rfind("response", 0) == 0) {
-      g = responses;
+    } else if (id == "frontHaze" || id == "cleaningMarks" ||
+               id == "scratchAmount" || id == "scratchDirection" ||
+               id == "damageScale" || id == "coatingWear" ||
+               id == "coatingWearScale" || id == "damageSeed") {
+      g = frontWear;
       p = advanced;
+    } else if (id.rfind("internalDirt", 0) == 0) {
+      g = lensDirt;
+      p = advanced;
+    } else if (id.rfind("refractive", 0) == 0) {
+      g = refractive;
+      p = optics;
+    } else if (id.rfind("prism", 0) == 0) {
+      g = prism;
+      p = optics;
     } else if (id == "coma" || id == "comaThreshold") {
       g = offAxis;
       p = advanced;
@@ -1274,6 +1535,8 @@ void LensDebaserPluginFactory::describeInContext(OFX::ImageEffectDescriptor &d,
            .65);
   addColor("anamorphicFlareColor", "Flare Color", *anamorphic, *optics, .35,
            .55, 1);
+  addColor("anamorphicFlareGhostColor", "Ghost Color", *anamorphic, *optics,
+           .55, .25, 1);
 }
 OFX::ImageEffect *
 LensDebaserPluginFactory::createInstance(OfxImageEffectHandle h,

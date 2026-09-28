@@ -1,0 +1,27 @@
+LensDebaserPreset=2
+# Family: Electric-Blue-Scope
+# Strength: Caricature
+# Blue 2x anamorphic character; bright points drive streaks and reveal oval peripheral bokeh.
+anamorphicAberration=1.7
+anamorphicDistortion=0.028
+anamorphicFlareAmount=2.2
+anamorphicFlareB=1
+anamorphicFlareG=0.4
+anamorphicFlareR=0.14
+anamorphicFlareRadius=245
+anamorphicFlareThreshold=0.14
+anamorphicSqueeze=2
+apertureAspect=3
+apertureBokehSwirl=4.2
+apertureCatEye=0.56
+apertureRadius=8.3
+apertureResponse=0.31
+apertureShape=2
+astigmatism=0.48
+cornerSharpnessLoss=0.72
+fieldAspect=1.65
+fieldCurvature=0.36
+lateralCABlue=-2
+lateralCARed=1.5
+responseFieldFalloff=1.58
+responseFieldOnset=0.2

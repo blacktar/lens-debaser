@@ -1,0 +1,12 @@
+LensDebaserPreset=2
+# Family: Demo-Pupil-Decenter-Clipping
+# Strength: Educational
+# Outer pupils visibly shift and close while retaining a smooth filled footprint.
+aperturePupilClip=0.32
+aperturePupilShift=0.38
+apertureRadius=12
+apertureResponse=0.54
+apertureShape=0
+apertureSoftness=0.25
+responseFieldFalloff=1.08
+responseFieldOnset=0.14

@@ -1,0 +1,28 @@
+LensDebaserPreset=2
+# Family: Demo-Structured-Anamorphic-Flare
+# Strength: Educational
+# One compact bright source reveals a clear continuous streak and controlled reflection train.
+anamorphicFlareAmount=0.9
+anamorphicFlareAsymmetry=0.07
+anamorphicFlareB=1
+anamorphicFlareBandAmount=0.45
+anamorphicFlareBandSeparation=26
+anamorphicFlareCoreAmount=0.3
+anamorphicFlareG=0.46
+anamorphicFlareGhostAmount=0.045
+anamorphicFlareGhostB=1
+anamorphicFlareGhostCount=3
+anamorphicFlareGhostEnergyDecay=0.54
+anamorphicFlareGhostG=0.28
+anamorphicFlareGhostPosition=-0.62
+anamorphicFlareGhostR=0.46
+anamorphicFlareGhostScale=0.82
+anamorphicFlareGhostScaleDecay=0.76
+anamorphicFlareGhostSpacing=105
+anamorphicFlareR=0.16
+anamorphicFlareRadius=1650
+anamorphicFlareSecondaryAmount=0.19
+anamorphicFlareSecondaryOffset=190
+anamorphicFlareThickness=0.15
+anamorphicFlareThreshold=0.5
+anamorphicSqueeze=2

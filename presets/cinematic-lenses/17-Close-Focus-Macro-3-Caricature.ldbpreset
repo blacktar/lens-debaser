@@ -1,0 +1,22 @@
+LensDebaserPreset=2
+# Family: Close-Focus-Macro
+# Strength: Caricature
+# Close-focus macro character with crisp central texture, rapidly curving focus and longitudinal color.
+apertureCatEye=0.38
+apertureRadius=14
+apertureResponse=0.65
+astigmatism=0.52
+captureAperture=2
+captureFocalLength=100
+captureFocusDistance=28
+captureInfluence=1
+cornerSharpnessLoss=1.65
+fieldCurvature=1.55
+fineDetail=0.26
+longitudinalCA=1.4
+microContrast=0.34
+radialSmear=0.38
+responseFieldFalloff=1.52
+responseFieldOnset=0.18
+sphericalHalo=1
+tangentialSmear=0.32

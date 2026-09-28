@@ -1,0 +1,8 @@
+LensDebaserPreset=2
+# Family: Demo-Peripheral-Stretch
+# Strength: Educational
+# A grid clearly exposes radial magnification growing gradually toward the perimeter.
+geometryFieldAmount=0.82
+peripheralStretch=0.32
+responseFieldFalloff=1.58
+responseFieldOnset=0.24

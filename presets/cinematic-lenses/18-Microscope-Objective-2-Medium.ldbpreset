@@ -1,0 +1,25 @@
+LensDebaserPreset=2
+# Family: Microscope-Objective
+# Strength: Medium
+# Microscope-objective character: a small clinical centre gives way to severe colored peripheral falloff.
+astigmatism=0.28
+cornerSharpnessLoss=1.05
+fieldAspect=1.62
+fieldCurvature=0.8
+fieldRotation=12
+lateralCABlue=-1.45
+lateralCARed=1.1
+longitudinalCA=0.1
+radialSmear=0.08
+refractiveAnisotropy=0.3
+refractiveDispersion=0.08
+refractiveEdgeBias=0.76
+refractiveIrregularity=0.14
+refractiveScale=2.7
+refractiveSeed=86420
+responseFieldFalloff=1.38
+responseFieldOnset=0.16
+tangentialSmear=0.18
+variationAmount=0.18
+variationFieldAsymmetry=0.18
+variationSeed=86420

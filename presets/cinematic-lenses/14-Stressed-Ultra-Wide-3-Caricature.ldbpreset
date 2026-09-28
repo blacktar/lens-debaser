@@ -1,0 +1,27 @@
+LensDebaserPreset=2
+# Family: Stressed-Ultra-Wide
+# Strength: Caricature
+# Wide-angle moustache geometry; straight lines and high-contrast edges reveal the signature.
+astigmatism=0.7
+cornerSharpnessLoss=1.15
+distortionK1=-0.028
+distortionK2=0.18
+geometryFieldAmount=1
+imageCircleSize=1.04
+imageCircleSoftness=0.2
+lateralCABlue=-3
+lateralCARed=2.4
+moustacheK3=0.28
+peripheralStretch=0.38
+peripheralWarp=0.3
+radialSmear=0.72
+refractiveAnisotropy=0.25
+refractiveDispersion=0.3
+refractiveEdgeBias=0.7
+refractiveIrregularity=0.28
+refractiveScale=2.2
+refractiveSeed=1414
+responseFieldFalloff=1.68
+responseFieldOnset=0.24
+vignetteMechanical=0.1
+vignetteNatural=0.16

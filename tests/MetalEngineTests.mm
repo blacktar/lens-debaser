@@ -2,6 +2,7 @@
 #include "LDBOpticsEngine.h"
 #import <Foundation/Foundation.h>
 #import <Metal/Metal.h>
+#include <algorithm>
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
@@ -18,20 +19,22 @@ static std::vector<simd_float4>
 render(LDBOpticsEngine &engine, id<MTLDevice> device, id<MTLCommandQueue> queue,
        const std::vector<simd_float4> &input, uint32_t width, uint32_t height,
        const LDBOpticsParameters &parameters) {
-  NSUInteger bytes = input.size() * sizeof(simd_float4);
-  id<MTLBuffer> src = [device newBufferWithBytes:input.data()
-                                          length:bytes
-                                         options:MTLResourceStorageModeShared];
-  id<MTLBuffer> dst = [device newBufferWithLength:bytes
-                                          options:MTLResourceStorageModeShared];
-  id<MTLCommandBuffer> command = [queue commandBuffer];
-  engine.encode(command, src, dst, width, height, parameters);
-  [command commit];
-  [command waitUntilCompleted];
-  require(command.status == MTLCommandBufferStatusCompleted,
-          "Metal command did not complete");
-  simd_float4 *values = static_cast<simd_float4 *>(dst.contents);
-  return std::vector<simd_float4>(values, values + input.size());
+  @autoreleasepool {
+    NSUInteger bytes = input.size() * sizeof(simd_float4);
+    id<MTLBuffer> src = [device newBufferWithBytes:input.data()
+                                            length:bytes
+                                           options:MTLResourceStorageModeShared];
+    id<MTLBuffer> dst = [device newBufferWithLength:bytes
+                                            options:MTLResourceStorageModeShared];
+    id<MTLCommandBuffer> command = [queue commandBuffer];
+    engine.encode(command, src, dst, width, height, parameters);
+    [command commit];
+    [command waitUntilCompleted];
+    require(command.status == MTLCommandBufferStatusCompleted,
+            "Metal command did not complete");
+    simd_float4 *values = static_cast<simd_float4 *>(dst.contents);
+    return std::vector<simd_float4>(values, values + input.size());
+  }
 }
 
 static std::vector<simd_float4> renderWithDepth(
@@ -39,24 +42,27 @@ static std::vector<simd_float4> renderWithDepth(
     const std::vector<simd_float4> &input,
     const std::vector<simd_float4> &depth, uint32_t width, uint32_t height,
     const LDBOpticsParameters &parameters) {
-  require(input.size() == depth.size(), "Depth input dimensions must match RGB");
-  NSUInteger bytes = input.size() * sizeof(simd_float4);
-  id<MTLBuffer> src = [device newBufferWithBytes:input.data()
+  @autoreleasepool {
+    require(input.size() == depth.size(),
+            "Depth input dimensions must match RGB");
+    NSUInteger bytes = input.size() * sizeof(simd_float4);
+    id<MTLBuffer> src = [device newBufferWithBytes:input.data()
+                                            length:bytes
+                                           options:MTLResourceStorageModeShared];
+    id<MTLBuffer> z = [device newBufferWithBytes:depth.data()
                                           length:bytes
                                          options:MTLResourceStorageModeShared];
-  id<MTLBuffer> z = [device newBufferWithBytes:depth.data()
-                                        length:bytes
-                                       options:MTLResourceStorageModeShared];
-  id<MTLBuffer> dst = [device newBufferWithLength:bytes
-                                          options:MTLResourceStorageModeShared];
-  id<MTLCommandBuffer> command = [queue commandBuffer];
-  engine.encode(command, src, dst, width, height, parameters, z);
-  [command commit];
-  [command waitUntilCompleted];
-  require(command.status == MTLCommandBufferStatusCompleted,
-          "Metal depth-input command did not complete");
-  simd_float4 *values = static_cast<simd_float4 *>(dst.contents);
-  return std::vector<simd_float4>(values, values + input.size());
+    id<MTLBuffer> dst = [device newBufferWithLength:bytes
+                                            options:MTLResourceStorageModeShared];
+    id<MTLCommandBuffer> command = [queue commandBuffer];
+    engine.encode(command, src, dst, width, height, parameters, z);
+    [command commit];
+    [command waitUntilCompleted];
+    require(command.status == MTLCommandBufferStatusCompleted,
+            "Metal depth-input command did not complete");
+    simd_float4 *values = static_cast<simd_float4 *>(dst.contents);
+    return std::vector<simd_float4>(values, values + input.size());
+  }
 }
 
 static float maxDifference(const std::vector<simd_float4> &a,
@@ -86,6 +92,13 @@ static float luminanceDeviation(const std::vector<simd_float4> &image) {
   for (const auto &p : image)
     deviation += std::abs((p.x + p.y + p.z) / 3.0 - mean);
   return float(deviation / image.size());
+}
+
+static float meanLuminance(const std::vector<simd_float4> &image) {
+  double mean = 0.0;
+  for (const auto &p : image)
+    mean += (p.x + p.y + p.z) / 3.0;
+  return float(mean / image.size());
 }
 
 static float meanChromaSpread(const std::vector<simd_float4> &image) {
@@ -221,6 +234,73 @@ int main(int argc, char **argv) {
     require(maxDifference(image, render(engine, device, queue, image, width,
                                         height, moustacheDistortion)) > .001f,
             "Moustache distortion must respond within its UI range");
+    auto gatedGeometry = neutral;
+    gatedGeometry.distortionK1 = .2f;
+    gatedGeometry.geometryFieldAmount = 1.0f;
+    gatedGeometry.responseFieldOnset = .45f;
+    gatedGeometry.responseFieldFalloff = .5f;
+    auto gatedGeometryOut = render(engine, device, queue, image, width, height,
+                                   gatedGeometry);
+    require(maxDifference(image, gatedGeometryOut) > .001f,
+            "Field-gated geometry must deform the perimeter");
+    auto peripheralGeometry = neutral;
+    peripheralGeometry.geometryFieldAmount = 1.0f;
+    peripheralGeometry.responseFieldOnset = .3f;
+    peripheralGeometry.responseFieldFalloff = .55f;
+    peripheralGeometry.peripheralStretch = .8f;
+    peripheralGeometry.peripheralWarp = .9f;
+    require(maxDifference(image, render(engine, device, queue, image, width,
+                                        height, peripheralGeometry)) > .001f,
+            "Peripheral stretch and irregular warp must work without barrel distortion");
+    auto refractive = neutral;
+    refractive.refractiveIrregularity = 1.0f;
+    refractive.refractiveScale = 1.2f;
+    refractive.refractiveEdgeBias = .6f;
+    refractive.refractiveAnisotropy = .4f;
+    refractive.refractiveRotation = 31;
+    refractive.refractiveDispersion = .8f;
+    refractive.refractiveSeed = 123;
+    auto refractiveOut = render(engine, device, queue, image, width, height,
+                                refractive);
+    require(maxDifference(image, refractiveOut) > .001f,
+            "Refractive irregularity must create local displacement");
+    require(maxDifference(refractiveOut,
+                          render(engine, device, queue, image, width, height,
+                                 refractive)) < 1e-7f,
+            "Refractive irregularity must remain deterministic");
+    auto refractiveOtherSeed = refractive;
+    refractiveOtherSeed.refractiveSeed = 124;
+    require(maxDifference(refractiveOut,
+                          render(engine, device, queue, image, width, height,
+                                 refractiveOtherSeed)) > .0001f,
+            "Refractive seed must select a distinct stable field");
+    auto prism = neutral;
+    prism.prismAmount = 1.0f;
+    prism.prismDirection = 0.0f;
+    prism.prismDispersion = .75f;
+    prism.prismEdgeBias = .55f;
+    prism.prismSoftness = .35f;
+    auto prismOut = render(engine, device, queue, image, width, height, prism);
+    require(maxDifference(image, prismOut) > .001f,
+            "Prism Amount must create coherent edge refraction");
+    auto prismOpposite = prism;
+    prismOpposite.prismDirection = 180.0f;
+    require(maxDifference(prismOut,
+                          render(engine, device, queue, image, width, height,
+                                 prismOpposite)) > .001f,
+            "Prism Direction must select the refracted edge");
+    auto prismAchromatic = prism;
+    prismAchromatic.prismDispersion = 0.0f;
+    require(maxDifference(prismOut,
+                          render(engine, device, queue, image, width, height,
+                                 prismAchromatic)) > .0001f,
+            "Prism Dispersion must independently separate wavelengths");
+    auto prismHard = prism;
+    prismHard.prismSoftness = .03f;
+    require(maxDifference(prismOut,
+                          render(engine, device, queue, image, width, height,
+                                 prismHard)) > .0001f,
+            "Prism Softness must shape the edge transition");
     auto anamorphicField = distortion;
     anamorphicField.anamorphicSqueeze = 1.8f;
     require(
@@ -419,6 +499,120 @@ int main(int argc, char **argv) {
                 .0001f,
             "Variation Seed must select a distinct stable lens instance");
 
+    auto wornElement = neutral;
+    wornElement.frontHaze = .7f;
+    wornElement.cleaningMarks = 1.0f;
+    wornElement.scratchAmount = .8f;
+    wornElement.scratchDirection = 27.0f;
+    wornElement.damageScale = 1.3f;
+    wornElement.coatingWear = .7f;
+    wornElement.coatingWearScale = 1.4f;
+    wornElement.damageSeed = 1234;
+    auto wornElementOut = render(engine, device, queue, image, width, height,
+                                 wornElement);
+    require(maxDifference(image, wornElementOut) > .001f,
+            "Front element wear must alter scatter and transmission");
+    require(maxDifference(wornElementOut,
+                          render(engine, device, queue, image, width, height,
+                                 wornElement)) < 1e-7f,
+            "Front element wear must remain fixed for the same seed");
+    auto differentDamage = wornElement;
+    differentDamage.damageSeed = 4321;
+    require(maxDifference(wornElementOut,
+                          render(engine, device, queue, image, width, height,
+                                 differentDamage)) > .0001f,
+            "Damage Seed must select a distinct stable wear pattern");
+
+    auto dirtChildrenOnly = neutral;
+    dirtChildrenOnly.internalDirtScale = 3.0f;
+    dirtChildrenOnly.internalDirtSmear = 1.0f;
+    dirtChildrenOnly.internalDirtScatter = 2.0f;
+    dirtChildrenOnly.internalDirtSeed = 82;
+    require(maxDifference(image, render(engine, device, queue, image, width,
+                                        height, dirtChildrenOnly)) < 1e-7f,
+            "Internal contamination child controls must require a nonzero amount");
+    auto internalDirt = neutral;
+    internalDirt.internalDirtAmount = 1.5f;
+    internalDirt.internalDirtScale = 1.4f;
+    internalDirt.internalDirtSmear = .45f;
+    internalDirt.internalDirtScatter = 1.2f;
+    internalDirt.internalDirtSeed = 31415;
+    auto internalDirtOut = render(engine, device, queue, image, width, height,
+                                  internalDirt);
+    require(maxDifference(image, internalDirtOut) > .001f,
+            "Internal contamination must create visible optical diffusion");
+    auto internalDensityOnly = internalDirt;
+    internalDensityOnly.internalDirtScatter = 0.0f;
+    auto internalDensityOnlyOut = render(engine, device, queue, image, width,
+                                         height, internalDensityOnly);
+    require(maxDifference(image, internalDensityOnlyOut) > .0001f,
+            "Internal contamination density must remain active without scatter");
+    require(maxDifference(internalDensityOnlyOut, internalDirtOut) > .0001f,
+            "Internal Scatter must independently add smooth highlight redistribution");
+    auto conservativeDensity = internalDensityOnly;
+    conservativeDensity.internalDirtAmount = 1.0f;
+    auto mediumDensity = internalDensityOnly;
+    mediumDensity.internalDirtAmount = 5.0f;
+    auto extremeDensity = internalDensityOnly;
+    extremeDensity.internalDirtAmount = 10.0f;
+    auto conservativeDensityOut = render(engine, device, queue, image, width,
+                                         height, conservativeDensity);
+    auto mediumDensityOut = render(engine, device, queue, image, width, height,
+                                   mediumDensity);
+    auto extremeDensityOut = render(engine, device, queue, image, width, height,
+                                    extremeDensity);
+    require(meanLuminance(conservativeDensityOut) > meanLuminance(mediumDensityOut)
+                && meanLuminance(mediumDensityOut) > meanLuminance(extremeDensityOut),
+            "Internal Dirt Amount must increase monotonically through the extended range");
+    for (const auto &pixel : extremeDensityOut)
+      require(std::isfinite(pixel.x) && std::isfinite(pixel.y)
+                  && std::isfinite(pixel.z) && pixel.x >= 0.0f
+                  && pixel.y >= 0.0f && pixel.z >= 0.0f,
+              "Extreme Internal Dirt Amount must remain finite and non-negative");
+    auto softDensityOnly = internalDensityOnly;
+    softDensityOnly.internalDirtSoftness = 1.0f;
+    require(maxDifference(internalDensityOnlyOut,
+                          render(engine, device, queue, image, width, height,
+                                 softDensityOnly)) > .01f,
+            "Cloud Softness must remain visibly effective without Internal Scatter");
+    require(maxDifference(internalDirtOut,
+                          render(engine, device, queue, image, width, height,
+                                 internalDirt)) < 1e-7f,
+            "Internal contamination must remain deterministic for one seed");
+    auto softCloud = internalDirt;
+    softCloud.internalDirtSoftness = 1.0f;
+    require(maxDifference(internalDirtOut,
+                          render(engine, device, queue, image, width, height,
+                                 softCloud)) > .0001f,
+            "Cloud Softness must reshape internal optical density");
+    auto complexCloud = internalDirt;
+    complexCloud.internalDirtComplexity = 1.0f;
+    require(maxDifference(internalDirtOut,
+                          render(engine, device, queue, image, width, height,
+                                 complexCloud)) > .005f,
+            "Cloud Complexity must add deterministic multi-scale structure");
+    auto internalWithWear = internalDirt;
+    internalWithWear.frontHaze = .7f;
+    internalWithWear.cleaningMarks = .8f;
+    internalWithWear.scratchAmount = .55f;
+    internalWithWear.coatingWear = .7f;
+    require(maxDifference(internalDirtOut,
+                          render(engine, device, queue, image, width, height,
+                                 internalWithWear)) > .0001f,
+            "Internal contamination must coexist with front element wear");
+    auto internalWithScatter = internalDirt;
+    internalWithScatter.bloomThreshold = .5f;
+    internalWithScatter.bloomEnergy = .45f;
+    internalWithScatter.bloomRadius = 10.0f;
+    internalWithScatter.glareEnergy = .25f;
+    internalWithScatter.glareRadius = 24.0f;
+    require(maxDifference(internalDirtOut,
+                          render(engine, device, queue, image, width, height,
+                                 internalWithScatter)) > .0001f,
+            "Internal contamination must feed later bloom and glare stages");
+    require(maxAlphaDifference(image, internalDirtOut) < 1e-6f,
+            "Internal contamination must preserve alpha");
+
     auto chromatic = neutral;
     chromatic.lateralCARed = 0.8f;
     chromatic.lateralCABlue = -0.8f;
@@ -426,6 +620,85 @@ int main(int argc, char **argv) {
         render(engine, device, queue, image, width, height, chromatic);
     require(maxDifference(image, chromaticOut) > 0.001f,
             "Chromatic aberration must alter channels");
+    auto fieldChromatic = chromatic;
+    fieldChromatic.responseFieldOnset = .30f;
+    fieldChromatic.responseFieldFalloff = .85f;
+    std::vector<simd_float4> chromaPattern(width * height);
+    for (uint32_t y = 0; y < height; ++y)
+      for (uint32_t x = 0; x < width; ++x) {
+        float v = ((x / 2 + y / 2) & 1) ? .85f : .15f;
+        chromaPattern[size_t(y) * width + x] = {v, v, v, 1};
+      }
+    auto fieldChromaticOut =
+        render(engine, device, queue, chromaPattern, width, height,
+               fieldChromatic);
+    float chromaCentreDifference = 0, chromaEdgeDifference = 0;
+    uint32_t chromaCentreCount = 0, chromaEdgeCount = 0;
+    for (uint32_t y = 0; y < height; ++y)
+      for (uint32_t x = 0; x < width; ++x) {
+        float nx = (float(x) + .5f) / float(width) - .5f;
+        float ny = (float(y) + .5f) / float(height) - .5f;
+        float r = std::sqrt(nx * nx + ny * ny) * 2.0f;
+        auto sourceSample = chromaPattern[size_t(y) * width + x];
+        auto outputSample = fieldChromaticOut[size_t(y) * width + x];
+        float d = std::abs(outputSample.x - sourceSample.x)
+                + std::abs(outputSample.z - sourceSample.z);
+        if (r < .15f) { chromaCentreDifference += d; ++chromaCentreCount; }
+        if (r > .80f) { chromaEdgeDifference += d; ++chromaEdgeCount; }
+      }
+    chromaCentreDifference /= float(chromaCentreCount);
+    chromaEdgeDifference /= float(chromaEdgeCount);
+    require(chromaEdgeDifference > .001f &&
+                chromaEdgeDifference > chromaCentreDifference * 3.0f,
+            "Lateral chromatic aberration must follow the gradual Field "
+            "envelope and preserve its centre");
+    auto blurredChromatic = fieldChromatic;
+    blurredChromatic.cornerSharpnessLoss = 2.0f;
+    blurredChromatic.fieldCurvature = 2.0f;
+    blurredChromatic.radialSmear = 1.25f;
+    blurredChromatic.tangentialSmear = 1.55f;
+    blurredChromatic.apertureResponse = 1.0f;
+    blurredChromatic.apertureRadius = 24.0f;
+    auto blurredAchromatic = blurredChromatic;
+    blurredAchromatic.lateralCARed = 0.0f;
+    blurredAchromatic.lateralCABlue = 0.0f;
+    auto blurredChromaticOut = render(engine, device, queue, chromaPattern,
+                                      width, height, blurredChromatic);
+    auto blurredAchromaticOut = render(engine, device, queue, chromaPattern,
+                                       width, height, blurredAchromatic);
+    float combinedCentreDifference = 0, combinedEdgeDifference = 0;
+    uint32_t combinedCentreCount = 0, combinedEdgeCount = 0;
+    for (uint32_t y = 0; y < height; ++y)
+      for (uint32_t x = 0; x < width; ++x) {
+        float nx = (float(x) + .5f) / float(width) - .5f;
+        float ny = (float(y) + .5f) / float(height) - .5f;
+        float r = std::sqrt(nx * nx + ny * ny) * 2.0f;
+        auto ca = blurredChromaticOut[size_t(y) * width + x];
+        auto noCA = blurredAchromaticOut[size_t(y) * width + x];
+        float d = std::abs(ca.x - noCA.x) + std::abs(ca.z - noCA.z);
+        if (r < .15f) { combinedCentreDifference += d; ++combinedCentreCount; }
+        if (r > .80f) { combinedEdgeDifference += d; ++combinedEdgeCount; }
+      }
+    combinedCentreDifference /= float(combinedCentreCount);
+    combinedEdgeDifference /= float(combinedEdgeCount);
+    require(combinedEdgeDifference > .001f &&
+                combinedEdgeDifference > combinedCentreDifference * 3.0f,
+            "Strong edge defocus must not suppress field-gated chromatic "
+            "aberration");
+    auto independentChromatic = blurredChromatic;
+    independentChromatic.chromaticFieldOnset = .32f;
+    independentChromatic.chromaticFieldFalloff = .54f;
+    auto independentAchromatic = blurredAchromatic;
+    independentAchromatic.chromaticFieldOnset = .32f;
+    independentAchromatic.chromaticFieldFalloff = .54f;
+    require(maxDifference(blurredAchromaticOut,
+                          render(engine, device, queue, chromaPattern, width,
+                                 height, independentAchromatic)) < 1e-6f,
+            "Independent chromatic envelope must not move the focus field");
+    auto independentOut = render(engine, device, queue, chromaPattern, width,
+                                 height, independentChromatic);
+    require(maxDifference(blurredChromaticOut, independentOut) > .001f,
+            "Independent chromatic envelope must alter the colour field");
     auto redOnly = neutral;
     redOnly.lateralCARed = 1;
     auto blueOnly = neutral;
@@ -706,6 +979,83 @@ int main(int argc, char **argv) {
                                            width, height, rejectedFlare)) >
                 .0001f,
             "Anamorphic Flare Threshold must control highlight eligibility");
+    auto coreFlare = anamorphicFlare;
+    coreFlare.anamorphicFlareCoreAmount = 1.4f;
+    require(maxDifference(flareOut, render(engine, device, queue, impulse,
+                                           width, height, coreFlare)) > .0001f,
+            "Flare Core must independently concentrate streak energy");
+    auto asymmetricFlare = anamorphicFlare;
+    asymmetricFlare.anamorphicFlareAsymmetry = .8f;
+    require(maxDifference(flareOut, render(engine, device, queue, impulse,
+                                           width, height, asymmetricFlare)) > .0001f,
+            "Flare Asymmetry must bias the streak tail");
+    std::vector<simd_float4> offCentreImpulse(width * height,
+                                              simd_float4{0, 0, 0, 1});
+    offCentreImpulse[size_t(height / 2) * width + width / 3] = {8, 8, 8, 1};
+    auto plainOffCentreFlare = render(engine, device, queue, offCentreImpulse,
+                                      width, height, anamorphicFlare);
+    auto ghostFlare = anamorphicFlare;
+    ghostFlare.anamorphicFlareGhostAmount = 1.2f;
+    ghostFlare.anamorphicFlareGhostPosition = -.72f;
+    ghostFlare.anamorphicFlareGhostScale = .85f;
+    ghostFlare.anamorphicFlareGhostColor = {.8f, .2f, 1.0f};
+    auto ghostOut = render(engine, device, queue, offCentreImpulse, width,
+                           height, ghostFlare);
+    require(maxDifference(plainOffCentreFlare, ghostOut) > .0001f,
+            "Flare Ghost must add a source-responsive internal reflection");
+    auto ghostTrainFlare=ghostFlare;
+    ghostTrainFlare.anamorphicFlareGhostCount=5.0f;
+    ghostTrainFlare.anamorphicFlareGhostSpacing=14.0f;
+    ghostTrainFlare.anamorphicFlareGhostScaleDecay=.82f;
+    ghostTrainFlare.anamorphicFlareGhostEnergyDecay=.64f;
+    auto ghostTrainOut=render(engine,device,queue,offCentreImpulse,width,height,
+                              ghostTrainFlare);
+    require(maxDifference(ghostOut,ghostTrainOut)>.0001f,
+            "Ghost Paths must add a bounded analytic reflection train");
+    auto bandedFlare = anamorphicFlare;
+    bandedFlare.anamorphicFlareBandAmount = 1.0f;
+    bandedFlare.anamorphicFlareBandSeparation = 8.0f;
+    auto bandedOut = render(engine, device, queue, impulse, width, height,
+                            bandedFlare);
+    require(maxDifference(flareOut, bandedOut) > .0001f,
+            "Flare Bands must add independently spaced layered streaks");
+    auto thinFlare = bandedFlare;
+    // Exercise thickness with a radius large enough to escape the one-pixel
+    // vertical minimum in this compact fixture.
+    thinFlare.anamorphicFlareRadius = 200.0f;
+    thinFlare.anamorphicFlareThickness = .1f;
+    auto thinFlareOut = render(engine, device, queue, impulse, width, height,
+                               thinFlare);
+    auto thickFlare = thinFlare;
+    thickFlare.anamorphicFlareThickness = 4.0f;
+    require(maxDifference(thinFlareOut, render(engine, device, queue, impulse,
+                                               width, height, thickFlare)) > .00001f,
+            "Flare Thickness must independently shape layered streak width");
+    auto secondaryFlare = bandedFlare;
+    secondaryFlare.anamorphicFlareSecondaryAmount = .8f;
+    secondaryFlare.anamorphicFlareSecondaryOffset = 12.0f;
+    require(maxDifference(bandedOut, render(engine, device, queue, impulse,
+                                            width, height, secondaryFlare)) >
+                .0001f,
+            "Secondary Streak must add an independently offset flare layer");
+    auto rayFlare = anamorphicFlare;
+    rayFlare.diffractionRayAmount = 1.0f;
+    rayFlare.diffractionRayLength = 80.0f;
+    auto rayOut = render(engine, device, queue, impulse, width, height, rayFlare);
+    require(rayOut[verticalFlare].z > flareOut[verticalFlare].z,
+            "Vertical Rays must add source-derived diffraction energy");
+    auto rayContributionAt = [&](uint32_t offset) {
+      size_t sample = size_t(height / 2 + offset) * width + width / 2;
+      return rayOut[sample].z - flareOut[sample].z;
+    };
+    require(rayContributionAt(8) > rayContributionAt(16) &&
+                rayContributionAt(16) > rayContributionAt(24),
+            "Analytic diffraction rays must have a smooth monotonic falloff");
+    auto shortRay = rayFlare;
+    shortRay.diffractionRayLength = 18.0f;
+    require(maxDifference(rayOut, render(engine, device, queue, impulse,
+                                         width, height, shortRay)) > .00001f,
+            "Ray Length must independently shape vertical diffraction extent");
     auto diagnosticBloom = bloom;
     diagnosticBloom.processingFlags = LDBDiagnosticScatter;
     require(maxDifference(bloomOut, render(engine, device, queue, impulse,
@@ -927,6 +1277,88 @@ int main(int argc, char **argv) {
                           render(engine, device, queue, focusPattern, width,
                                  height, catEyeAperture)) > .001f,
             "Cat-eye response must deform the off-axis pupil");
+    auto shiftedPupil = catEyeAperture;
+    shiftedPupil.aperturePupilShift = .8f;
+    auto shiftedPupilOut = render(engine, device, queue, focusPattern, width,
+                                  height, shiftedPupil);
+    require(maxDifference(shiftedPupilOut,
+                          render(engine, device, queue, focusPattern, width,
+                                 height, catEyeAperture)) > .001f,
+            "Pupil Shift must independently displace off-axis bokeh");
+    auto clippedPupil = shiftedPupil;
+    clippedPupil.aperturePupilClip = .7f;
+    auto clippedPupilOut = render(engine, device, queue, focusPattern, width,
+                                  height, clippedPupil);
+    require(maxDifference(shiftedPupilOut, clippedPupilOut) > .001f,
+            "Pupil Clipping must independently shape off-axis bokeh");
+    auto rimmedPupil = clippedPupil;
+    rimmedPupil.apertureRimWeight = .8f;
+    require(maxDifference(clippedPupilOut,
+                          render(engine, device, queue, focusPattern, width,
+                                 height, rimmedPupil)) > .001f,
+            "Pupil Rim Weight must redistribute bokeh energy");
+    auto spatialAperture = circularAperture;
+    spatialAperture.responseFieldOnset = .22f;
+    spatialAperture.responseFieldFalloff = .82f;
+    auto spatialApertureOut = render(engine, device, queue, focusPattern, width,
+                                     height, spatialAperture);
+    float centreDifference = 0, edgeDifference = 0;
+    uint32_t centreCount = 0, edgeCount = 0;
+    for (uint32_t y = 0; y < height; ++y)
+      for (uint32_t x = 0; x < width; ++x) {
+        float nx = (float(x) + .5f) / float(width) - .5f;
+        float ny = (float(y) + .5f) / float(height) - .5f;
+        float d = std::abs(spatialApertureOut[size_t(y) * width + x].x -
+                           focusPattern[size_t(y) * width + x].x);
+        float r = std::sqrt(nx * nx + ny * ny) * 2.0f;
+        if (r < .16f) { centreDifference += d; ++centreCount; }
+        if (r > .72f) { edgeDifference += d; ++edgeCount; }
+      }
+    centreDifference /= float(centreCount);
+    edgeDifference /= float(edgeCount);
+    require(edgeDifference > .01f && edgeDifference > centreDifference * 3.0f,
+            "Depth-free aperture response must preserve a usable centre and "
+            "progressively apply pupil reconstruction off axis");
+    auto spatialBokeh = spatialAperture;
+    spatialBokeh.apertureBokehSwirl = 2;
+    auto spatialBokehOut = render(engine, device, queue, focusPattern, width,
+                                  height, spatialBokeh);
+    require(maxDifference(spatialApertureOut, spatialBokehOut) > .001f,
+            "Bokeh Swirl must reshape an active spatial aperture response");
+    auto polygonAspect = polygonAperture;
+    polygonAspect.apertureAspect = 1.8f;
+    require(maxDifference(polygonApertureOut,
+                          render(engine, device, queue, focusPattern, width,
+                                 height, polygonAspect)) > .001f,
+            "Pupil Aspect must independently reshape polygonal pupils");
+    auto extremeBokeh = spatialAperture;
+    extremeBokeh.apertureBokehSwirl = 6.0f;
+    extremeBokeh.apertureCatEye = 1.0f;
+    auto extremeBokehOut = render(engine, device, queue, focusPattern, width,
+                                  height, extremeBokeh);
+    require(std::all_of(extremeBokehOut.begin(), extremeBokehOut.end(),
+                        [](simd_float4 value) {
+                          return std::isfinite(value.x) && std::isfinite(value.y) &&
+                                 std::isfinite(value.z) && std::isfinite(value.w);
+                        }),
+            "Extreme Bokeh Swirl must retain a finite bounded pupil response");
+    auto zeroWidthField = spatialAperture;
+    zeroWidthField.responseFieldOnset = .55f;
+    zeroWidthField.responseFieldFalloff = 0.0f;
+    auto zeroWidthFieldOut = render(engine, device, queue, focusPattern, width,
+                                    height, zeroWidthField);
+    require(std::all_of(zeroWidthFieldOut.begin(), zeroWidthFieldOut.end(),
+                        [](simd_float4 value) {
+                          return std::isfinite(value.x) && std::isfinite(value.y) &&
+                                 std::isfinite(value.z) && std::isfinite(value.w);
+                        }),
+            "Zero Field Falloff must retain a finite feathered transition");
+    auto shiftedSpatialAperture = spatialAperture;
+    shiftedSpatialAperture.fieldCenter = {.35f, .55f};
+    require(maxDifference(spatialApertureOut,
+                          render(engine, device, queue, focusPattern, width,
+                                 height, shiftedSpatialAperture)) > .001f,
+            "Depth-free aperture falloff must follow Field Center");
     auto softAperture = polygonAperture;
     softAperture.apertureSoftness = 1;
     require(maxDifference(polygonApertureOut,
@@ -951,6 +1383,7 @@ int main(int argc, char **argv) {
     auto filledAperture = neutral;
     filledAperture.apertureResponse = 1;
     filledAperture.apertureRadius = 10;
+    filledAperture.fieldCenter = {0, 0};
     auto filledApertureOut = render(engine, device, queue, aperturePoint, width,
                                     height, filledAperture);
     float ringMinimum = 1e9f, ringMaximum = 0;
@@ -1252,6 +1685,26 @@ int main(int argc, char **argv) {
                     .001f,
             "Detail falloff must be stronger off axis");
 
+    auto defocusedDetail = neutral;
+    defocusedDetail.cornerSharpnessLoss = 2.0f;
+    defocusedDetail.fieldCurvature = 1.5f;
+    defocusedDetail.responseFieldOnset = 0.0f;
+    defocusedDetail.responseFieldFalloff = .65f;
+    auto defocusedOnlyOut = render(engine, device, queue, detailPattern, width,
+                                   height, defocusedDetail);
+    auto boostedDefocus = defocusedDetail;
+    boostedDefocus.fineDetail = .7f;
+    boostedDefocus.microContrast = .6f;
+    auto boostedDefocusOut = render(engine, device, queue, detailPattern,
+                                    width, height, boostedDefocus);
+    float standaloneBoost = std::abs(fineBoostOut[cornerDetail].x -
+                                     detailPattern[cornerDetail].x);
+    float postDefocusBoost = std::abs(boostedDefocusOut[cornerDetail].x -
+                                      defocusedOnlyOut[cornerDetail].x);
+    require(postDefocusBoost < standaloneBoost * .65f,
+            "Positive detail enhancement must not reconstruct sharp texture "
+            "after strong field defocus");
+
     auto sagittal = neutral;
     sagittal.sagittalDetail = .8f;
     auto tangential = neutral;
@@ -1354,6 +1807,19 @@ int main(int argc, char **argv) {
       require(simd_reduce_max(simd_abs(resultAP1 - expected)) < 4e-4f,
               "Optical response must be equivalent after decoding each working "
               "space");
+
+      auto encodedContamination = roundTrip;
+      encodedContamination.internalDirtAmount = 1.2f;
+      encodedContamination.internalDirtScale = 1.4f;
+      encodedContamination.internalDirtSmear = .35f;
+      encodedContamination.internalDirtScatter = 1.0f;
+      encodedContamination.internalDirtSeed = 16180;
+      auto contaminated = render(engine, device, queue, encoded, width, height,
+                                 encodedContamination);
+      require(maxDifference(encoded, contaminated) > .0001f,
+              "Internal contamination must operate in every working space");
+      require(maxAlphaDifference(encoded, contaminated) < 1e-6f,
+              "Internal contamination must preserve alpha in every working space");
     }
 
     std::printf("PASS: neutral identity\n");
@@ -1361,6 +1827,7 @@ int main(int argc, char **argv) {
     std::printf("PASS: vignette field response\n");
     std::printf("PASS: geometric distortion\n");
     std::printf("PASS: lateral chromatic aberration\n");
+    std::printf("PASS: gradual field-gated chromatic aberration\n");
     std::printf("PASS: longitudinal near/far chromatic aberration\n");
     std::printf("PASS: optional depth input interpretation and diagnostic\n");
     std::printf("PASS: depth edge softness and protection\n");
@@ -1369,19 +1836,21 @@ int main(int argc, char **argv) {
     std::printf("PASS: independent field shape\n");
     std::printf("PASS: independent anamorphic distortion and aberration\n");
     std::printf("PASS: deterministic lens variation responses\n");
+    std::printf("PASS: deterministic internal element contamination interactions\n");
     std::printf("PASS: simultaneous advanced response shaping\n");
     std::printf("PASS: deterministic capture and look mapping\n");
     std::printf("PASS: multi-pass bloom distribution\n");
     std::printf("PASS: field swirl\n");
     std::printf("PASS: field curvature response\n");
     std::printf("PASS: normalized independent astigmatism and smear\n");
-    std::printf("PASS: continuous aperture and pupil response\n");
+    std::printf("PASS: continuous spatial aperture and pupil response\n");
     std::printf("PASS: independent aperture shape controls\n");
     std::printf("PASS: filled aperture footprint without directional spokes\n");
     std::printf("PASS: uniform aperture reconstruction without retained "
                 "point-source core\n");
     std::printf("PASS: expanded creative focus and coma ranges\n");
     std::printf("PASS: anamorphic full-field shaping\n");
+    std::printf("PASS: coherent-source analytic flare, reflection train and diffraction\n");
     std::printf("PASS: all UI control ranges and documented dependencies\n");
     std::printf("PASS: distortion-aligned optical scatter\n");
     std::printf("PASS: asymmetric off-axis coma tail\n");
@@ -1395,6 +1864,7 @@ int main(int argc, char **argv) {
     std::printf("PASS: sagittal and tangential detail transfer\n");
     std::printf("PASS: selectable detail scale\n");
     std::printf("PASS: detail-transfer halo suppression\n");
+    std::printf("PASS: detail enhancement respects field-defocus ordering\n");
     std::printf("PASS: independent bloom and glare fields\n");
     std::printf("PASS: independent anamorphic flare response\n");
     std::printf("PASS: fixed high-quality diagnostic transitions\n");
