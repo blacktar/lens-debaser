@@ -31,7 +31,10 @@ codesign --force --deep --sign - "$stage_dir/LensDebaser.ofx.bundle"
 codesign --verify --deep --strict --verbose=2 "$stage_dir/LensDebaser.ofx.bundle"
 
 rm -f "$archive" "$archive.sha256"
-ditto -c -k --sequesterRsrc --keepParent "$stage_dir" "$archive"
+# Distribution archives should contain only the files users need. Resource
+# forks and extended attributes make ditto add a parallel __MACOSX tree of
+# AppleDouble metadata, which is unnecessary for the signed OFX payload.
+ditto -c -k --norsrc --noextattr --keepParent "$stage_dir" "$archive"
 (cd "$release_root" && shasum -a 256 "$(basename "$archive")" > "$(basename "$archive").sha256")
 echo "Created $archive"
 echo "Created $archive.sha256"
