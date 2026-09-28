@@ -94,20 +94,26 @@ ZIP archive plus SHA-256 checksum into `releases/`. Each archive contains the
 compiled OFX plug-in, compiled Metal library, factory presets, release notes,
 third-party notices and a double-clickable installer. The user guide and its
 example images remain online rather than being duplicated in the archive.
-Versioned release archives are kept in the repository so users do not need
-Xcode or the Resolve OpenFX SDK. Download the current build from
+Versioned release archives are published as GitHub release assets so users do
+not need Xcode or the Resolve OpenFX SDK. Download the current build from
 [GitHub Releases](https://github.com/blacktar/lens-debaser/releases).
 
-## License
+## License, credits and third-party notices
 
 Lens Debaser is licensed under the
 [Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International
 License](https://creativecommons.org/licenses/by-nc-sa/4.0/). You may share
 and adapt the project with attribution for non-commercial purposes, provided
-derivative work is distributed under the same license. See [LICENSE](LICENSE)
-for the complete legal terms.
+derivative work is distributed under the same license. See the repository
+[LICENSE](LICENSE) for the complete legal terms.
 
 The included Milan images captured with an iPhone 17 Pro and 1.55× anamorphic
 adapter were created by Vidar Andersen and are distributed under this same
 license. Their asset-level attribution is recorded in
 [`inputs/redistributable/README.md`](inputs/redistributable/README.md).
+
+Third-party software, platform, colour-science and test-chart acknowledgements
+are listed in [`resources/THIRD-PARTY-NOTICES.txt`](resources/THIRD-PARTY-NOTICES.txt).
+The online user guide also contains a consolidated
+[Acknowledgements & Credits](https://vidarandersen.com/dmz/lens-debaser-ofx/#credits)
+section.

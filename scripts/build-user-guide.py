@@ -3,6 +3,7 @@
 
 from pathlib import Path
 import html as html_module
+import json
 import plistlib
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -226,14 +227,14 @@ for slug,title,_preferred_source,_source_label,note in example_specs:
     comparisons=[]
     if slug == 'blend':
         full=guide_example_uri("blend-iso-100.png"); half=guide_example_uri("blend-iso-50.png")
-        comparisons.append(f'''<figure class="image-compare" data-compare style="--split:50%;--split-number:50"><img src="{half}" alt="Demo Blend optical treatment at 50 percent on ISO 12233 chart"><div class="before-layer"><img src="{full}" alt="Demo Blend optical treatment at 100 percent on ISO 12233 chart"></div><span class="compare-divider" aria-hidden="true"></span><span class="compare-label before-label">100% effect</span><span class="compare-label after-label">50% Blend</span><input type="range" min="0" max="100" value="50" aria-label="Compare the Demo Blend treatment at 100 percent and 50 percent"></figure>''')
+        comparisons.append(f'''<figure class="image-compare" data-compare style="--split:50%;--split-number:50"><img src="{half}" alt="Demo Blend optical treatment at 50 percent on ISO 12233 chart" loading="lazy" decoding="async"><div class="before-layer"><img src="{full}" alt="Demo Blend optical treatment at 100 percent on ISO 12233 chart" loading="lazy" decoding="async"></div><span class="compare-divider" aria-hidden="true"></span><span class="compare-label before-label">100% effect</span><span class="compare-label after-label">50% Blend</span><input type="range" min="0" max="100" value="50" aria-label="Compare the Demo Blend treatment at 100 percent and 50 percent"></figure>''')
     else:
         sources_for_group=atlas_sources[:1] if slug == 'processing' else atlas_sources
         for source,source_name in sources_for_group:
             before=guide_example_uri(f"{source}-before.png"); after=guide_example_uri(f"{slug}-{source}-after.png")
             after_label='Difference diagnostic' if slug == 'processing' else 'Applied'
             media_aspect='4224/2000' if source.startswith('milano') else '16/9'
-            comparisons.append(f'''<figure class="image-compare" data-compare style="--split:50%;--split-number:50;--media-aspect:{media_aspect}"><img src="{after}" alt="{title} applied to {source_name}"><div class="before-layer"><img src="{before}" alt="Neutral {source_name} before {title}"></div><span class="compare-divider" aria-hidden="true"></span><span class="compare-label before-label">Before</span><span class="compare-label after-label">{after_label}</span><input type="range" min="0" max="100" value="50" aria-label="Compare neutral and {title} applied to {source_name}"></figure>''')
+            comparisons.append(f'''<figure class="image-compare" data-compare style="--split:50%;--split-number:50;--media-aspect:{media_aspect}"><img src="{after}" alt="{title} applied to {source_name}" loading="lazy" decoding="async"><div class="before-layer"><img src="{before}" alt="Neutral {source_name} before {title}" loading="lazy" decoding="async"></div><span class="compare-divider" aria-hidden="true"></span><span class="compare-label before-label">Before</span><span class="compare-label after-label">{after_label}</span><input type="range" min="0" max="100" value="50" aria-label="Compare neutral and {title} applied to {source_name}"></figure>''')
     preset_number=example_demo_numbers[slug]
     matches=sorted((ROOT / "presets" / "demonstrations").glob(f"{preset_number:02d}-Demo-*.ldbpreset"))
     preset_name=matches[0].stem if matches else f"{preset_number:02d}-Demo preset"
@@ -268,7 +269,7 @@ for preset_path in medium_presets:
         before=guide_example_uri(f"{source}-before.png")
         after=guide_example_uri(f"preset-{preset_slug}-{source}-after.png")
         media_aspect='4224/2000' if source.startswith('milano') else '16/9'
-        comparisons.append(f'''<figure class="image-compare" data-compare style="--split:50%;--split-number:50;--media-aspect:{media_aspect}"><img src="{after}" alt="{preset_name} applied to {source_name}"><div class="before-layer"><img src="{before}" alt="Neutral {source_name} before {preset_name}"></div><span class="compare-divider" aria-hidden="true"></span><span class="compare-label before-label">Before</span><span class="compare-label after-label">Applied</span><input type="range" min="0" max="100" value="50" aria-label="Compare neutral and {preset_name} applied to {source_name}"></figure>''')
+        comparisons.append(f'''<figure class="image-compare" data-compare style="--split:50%;--split-number:50;--media-aspect:{media_aspect}"><img src="{after}" alt="{preset_name} applied to {source_name}" loading="lazy" decoding="async"><div class="before-layer"><img src="{before}" alt="Neutral {source_name} before {preset_name}" loading="lazy" decoding="async"></div><span class="compare-divider" aria-hidden="true"></span><span class="compare-label before-label">Before</span><span class="compare-label after-label">Applied</span><input type="range" min="0" max="100" value="50" aria-label="Compare neutral and {preset_name} applied to {source_name}"></figure>''')
     preset_cards.append(f'''<section class="example-card" id="preset-example-{preset_slug}"><div><h3>{family}</h3><p>{description}</p><p class="applied-recipe"><b>Applied preset for the comparisons below:</b> <code>{preset_name}</code></p></div><div class="example-gallery">{''.join(comparisons)}</div></section>''')
 preset_examples_html=f'''<article id="preset-examples" class="examples-intro"><p class="eyebrow">PRESET ATLAS</p><h2>See the included presets in action</h2><p class="lead">Each cinematic-lens family is shown on both charts and the three color-graded iPhone images. Medium versions are used where available; Bodycam Edge Stress uses its single included version.</p></article>{''.join(preset_cards)}'''
 
@@ -296,7 +297,7 @@ for slug,root,title,_ in groups:
         active_root=root
     lead,body=descriptions[slug]
     workflow=depth_workflow if slug == "depth" else ""
-    sections.append(f'<section id="{slug}"><div><p class="eyebrow">{root} / CONTROL GROUP</p><h2>{title}</h2><p class="lead">{lead}</p><p>{body}</p>{workflow}<p class="section-jump"><a href="#example-{slug}">See it in action ↓</a></p></div><img src="{image_uri(slug)}" alt="Illustrated Lens Debaser {root} and {title} control layout"></section>')
+    sections.append(f'<section id="{slug}"><div><p class="eyebrow">{root} / CONTROL GROUP</p><h2>{title}</h2><p class="lead">{lead}</p><p>{body}</p>{workflow}<p class="section-jump"><a href="#example-{slug}">See it in action ↓</a></p></div><img src="{image_uri(slug)}" alt="Illustrated Lens Debaser {root} and {title} control layout" loading="lazy" decoding="async"></section>')
     if slug == "processing":
         sections.append(diagnostic_html)
 
@@ -305,6 +306,54 @@ demonstration_count=len(list((ROOT / "presets" / "demonstrations").glob("*.ldbpr
 cinematic_count=len([p for p in (ROOT / "presets" / "cinematic-lenses").glob("*.ldbpreset")
                      if not p.name.endswith(" 2.ldbpreset")])
 factory_preset_count=demonstration_count+cinematic_count
+GUIDE_URL="https://vidarandersen.com/dmz/lens-debaser-ofx/"
+REPOSITORY_URL="https://github.com/blacktar/lens-debaser"
+RELEASES_URL=f"{REPOSITORY_URL}/releases"
+guide_description=(
+    "User guide for Lens Debaser, an experimental Apple Silicon Metal/OpenFX "
+    "lens-character effect for DaVinci Resolve."
+)
+structured_data={
+ "@context":"https://schema.org",
+ "@graph":[
+  {
+   "@type":"SoftwareApplication",
+   "@id":f"{GUIDE_URL}#software",
+   "name":"Lens Debaser",
+   "alternateName":"Lens Debaser OFX",
+   "description":"An experimental Apple Silicon Metal/OpenFX effect that adds controllable optical character to footage in DaVinci Resolve.",
+   "applicationCategory":"MultimediaApplication",
+   "applicationSubCategory":"Video post-production plug-in",
+   "operatingSystem":"macOS on Apple Silicon",
+   "softwareVersion":VERSION,
+   "softwareRequirements":"Apple Silicon Mac, Metal, and DaVinci Resolve or DaVinci Resolve Studio",
+   "processorRequirements":"Apple Silicon (arm64)",
+   "isAccessibleForFree":True,
+   "license":"https://creativecommons.org/licenses/by-nc-sa/4.0/",
+   "url":REPOSITORY_URL,
+   "downloadUrl":RELEASES_URL,
+   "sameAs":[REPOSITORY_URL],
+   "author":{"@type":"Person","name":"Vidar Andersen"},
+   "image":f"{GUIDE_URL}images/logo.webp"
+  },
+  {
+   "@type":"TechArticle",
+   "@id":f"{GUIDE_URL}#guide",
+   "headline":f"Lens Debaser {VERSION} User Guide",
+   "name":f"Lens Debaser {VERSION} User Guide",
+   "description":guide_description,
+   "url":GUIDE_URL,
+   "mainEntityOfPage":{"@type":"WebPage","@id":GUIDE_URL},
+   "about":{"@id":f"{GUIDE_URL}#software"},
+   "author":{"@type":"Person","name":"Vidar Andersen"},
+   "inLanguage":"en",
+   "license":"https://creativecommons.org/licenses/by-nc-sa/4.0/",
+   "isAccessibleForFree":True,
+   "image":f"{GUIDE_URL}images/logo.webp"
+  }
+ ]
+}
+structured_data_json=json.dumps(structured_data,ensure_ascii=False,separators=(",",":"))
 demo_descriptions=(
  ("Capture","Supplies peripheral detail loss, field curvature, longitudinal focus color and natural vignetting, then enables Capture Influence. Those four effects form the visible base image; the Capture settings coordinate their strength according to the simulated focal length, aperture, focus distance and capture gate."),
  ("Look","Coordinates several existing optical responses so each broad Look bias is visibly educational rather than neutral on its own."),
@@ -354,8 +403,8 @@ guide_css += """
 .section-jump{margin:1.15em 0 0}.section-jump a{display:inline-block;font-size:.8rem;font-weight:800;letter-spacing:.08em;text-decoration:none;text-transform:uppercase}.section-jump a:hover,.section-jump a:focus-visible{text-decoration:underline;text-underline-offset:.2em}
 @media(max-width:800px){.image-compare{min-width:0}}
 """
-html=f'''<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Lens Debaser {VERSION} — User Guide</title><style>{guide_css}</style></head><body>
-<header class="hero"><div class="hero-copy"><p class="kicker">Lens Debaser {VERSION} · User guide</p><h1><span>Lens</span><span>Debaser</span><span>OFX</span></h1><p class="intro">Lens Debaser is an Apple-Silicon Metal/OpenFX effect for DaVinci Resolve. It can add spatial, chromatic, tonal, and highlight character to your too-perfect footage.</p><p class="intro">Because all cameras are good now. Too good. So I made this for you to debase perfectly good optics in post - because perfect modern optics is for OnlyFans - not for <strong>ABSOLUTE CINEMA!</strong></p><span class="badge">DEBASE PERFECTLY GOOD OPTICS IN POST</span><a class="hero-cta" href="https://github.com/blacktar/lens-debaser/releases">Get Lens Debaser now</a></div><img class="hero-logo" src="{image_uri('logo')}" alt="Lens Debaser logo"></header><div class="menu-bar"><button class="menu-button" type="button" aria-expanded="false" aria-controls="guide-menu"><span class="menu-icon" aria-hidden="true"></span><span>Guide menu</span></button><nav id="guide-menu"><a href="#disclaimer">Work in Progress</a><a href="#installation">Installation</a>{nav}<a href="#diagnostic-views">Diagnostic Views</a><a href="#control-examples">Control examples</a><a href="#preset-examples">Preset examples</a><a href="#catalogue">Preset catalogue</a><a href="#credits">Acknowledgements &amp; Credits</a></nav></div><main class="wrap">
+html=f'''<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Lens Debaser {VERSION} — User Guide</title><meta name="description" content="{guide_description}"><meta name="robots" content="index,follow,max-image-preview:large"><link rel="canonical" href="{GUIDE_URL}"><meta property="og:type" content="article"><meta property="og:title" content="Lens Debaser {VERSION} — User Guide"><meta property="og:description" content="{guide_description}"><meta property="og:url" content="{GUIDE_URL}"><meta property="og:image" content="{GUIDE_URL}images/logo.webp"><meta property="og:site_name" content="Lens Debaser"><meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="Lens Debaser {VERSION} — User Guide"><meta name="twitter:description" content="{guide_description}"><meta name="twitter:image" content="{GUIDE_URL}images/logo.webp"><script type="application/ld+json">{structured_data_json}</script><style>{guide_css}</style></head><body>
+<header class="hero"><div class="hero-copy"><p class="kicker">Lens Debaser {VERSION} · User guide</p><h1><span>Lens</span><span>Debaser</span><span>OFX</span></h1><p class="intro">Lens Debaser is an Apple-Silicon Metal/OpenFX effect for DaVinci Resolve. It can add spatial, chromatic, tonal, and highlight character to your too-perfect footage.</p><p class="intro">Because all cameras are good now. Too good. So I made this for you to debase perfectly good optics in post - because perfect modern optics is for OnlyFans - not for <strong>ABSOLUTE CINEMA!</strong></p><span class="badge">DEBASE PERFECTLY GOOD OPTICS IN POST</span><a class="hero-cta" href="https://github.com/blacktar/lens-debaser/releases">Get Lens Debaser now</a></div><img class="hero-logo" src="{image_uri('logo')}" alt="Lens Debaser logo" loading="eager" decoding="async" fetchpriority="high"></header><div class="menu-bar"><button class="menu-button" type="button" aria-expanded="false" aria-controls="guide-menu"><span class="menu-icon" aria-hidden="true"></span><span>Guide menu</span></button><nav id="guide-menu"><a href="#disclaimer">Work in Progress</a><a href="#installation">Installation</a>{nav}<a href="#diagnostic-views">Diagnostic Views</a><a href="#control-examples">Control examples</a><a href="#preset-examples">Preset examples</a><a href="#catalogue">Preset catalogue</a><a href="#credits">Acknowledgements &amp; Credits</a></nav></div><main class="wrap">
 <article id="disclaimer" class="disclaimer"><p class="eyebrow">WORK IN PROGRESS</p><h2>Experimental software</h2><p>Lens Debaser is under active development. Features, controls, presets, results, compatibility and performance may change without notice. Parts of the plugin may break, behave unexpectedly, or not work entirely as described in this guide.</p><p>Lens Debaser is not a scientific ray tracer. It uses perceptually useful approximations of lens effects rather than attempting mathematically exact optical simulation. The aim is to produce convincing, controllable results while keeping render times practical for post-production and color-grading workflows.</p><p>The software and this guide are provided <b>as is</b> and <b>as available</b>, without warranties of any kind, express or implied. To the fullest extent permitted by applicable law, the authors and contributors accept no liability for loss, damage, interrupted work, corrupted projects, lost media or any other consequence arising from installation or use. Test the plugin on copies of important projects and media.</p></article>
 <article id="installation"><p class="eyebrow">INSTALLATION</p><h2>Install the compiled plug-in</h2><p class="lead">The release package contains the ready-built Apple Silicon OpenFX plug-in, its Metal processing library, factory presets and an installer. Xcode and developer tools are not required.</p><div class="steps"><div><b>Unpack the release</b><br>Double-click the downloaded Lens Debaser ZIP file to extract its folder.</div><div><b>Quit Resolve</b><br>Fully quit DaVinci Resolve before installing or replacing the plug-in.</div><div><b>Run the installer</b><br>Double-click <b>Install Lens Debaser.command</b> and enter the Mac administrator password when requested. If macOS blocks it, Control-click the installer, choose Open, then confirm.</div><div><b>Restart Resolve</b><br>Open Resolve and find Lens Debaser in the OpenFX effects library. The installer also copies the included factory presets into the Lens Debaser preset folder.</div></div><p class="fine"><b>Requirements:</b> an Apple Silicon Mac and DaVinci Resolve or DaVinci Resolve Studio. Installing a newer release automatically saves the previous plug-in bundle in <code>/Library/Application Support/Lens Debaser/Backups</code>.</p></article>
 <article><p class="eyebrow">QUICK START</p><h2>Four steps to results</h2><div class="steps"><div><b>Add Lens Debaser</b><br>Add Lens Debaser to a node on the Color page.</div><div><b>Match the input</b><br>Choose the Input Working Space that matches the image entering the node.</div><div><b>Choose a starting point</b><br>Load a preset or begin with Clean Slate, then adjust the controls for the shot.</div><div><b>Optional: set the final strength</b><br>Use Blend when you want to mix the complete Lens Debaser result with the original image.</div></div></article>
