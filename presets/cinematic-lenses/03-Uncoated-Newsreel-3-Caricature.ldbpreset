@@ -15,6 +15,7 @@ fineDetail=-0.32
 frontHaze=0.42
 glareEnergy=1.15
 glareRadius=125
+glareThreshold=0.2
 lateralCABlue=-0.82
 lateralCARed=0.62
 longitudinalCA=0.34

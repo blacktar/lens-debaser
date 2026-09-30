@@ -23,6 +23,7 @@ fieldCenterY=0.46
 fieldCurvature=1.32
 frontHaze=0.34
 glareEnergy=1.1
+glareThreshold=0.45
 lateralCABlue=-1.9
 lateralCARed=1.45
 longitudinalCA=1.25

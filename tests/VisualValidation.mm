@@ -531,6 +531,7 @@ static LDBOpticsParameters loadCookeFlareCalibration(const std::string& path,
         LDB_LOAD_FLOAT("diffractionRayAmount",diffractionRayAmount)
         LDB_LOAD_FLOAT("diffractionRayLength",diffractionRayLength)
         LDB_LOAD_FLOAT("glareEnergy",glareEnergy)
+        LDB_LOAD_FLOAT("glareThreshold",glareThreshold)
         LDB_LOAD_FLOAT("glareRadius",glareRadius)
         LDB_LOAD_FLOAT("glareColorAmount",glareColorAmount)
         LDB_LOAD_FLOAT("bloomEnergy",bloomEnergy)
@@ -574,7 +575,7 @@ int main(int argc, char** argv) {
         // focused new outputs.
         const int passNumber=argc>=9?std::atoi(argv[7]):0;
         const bool baselineRebuild=passNumber<0;
-        const int reviewOutputFloor=passNumber>=85?384:(passNumber>=84?379:(passNumber>=83?374:(passNumber>=82?368:(passNumber>=81?357:(passNumber>=80?350:(passNumber>=79?339:(passNumber>=77?325:(passNumber>=76?317:(passNumber>=68?310:(passNumber>=67?302:(passNumber>=66?293:(passNumber>=65?281:(passNumber>=64?273:(passNumber>=63?268:(passNumber>=62?263:(passNumber>=61?258:(passNumber>=60?252:0)))))))))))))))));
+        const int reviewOutputFloor=passNumber>=94?455:(passNumber>=93?447:(passNumber>=92?439:(passNumber>=85?384:(passNumber>=84?379:(passNumber>=83?374:(passNumber>=82?368:(passNumber>=81?357:(passNumber>=80?350:(passNumber>=79?339:(passNumber>=77?325:(passNumber>=76?317:(passNumber>=68?310:(passNumber>=67?302:(passNumber>=66?293:(passNumber>=65?281:(passNumber>=64?273:(passNumber>=63?268:(passNumber>=62?263:(passNumber>=61?258:(passNumber>=60?252:0))))))))))))))))))));
         const std::unordered_set<std::string> baselineOutputs = {
             // Neutral inputs and the principal optical families.
             "00-input.tiff", "01-modern.tiff", "02-vintage.tiff", "03-anamorphic.tiff",
@@ -652,6 +653,89 @@ int main(int argc, char** argv) {
                    << "  Current analytic flare primitives: 252-257\n"
                    << "  Current Cooke focal profile calibration: 268-272\n"
                    << "  Retired and superseded development renders are intentionally omitted.\n";
+            else if(passNumber>=94) marker
+                   << "  455-glare-halo-chart-source.tiff\n"
+                   << "  456-glare-halo-hdr-source.tiff\n"
+                   << "  457-demo-glare-and-halo-chart.tiff\n"
+                   << "  458-demo-glare-and-halo-hdr.tiff\n"
+                   << "  459-glare-only-scatter.tiff\n"
+                   << "  460-halo-only-scatter.tiff\n"
+                   << "  461-demo-highlight-response-chart.tiff\n"
+                   << "  462-independent-bloom-glare-wear.tiff\n";
+            else if(passNumber>=93) marker
+                   << "  447-glare-halo-chart-source.tiff\n"
+                   << "  448-glare-halo-hdr-source.tiff\n"
+                   << "  449-demo-glare-and-halo-chart.tiff\n"
+                   << "  450-demo-glare-and-halo-hdr.tiff\n"
+                   << "  451-glare-only-scatter.tiff\n"
+                   << "  452-halo-only-scatter.tiff\n"
+                   << "  453-demo-highlight-response-chart.tiff\n"
+                   << "  454-independent-bloom-glare-wear.tiff\n";
+            else if(passNumber>=92) marker
+                   << "  439-glare-halo-chart-source.tiff\n"
+                   << "  440-glare-halo-hdr-source.tiff\n"
+                   << "  441-demo-glare-and-halo-chart.tiff\n"
+                   << "  442-demo-glare-and-halo-hdr.tiff\n"
+                   << "  443-glare-only-scatter.tiff\n"
+                   << "  444-halo-only-scatter.tiff\n"
+                   << "  445-demo-highlight-response-chart.tiff\n"
+                   << "  446-independent-bloom-glare-wear.tiff\n";
+            else if(passNumber>=91) marker
+                   << "  429-front-wear-chart-source.tiff\n"
+                   << "  430-front-wear-haze-isolated.tiff\n"
+                   << "  431-front-wear-cleaning-marks-isolated.tiff\n"
+                   << "  432-front-wear-scratches-isolated.tiff\n"
+                   << "  433-front-wear-coating-isolated.tiff\n"
+                   << "  434-front-wear-combined-moderate.tiff\n"
+                   << "  435-front-wear-combined-strong.tiff\n"
+                   << "  436-front-wear-real-source.tiff\n"
+                   << "  437-front-wear-real-combined-moderate.tiff\n"
+                   << "  438-front-wear-real-combined-strong.tiff\n";
+            else if(passNumber>=90) marker
+                   << "  419-front-wear-chart-source.tiff\n"
+                   << "  420-front-wear-haze-isolated.tiff\n"
+                   << "  421-front-wear-cleaning-marks-isolated.tiff\n"
+                   << "  422-front-wear-scratches-isolated.tiff\n"
+                   << "  423-front-wear-coating-isolated.tiff\n"
+                   << "  424-front-wear-combined-moderate.tiff\n"
+                   << "  425-front-wear-combined-strong.tiff\n"
+                   << "  426-front-wear-real-source.tiff\n"
+                   << "  427-front-wear-real-combined-moderate.tiff\n"
+                   << "  428-front-wear-real-combined-strong.tiff\n";
+            else if(passNumber>=89) marker
+                   << "  409-front-wear-chart-source.tiff\n"
+                   << "  410-front-wear-haze-isolated.tiff\n"
+                   << "  411-front-wear-cleaning-marks-isolated.tiff\n"
+                   << "  412-front-wear-scratches-isolated.tiff\n"
+                   << "  413-front-wear-coating-isolated.tiff\n"
+                   << "  414-front-wear-combined-moderate.tiff\n"
+                   << "  415-front-wear-combined-strong.tiff\n"
+                   << "  416-front-wear-real-source.tiff\n"
+                   << "  417-front-wear-real-combined-moderate.tiff\n"
+                   << "  418-front-wear-real-combined-strong.tiff\n";
+            else if(passNumber>=88) marker
+                   << "  401-internal-strength-chart-source.tiff\n"
+                   << "  402-internal-strength-amount-2-5.tiff\n"
+                   << "  403-internal-strength-amount-4.tiff\n"
+                   << "  404-internal-strength-amount-6.tiff\n"
+                   << "  405-internal-strength-real-source.tiff\n"
+                   << "  406-internal-strength-real-amount-2-5.tiff\n"
+                   << "  407-internal-strength-real-amount-4.tiff\n"
+                   << "  408-internal-strength-real-amount-6.tiff\n";
+            else if(passNumber>=87) marker
+                   << "  397-internal-contamination-chart-source.tiff\n"
+                   << "  398-internal-contamination-localized.tiff\n"
+                   << "  399-internal-contamination-real-source.tiff\n"
+                   << "  400-internal-contamination-real-localized.tiff\n";
+            else if(passNumber>=86) marker
+                   << "  389-highlight-wear-chart-source.tiff\n"
+                   << "  390-highlight-response-shadow-safe.tiff\n"
+                   << "  391-front-element-wear-retuned.tiff\n"
+                   << "  392-internal-contamination-retuned.tiff\n"
+                   << "  393-highlight-wear-real-source.tiff\n"
+                   << "  394-highlight-response-real-shadow-safe.tiff\n"
+                   << "  395-front-element-wear-real-retuned.tiff\n"
+                   << "  396-internal-contamination-real-retuned.tiff\n";
             else if(passNumber>=85) marker
                    << "  384-prism-chart-source.tiff\n"
                    << "  385-prism-conservative-inward.tiff\n"
@@ -1381,6 +1465,102 @@ int main(int argc, char** argv) {
             };
             auto neutralReal = LDBNeutralOpticsParameters(realWidth, realHeight);
             neutralReal.workingColorSpace = LDBWorkingColorSpaceDaVinciIntermediate;
+            if(passNumber>=89&&passNumber<=91) {
+                const bool revisedWear=passNumber>=90;
+                const bool refinedWear=passNumber==91;
+                saveReal(refinedWear?"436-front-wear-real-source.tiff"
+                         :(revisedWear?"426-front-wear-real-source.tiff"
+                                      :"416-front-wear-real-source.tiff"),real);
+                auto combined=neutralReal;
+                combined.frontHaze=.75f;
+                combined.cleaningMarks=revisedWear?.95f:.80f;
+                combined.scratchAmount=refinedWear?.40f:(revisedWear?.60f:.45f);
+                combined.scratchDirection=28.0f;
+                combined.damageScale=1.35f;
+                combined.coatingWear=refinedWear?1.05f:(revisedWear?.80f:.65f);
+                combined.coatingWearScale=1.45f;
+                combined.damageSeed=31415;
+                saveReal(refinedWear?"437-front-wear-real-combined-moderate.tiff"
+                         :(revisedWear?"427-front-wear-real-combined-moderate.tiff"
+                                      :"417-front-wear-real-combined-moderate.tiff"),render(
+                    engine,device,queue,real,realWidth,realHeight,combined));
+                combined.frontHaze=1.35f;
+                combined.cleaningMarks=1.45f;
+                combined.scratchAmount=refinedWear?.75f:1.0f;
+                combined.coatingWear=refinedWear?1.55f:1.25f;
+                saveReal(refinedWear?"438-front-wear-real-combined-strong.tiff"
+                         :(revisedWear?"428-front-wear-real-combined-strong.tiff"
+                                      :"418-front-wear-real-combined-strong.tiff"),render(
+                    engine,device,queue,real,realWidth,realHeight,combined));
+            }
+            if(passNumber==88) {
+                saveReal("405-internal-strength-real-source.tiff",real);
+                auto contamination=neutralReal;
+                contamination.internalDirtScale=.62f;
+                contamination.internalDirtSmear=.52f;
+                contamination.internalDirtScatter=1.45f;
+                contamination.internalDirtSoftness=.78f;
+                contamination.internalDirtComplexity=.78f;
+                contamination.internalDirtSeed=16180;
+                contamination.internalDirtAmount=2.5f;
+                saveReal("406-internal-strength-real-amount-2-5.tiff",render(
+                    engine,device,queue,real,realWidth,realHeight,contamination));
+                contamination.internalDirtAmount=4.0f;
+                saveReal("407-internal-strength-real-amount-4.tiff",render(
+                    engine,device,queue,real,realWidth,realHeight,contamination));
+                contamination.internalDirtAmount=6.0f;
+                saveReal("408-internal-strength-real-amount-6.tiff",render(
+                    engine,device,queue,real,realWidth,realHeight,contamination));
+            }
+            if(passNumber==87) {
+                saveReal("399-internal-contamination-real-source.tiff",real);
+                auto contamination=neutralReal;
+                contamination.internalDirtAmount=1.95f;
+                contamination.internalDirtScale=.62f;
+                contamination.internalDirtSmear=.52f;
+                contamination.internalDirtScatter=1.45f;
+                contamination.internalDirtSoftness=.78f;
+                contamination.internalDirtComplexity=.78f;
+                contamination.internalDirtSeed=16180;
+                saveReal("400-internal-contamination-real-localized.tiff",render(
+                    engine,device,queue,real,realWidth,realHeight,contamination));
+            }
+            if(passNumber==86) {
+                saveReal("393-highlight-wear-real-source.tiff",real);
+                auto highlightResponse=neutralReal;
+                highlightResponse.responseHighlightKnee=.72f;
+                highlightResponse.bloomEnergy=.38f;
+                highlightResponse.bloomThreshold=.72f;
+                highlightResponse.bloomRadius=28.0f;
+                highlightResponse.glareEnergy=.24f;
+                highlightResponse.glareRadius=44.0f;
+                highlightResponse.sphericalHalo=.20f;
+                highlightResponse.coma=.14f;
+                highlightResponse.comaThreshold=.68f;
+                saveReal("394-highlight-response-real-shadow-safe.tiff",render(
+                    engine,device,queue,real,realWidth,realHeight,highlightResponse));
+                auto frontWear=neutralReal;
+                frontWear.frontHaze=.90f;
+                frontWear.cleaningMarks=1.15f;
+                frontWear.scratchAmount=.68f;
+                frontWear.scratchDirection=28.0f;
+                frontWear.damageScale=1.35f;
+                frontWear.coatingWear=.88f;
+                frontWear.coatingWearScale=1.45f;
+                frontWear.damageSeed=31415;
+                saveReal("395-front-element-wear-real-retuned.tiff",render(
+                    engine,device,queue,real,realWidth,realHeight,frontWear));
+                auto contamination=neutralReal;
+                contamination.internalDirtAmount=1.8f;
+                contamination.internalDirtScale=1.55f;
+                contamination.internalDirtSmear=.38f;
+                contamination.internalDirtScatter=1.05f;
+                contamination.internalDirtSoftness=.72f;
+                contamination.internalDirtComplexity=.72f;
+                contamination.internalDirtSeed=16180;
+                saveReal("396-internal-contamination-real-retuned.tiff",render(
+                    engine,device,queue,real,realWidth,realHeight,contamination));
+            }
             if(passNumber>=77) {
                 std::vector<simd_float4> stageSource(size_t(width)*height,
                                                      simd_float4{.015f,.018f,.022f,.82f});
@@ -2150,6 +2330,185 @@ int main(int argc, char** argv) {
                 prismOpposite.prismDirection=-164.0f;
                 save("388-prism-opposite-direction-inward.tiff",displayPreview(render(
                     engine,device,queue,input,width,height,prismOpposite)));
+            }
+
+            if(passNumber==86) {
+                save("389-highlight-wear-chart-source.tiff",displayPreview(input));
+                auto highlightResponse=LDBNeutralOpticsParameters(width,height);
+                highlightResponse.responseHighlightKnee=.72f;
+                highlightResponse.bloomEnergy=.38f;
+                highlightResponse.bloomThreshold=.72f;
+                highlightResponse.bloomRadius=28.0f;
+                highlightResponse.glareEnergy=.24f;
+                highlightResponse.glareRadius=44.0f;
+                highlightResponse.sphericalHalo=.20f;
+                highlightResponse.coma=.14f;
+                highlightResponse.comaThreshold=.68f;
+                save("390-highlight-response-shadow-safe.tiff",displayPreview(render(
+                    engine,device,queue,input,width,height,highlightResponse)));
+                auto frontWear=LDBNeutralOpticsParameters(width,height);
+                frontWear.frontHaze=.90f;
+                frontWear.cleaningMarks=1.15f;
+                frontWear.scratchAmount=.68f;
+                frontWear.scratchDirection=28.0f;
+                frontWear.damageScale=1.35f;
+                frontWear.coatingWear=.88f;
+                frontWear.coatingWearScale=1.45f;
+                frontWear.damageSeed=31415;
+                save("391-front-element-wear-retuned.tiff",displayPreview(render(
+                    engine,device,queue,input,width,height,frontWear)));
+                auto contamination=LDBNeutralOpticsParameters(width,height);
+                contamination.internalDirtAmount=1.8f;
+                contamination.internalDirtScale=1.55f;
+                contamination.internalDirtSmear=.38f;
+                contamination.internalDirtScatter=1.05f;
+                contamination.internalDirtSoftness=.72f;
+                contamination.internalDirtComplexity=.72f;
+                contamination.internalDirtSeed=16180;
+                save("392-internal-contamination-retuned.tiff",displayPreview(render(
+                    engine,device,queue,input,width,height,contamination)));
+            }
+
+            if(passNumber>=92&&passNumber<=94) {
+                const int glareOutputBase=passNumber==94?455:(passNumber==93?447:439);
+                auto glareOutput=[&](int offset,const char* suffix) {
+                    return std::to_string(glareOutputBase+offset)+suffix;
+                };
+                save(glareOutput(0,"-glare-halo-chart-source.tiff"),displayPreview(input));
+                save(glareOutput(1,"-glare-halo-hdr-source.tiff"),displayPreview(hdr));
+                auto glareHalo=LDBNeutralOpticsParameters(width,height);
+                glareHalo.glareEnergy=.58f;
+                glareHalo.glareThreshold=.45f;
+                glareHalo.glareRadius=74.0f;
+                glareHalo.glareColor={1.0f,.72f,.46f};
+                glareHalo.glareColorAmount=.34f;
+                glareHalo.sphericalHalo=.58f;
+                save(glareOutput(2,"-demo-glare-and-halo-chart.tiff"),displayPreview(render(
+                    engine,device,queue,input,width,height,glareHalo)));
+                save(glareOutput(3,"-demo-glare-and-halo-hdr.tiff"),displayPreview(render(
+                    engine,device,queue,hdr,width,height,glareHalo)));
+                auto glareOnly=glareHalo;
+                glareOnly.sphericalHalo=0.0f;
+                save(glareOutput(4,"-glare-only-scatter.tiff"),displayPreview(render(
+                    engine,device,queue,hdr,width,height,glareOnly)));
+                auto haloOnly=glareHalo;
+                haloOnly.glareEnergy=0.0f;
+                save(glareOutput(5,"-halo-only-scatter.tiff"),displayPreview(render(
+                    engine,device,queue,hdr,width,height,haloOnly)));
+                auto highlightResponse=LDBNeutralOpticsParameters(width,height);
+                highlightResponse.responseHighlightKnee=.72f;
+                highlightResponse.bloomEnergy=.38f;
+                highlightResponse.bloomThreshold=.72f;
+                highlightResponse.bloomRadius=28.0f;
+                highlightResponse.glareEnergy=.24f;
+                highlightResponse.glareThreshold=.72f;
+                highlightResponse.glareRadius=44.0f;
+                highlightResponse.sphericalHalo=.20f;
+                highlightResponse.coma=.14f;
+                highlightResponse.comaThreshold=.68f;
+                save(glareOutput(6,"-demo-highlight-response-chart.tiff"),displayPreview(render(
+                    engine,device,queue,input,width,height,highlightResponse)));
+                auto combined=glareHalo;
+                combined.bloomEnergy=.42f;
+                combined.bloomThreshold=.72f;
+                combined.bloomRadius=30.0f;
+                combined.frontHaze=.75f;
+                save(glareOutput(7,"-independent-bloom-glare-wear.tiff"),displayPreview(render(
+                    engine,device,queue,hdr,width,height,combined)));
+            }
+
+            if(passNumber==87) {
+                save("397-internal-contamination-chart-source.tiff",displayPreview(input));
+                auto contamination=LDBNeutralOpticsParameters(width,height);
+                contamination.internalDirtAmount=1.95f;
+                contamination.internalDirtScale=.62f;
+                contamination.internalDirtSmear=.52f;
+                contamination.internalDirtScatter=1.45f;
+                contamination.internalDirtSoftness=.78f;
+                contamination.internalDirtComplexity=.78f;
+                contamination.internalDirtSeed=16180;
+                save("398-internal-contamination-localized.tiff",displayPreview(render(
+                    engine,device,queue,input,width,height,contamination)));
+            }
+
+            if(passNumber==88) {
+                save("401-internal-strength-chart-source.tiff",displayPreview(input));
+                auto contamination=LDBNeutralOpticsParameters(width,height);
+                contamination.internalDirtScale=.62f;
+                contamination.internalDirtSmear=.52f;
+                contamination.internalDirtScatter=1.45f;
+                contamination.internalDirtSoftness=.78f;
+                contamination.internalDirtComplexity=.78f;
+                contamination.internalDirtSeed=16180;
+                contamination.internalDirtAmount=2.5f;
+                save("402-internal-strength-amount-2-5.tiff",displayPreview(render(
+                    engine,device,queue,input,width,height,contamination)));
+                contamination.internalDirtAmount=4.0f;
+                save("403-internal-strength-amount-4.tiff",displayPreview(render(
+                    engine,device,queue,input,width,height,contamination)));
+                contamination.internalDirtAmount=6.0f;
+                save("404-internal-strength-amount-6.tiff",displayPreview(render(
+                    engine,device,queue,input,width,height,contamination)));
+            }
+
+            if(passNumber>=89&&passNumber<=91) {
+                const bool revisedWear=passNumber>=90;
+                const bool refinedWear=passNumber==91;
+                save(refinedWear?"429-front-wear-chart-source.tiff"
+                     :(revisedWear?"419-front-wear-chart-source.tiff"
+                                  :"409-front-wear-chart-source.tiff"),displayPreview(input));
+                auto haze=LDBNeutralOpticsParameters(width,height);
+                haze.frontHaze=1.0f;
+                save(refinedWear?"430-front-wear-haze-isolated.tiff"
+                     :(revisedWear?"420-front-wear-haze-isolated.tiff"
+                                  :"410-front-wear-haze-isolated.tiff"),displayPreview(render(
+                    engine,device,queue,input,width,height,haze)));
+                auto marks=LDBNeutralOpticsParameters(width,height);
+                marks.cleaningMarks=1.0f;
+                marks.damageScale=1.35f;
+                marks.damageSeed=31415;
+                save(refinedWear?"431-front-wear-cleaning-marks-isolated.tiff"
+                     :(revisedWear?"421-front-wear-cleaning-marks-isolated.tiff"
+                                  :"411-front-wear-cleaning-marks-isolated.tiff"),displayPreview(render(
+                    engine,device,queue,input,width,height,marks)));
+                auto scratches=LDBNeutralOpticsParameters(width,height);
+                scratches.scratchAmount=1.0f;
+                scratches.scratchDirection=28.0f;
+                scratches.damageScale=1.35f;
+                scratches.damageSeed=31415;
+                save(refinedWear?"432-front-wear-scratches-isolated.tiff"
+                     :(revisedWear?"422-front-wear-scratches-isolated.tiff"
+                                  :"412-front-wear-scratches-isolated.tiff"),displayPreview(render(
+                    engine,device,queue,input,width,height,scratches)));
+                auto coating=LDBNeutralOpticsParameters(width,height);
+                coating.coatingWear=1.0f;
+                coating.coatingWearScale=1.45f;
+                coating.damageSeed=31415;
+                save(refinedWear?"433-front-wear-coating-isolated.tiff"
+                     :(revisedWear?"423-front-wear-coating-isolated.tiff"
+                                  :"413-front-wear-coating-isolated.tiff"),displayPreview(render(
+                    engine,device,queue,input,width,height,coating)));
+                auto combined=LDBNeutralOpticsParameters(width,height);
+                combined.frontHaze=.75f;
+                combined.cleaningMarks=revisedWear?.95f:.80f;
+                combined.scratchAmount=refinedWear?.40f:(revisedWear?.60f:.45f);
+                combined.scratchDirection=28.0f;
+                combined.damageScale=1.35f;
+                combined.coatingWear=refinedWear?1.05f:(revisedWear?.80f:.65f);
+                combined.coatingWearScale=1.45f;
+                combined.damageSeed=31415;
+                save(refinedWear?"434-front-wear-combined-moderate.tiff"
+                     :(revisedWear?"424-front-wear-combined-moderate.tiff"
+                                  :"414-front-wear-combined-moderate.tiff"),displayPreview(render(
+                    engine,device,queue,input,width,height,combined)));
+                combined.frontHaze=1.35f;
+                combined.cleaningMarks=1.45f;
+                combined.scratchAmount=refinedWear?.75f:1.0f;
+                combined.coatingWear=refinedWear?1.55f:1.25f;
+                save(refinedWear?"435-front-wear-combined-strong.tiff"
+                     :(revisedWear?"425-front-wear-combined-strong.tiff"
+                                  :"415-front-wear-combined-strong.tiff"),displayPreview(render(
+                    engine,device,queue,input,width,height,combined)));
             }
 
             if(passNumber==83) {

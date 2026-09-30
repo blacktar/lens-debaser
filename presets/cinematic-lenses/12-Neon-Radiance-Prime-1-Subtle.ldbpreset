@@ -18,6 +18,7 @@ glareEnergy=0.1
 glareG=0.55
 glareR=0.28
 glareRadius=34
+glareThreshold=0.66
 transmissionB=1
 transmissionColorAmount=0.04
 transmissionG=0.97

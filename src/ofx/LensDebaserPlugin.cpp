@@ -14,7 +14,7 @@
 #include <vector>
 
 namespace {
-constexpr const char *kName = "Lens Debaser 1.57";
+constexpr const char *kName = "Lens Debaser 1.64";
 constexpr const char *kIdentifier = "com.ldb.LensDebaser";
 constexpr const char *kDepthClipName = "Depth";
 struct DoubleSpec {
@@ -197,6 +197,8 @@ const DoubleSpec kSpecs[] = {
      "Vertical displacement of Secondary Streak in output pixels."},
     {"glareEnergy", "Glare Amount", 0, 0, 2, .001,
      "Energy added by veiling glare."},
+    {"glareThreshold", "Glare Threshold", .45, 0, 4, .001,
+     "Scene-linear highlight level at which glare begins."},
     {"glareRadius", "Glare Radius", 24, 0, 1200, .01,
      "Glare spread; requires Glare Amount."},
     {"depthNear", "Input Near", 0, 0, 1, .001,
@@ -499,6 +501,7 @@ private:
     D(bloomRadius);
     D(bloomHorizontalStretch);
     D(glareEnergy);
+    D(glareThreshold);
     D(glareRadius);
     D(effectBlend);
     D(transmissionColorAmount);
@@ -871,7 +874,7 @@ private:
                                  p.apertureBladeCount != 6);
     setGroupOpen("bloom", active({"bloomEnergy", "bloomThreshold",
                                   "bloomRadius", "bloomHorizontalStretch"}));
-    setGroupOpen("glareHalo", active({"glareEnergy", "glareRadius",
+    setGroupOpen("glareHalo", active({"glareEnergy", "glareThreshold", "glareRadius",
                                       "glareColorAmount", "sphericalHalo"}));
     setGroupOpen(
         "transmission",
@@ -940,7 +943,7 @@ private:
     setGroupOpen(
         "lightSection",
         active({"bloomEnergy", "bloomThreshold", "bloomRadius",
-                "bloomHorizontalStretch", "glareEnergy", "glareRadius",
+                "bloomHorizontalStretch", "glareEnergy", "glareThreshold", "glareRadius",
                 "glareColorAmount", "sphericalHalo", "transmissionColorAmount",
                 "transmissionDensity", "transmissionContrast",
                 "transmissionHighlightSoftness", "responseHighlightKnee"}));
@@ -1016,6 +1019,7 @@ private:
     std::string line;
     int presetVersion = 0;
     bool focusDistanceRead = false;
+    bool glareThresholdRead = false;
     while (std::getline(f, line)) {
       auto pos = line.find('=');
       if (pos == std::string::npos)
@@ -1035,6 +1039,8 @@ private:
           p.values[key] = n;
           if (key == "captureFocusDistance")
             focusDistanceRead = true;
+          if (key == "glareThreshold")
+            glareThresholdRead = true;
         } else if (key == "apertureShape")
           p.apertureShape = int(n);
         else if (key == "apertureBladeCount")
@@ -1100,6 +1106,11 @@ private:
     // and stores centimetres while retaining the same persisted parameter ID.
     if (presetVersion == 1 && focusDistanceRead)
       p.values["captureFocusDistance"] *= 100.0;
+    // Presets authored before ABI v17 relied on the undocumented use of
+    // Bloom Threshold by Glare. Preserve their rendering on load without
+    // retaining that runtime coupling for newly authored presets.
+    if (!glareThresholdRead && p.values["glareEnergy"] > 0.0)
+      p.values["glareThreshold"] = p.values["bloomThreshold"];
     return true;
   }
   void load(const std::string &path) {

@@ -16,6 +16,7 @@ fieldCenterX=0.47
 fieldCenterY=0.52
 fieldCurvature=1.2
 glareEnergy=0.28
+glareThreshold=0.45
 longitudinalCA=0.5
 responseFieldFalloff=1.52
 responseFieldOnset=0.16

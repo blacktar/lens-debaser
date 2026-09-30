@@ -150,11 +150,16 @@ static float4 sampleNearest(device const float4* image, float2 pixel, uint width
 static float3 thresholdHighlightResponse(float3 color,float threshold,float knee) {
     color=max(color,float3(0.0f));
     float luminance=dot(color,float3(0.2126f,0.7152f,0.0722f));
-    float width=max(knee,0.0f);
+    // Knee is a dimensionless softness control. Map it into a width that can
+    // approach, but never exceed, the active threshold. The previous absolute
+    // scene-linear width allowed Knee > Threshold, which made the extraction
+    // begin below zero and admitted virtually every positive shadow value.
+    float positiveThreshold=max(threshold,0.0f);
+    float width=positiveThreshold*(1.0f-exp(-max(knee,0.0f)));
     float excess;
-    if(width<=1e-6f) excess=max(luminance-threshold,0.0f);
+    if(width<=1e-6f) excess=max(luminance-positiveThreshold,0.0f);
     else {
-        float x=luminance-threshold;
+        float x=luminance-positiveThreshold;
         if(x<=-width) excess=0.0f;
         else if(x>=width) excess=x;
         else {
@@ -477,10 +482,10 @@ static float3 frontElementPattern(float2 uv, constant LDBOpticsParameters& p) {
                * smoothstep(.72f,.94f,segment);
 
     // A few deeper scratches have unequal spacing and limited length.
-    float deepA = 1.0f-smoothstep(.0012f,.0055f,
+    float deepA = 1.0f-smoothstep(.00055f,.0022f,
         abs(r.y-.12f*sin(phase)-r.x*.035f));
     deepA *= smoothstep(.36f,.47f,.5f-abs(r.x+.08f*cos(phase)));
-    float deepB = 1.0f-smoothstep(.001f,.0045f,
+    float deepB = 1.0f-smoothstep(.00045f,.0019f,
         abs(r.y+.19f*cos(phase)+r.x*.08f));
     deepB *= smoothstep(.20f,.38f,.42f-abs(r.x-.13f*sin(phase)));
     return float3(clamp(arcs+fine*.55f,0.0f,1.0f),
@@ -493,7 +498,8 @@ static float coatingWearPattern(float2 uv, constant LDBOpticsParameters& p) {
     float2 q=(uv-.5f)*(2.2f/scale);
     float broad=sin(q.x*3.1f+phase)+sin(q.y*2.7f-phase*.63f)
                +.65f*sin((q.x+q.y)*4.3f+phase*1.4f);
-    return smoothstep(.35f,1.45f,broad);
+    float mottling=.5f+.5f*sin(q.x*5.7f-q.y*4.9f+phase*.8f);
+    return smoothstep(.08f,1.32f,broad+mottling*.32f);
 }
 
 kernel void ldbOpticsMain(device const float4* source [[buffer(0)]],
@@ -796,12 +802,20 @@ kernel void ldbOpticsMain(device const float4* source [[buffer(0)]],
         // Spatial wear masks alter transmission here. Their illumination-driven
         // scatter is composited later from the smooth separable scatter graph;
         // direct sparse taps made their sampling lattice visible around points.
-        optical.rgb*=1.0f-clamp(pattern.x*marks*.003f+pattern.y*scratches*.005f,
-                                0.0f,.010f);
+        // Marks primarily remove a small amount of local transmission. Keep
+        // the ceiling low enough to avoid drawn-on dark lines, but high enough
+        // for the 0..1 range to remain useful before highlight scatter reveals
+        // the residue more strongly in the composite stage.
+        // Wiping residue must remain visible in ordinary midtones, while deep
+        // scratches interrupt transmission more decisively along their narrow
+        // paths. The masks stay deterministic and spatially sparse, so these
+        // stronger per-mark responses do not become a global density change.
+        optical.rgb*=1.0f-clamp(pattern.x*marks*.045f+pattern.y*scratches*.035f,
+                                0.0f,.14f);
         if(coating>0.0f) {
             float coatingMask=wear*coating;
-            float3 wornTint=float3(1.035f,.985f,.94f);
-            optical.rgb*=mix(float3(1.0f),wornTint,clamp(coatingMask*.28f,0.0f,.55f));
+            float3 wornTint=float3(1.09f,.975f,.84f);
+            optical.rgb*=mix(float3(1.0f),wornTint,clamp(coatingMask*.68f,0.0f,.85f));
         }
     }
     float internalDirt=clamp(p.internalDirtAmount,0.0f,10.0f);
@@ -857,11 +871,36 @@ static float4 blurLine(device const float4* image, float2 pixel, float2 axis, fl
         if (abs(tap) > tapRadius) continue;
         float normalizedOffset = float(tap) / float(tapRadius);
         float weight = exp(-0.5f * (normalizedOffset / sigma) * (normalizedOffset / sigma));
+        // Fade the finite kernel to zero before its square support boundary.
+        // Without this taper, compact highlights reveal the separable cutoff
+        // as a rounded rectangle even though the inner Gaussian is circular.
+        weight*=1.0f-smoothstep(.72f,1.0f,abs(normalizedOffset));
         result += sampleBilinear(image, pixel + axis * radius * normalizedOffset,
                                  width, height) * weight;
         weightSum += weight;
     }
     return result / weightSum;
+}
+
+// Veiling glare needs a genuinely Gaussian tail. The ordinary bounded kernel
+// stops at one nominal radius, where its Gaussian still carries visible
+// energy; two separable passes therefore reveal a square support boundary.
+// Extend glare to 1.5 radii, where the tail is effectively black, while still
+// operating on the reduced scatter buffer.
+static float4 blurLineGlare(device const float4* image,float2 pixel,float2 axis,
+                            float radius,uint width,uint height) {
+    if(radius<=.001f)return sampleBilinear(image,pixel,width,height);
+    float4 result=0.0f;
+    float weightSum=0.0f;
+    float sigma=max(radius*.45f,.55f);
+    int support=clamp(int(ceil(radius*1.5f)),1,32);
+    for(int tap=-32;tap<=32;++tap) {
+        if(abs(tap)>support)continue;
+        float weight=exp(-.5f*float(tap*tap)/(sigma*sigma));
+        result+=sampleBilinear(image,pixel+axis*float(tap),width,height)*weight;
+        weightSum+=weight;
+    }
+    return result/max(weightSum,1e-6f);
 }
 
 // Very long anamorphic streaks need near-continuous sampling. Keep the sample
@@ -916,10 +955,35 @@ static float4 blurLineDepthAware(device const float4* image,float2 pixel,float2 
         if(abs(tap)>tapRadius) continue;
         float normalizedOffset=float(tap)/float(tapRadius);
         float weight=exp(-.5f*(normalizedOffset/sigma)*(normalizedOffset/sigma));
+        weight*=1.0f-smoothstep(.72f,1.0f,abs(normalizedOffset));
         float4 sample=sampleBilinear(image,pixel+axis*radius*normalizedOffset,width,height);
         float sampleDepth=normalizedDepth(sampleNearest(image,
             pixel+axis*radius*normalizedOffset,width,height),p);
         weight*=scatterDepthAgreement(targetDepth,sampleDepth,p);
+        result+=sample.rgb*weight;
+        weightSum+=weight;
+    }
+    return float4(weightSum>1e-6f?result/weightSum:centre.rgb,centre.a);
+}
+
+
+static float4 blurLineGlareDepthAware(device const float4* image,float2 pixel,
+                                      float2 axis,float radius,uint width,uint height,
+                                      constant LDBOpticsParameters& p) {
+    if(radius<=.001f)return sampleBilinear(image,pixel,width,height);
+    float4 centre=sampleNearest(image,pixel,width,height);
+    float targetDepth=normalizedDepth(centre,p);
+    float3 result=0.0f;
+    float weightSum=0.0f;
+    float sigma=max(radius*.45f,.55f);
+    int support=clamp(int(ceil(radius*1.5f)),1,32);
+    for(int tap=-32;tap<=32;++tap) {
+        if(abs(tap)>support)continue;
+        float2 samplePixel=pixel+axis*float(tap);
+        float4 sample=sampleBilinear(image,samplePixel,width,height);
+        float weight=exp(-.5f*float(tap*tap)/(sigma*sigma));
+        weight*=scatterDepthAgreement(targetDepth,
+            normalizedDepth(sampleNearest(image,samplePixel,width,height),p),p);
         result+=sample.rgb*weight;
         weightSum+=weight;
     }
@@ -1118,6 +1182,7 @@ kernel void ldbDownsampleHighlights(device const float4* source [[buffer(0)]],
     if (gid.x >= width || gid.y >= height) return;
     uint scale = max(scatter.scale, 1u);
     float3 sum = 0.0f;
+    float3 peak = 0.0f;
     for (uint y = 0; y < scale; ++y) {
         for (uint x = 0; x < scale; ++x) {
             uint2 sourcePosition = min(gid * scale + uint2(x, y),
@@ -1141,14 +1206,23 @@ kernel void ldbDownsampleHighlights(device const float4* source [[buffer(0)]],
                     max(sourceLuma-surroundLuma*.90f,0.0f)/max(sourceLuma,1e-5f));
                 sourceWeight*=compactGate;
             }
-            sum+=thresholdHighlightResponse(sourceSample.rgb,scatter.threshold,
-                                             p.responseHighlightKnee)*sourceWeight;
+            float3 eligible=thresholdHighlightResponse(sourceSample.rgb,scatter.threshold,
+                                                        p.responseHighlightKnee)*sourceWeight;
+            sum+=eligible;
+            peak=max(peak,eligible);
         }
     }
     uint2 depthPosition=min(gid*scale+uint2(scale/2u),
         uint2(uint(p.imageSize.x)-1,uint(p.imageSize.y)-1));
     float depthCarrier=source[depthPosition.y*uint(p.imageSize.x)+depthPosition.x].a;
-    destination[gid.y * width + gid.x] = float4(sum / float(scale * scale),depthCarrier);
+    float3 reduced=sum/float(scale*scale);
+    // Glare is frequently driven by compact practicals. Pure cell averaging
+    // divides a one-pixel source by as much as 64 before the blur and makes the
+    // UI appear inert. A restrained peak-preserving reduction retains source
+    // energy without turning the broad response into a hard point sprite.
+    if(scatter.axisY>.5f&&scatter.axisY<1.5f)
+        reduced=mix(reduced,peak,.35f);
+    destination[gid.y * width + gid.x] = float4(reduced,depthCarrier);
 }
 
 kernel void ldbDetectFlareSources(
@@ -1238,8 +1312,13 @@ kernel void ldbBlurHorizontal(device const float4* source [[buffer(0)]],
     uint width = uint(scatter.imageSize.x), height = uint(scatter.imageSize.y);
     if (gid.x >= width || gid.y >= height) return;
     bool depthAware=p.depthMode>0u&&scatter.axisX>.5f;
+    bool glareKernel=scatter.axisY>.5f&&scatter.axisY<1.5f;
     int maximumTaps=scatterTapLimit(p);
-    destination[gid.y*width+gid.x]=depthAware
+    destination[gid.y*width+gid.x]=glareKernel
+        ?(depthAware
+            ?blurLineGlareDepthAware(source,float2(gid),float2(1,0),scatter.radiusX,width,height,p)
+            :blurLineGlare(source,float2(gid),float2(1,0),scatter.radiusX,width,height))
+        :depthAware
         ?blurLineDepthAware(source,float2(gid),float2(1,0),scatter.radiusX,width,height,p,maximumTaps)
         :((scatter.axisY>2.5f||scatter.radiusX>24.0f)
             ?blurLineLongFlare(source,float2(gid),float2(1,0),scatter.radiusX,width,height)
@@ -1254,8 +1333,13 @@ kernel void ldbBlurVertical(device const float4* source [[buffer(0)]],
     uint width = uint(scatter.imageSize.x), height = uint(scatter.imageSize.y);
     if (gid.x >= width || gid.y >= height) return;
     bool depthAware=p.depthMode>0u&&scatter.axisX>.5f;
+    bool glareKernel=scatter.axisY>.5f&&scatter.axisY<1.5f;
     int maximumTaps=scatterTapLimit(p);
-    destination[gid.y*width+gid.x]=depthAware
+    destination[gid.y*width+gid.x]=glareKernel
+        ?(depthAware
+            ?blurLineGlareDepthAware(source,float2(gid),float2(0,1),scatter.radiusY,width,height,p)
+            :blurLineGlare(source,float2(gid),float2(0,1),scatter.radiusY,width,height))
+        :depthAware
         ?blurLineDepthAware(source,float2(gid),float2(0,1),scatter.radiusY,width,height,p,maximumTaps)
         :(scatter.radiusY>24.0f
             ?blurLineLongFlare(source,float2(gid),float2(0,1),scatter.radiusY,width,height)
@@ -1528,6 +1612,8 @@ kernel void ldbComposite(device const float4* source [[buffer(0)]],
                          constant LDBScatterParameters& haloScatter [[buffer(11)]],
                          constant LDBScatterParameters& flareScatter [[buffer(12)]],
                          device const LDBFlareSource* flareSources [[buffer(13)]],
+                         device const float4* opticalScatterScattered [[buffer(14)]],
+                         constant LDBScatterParameters& opticalScatter [[buffer(15)]],
                          uint2 gid [[thread_position_in_grid]]) {
     uint width = uint(p.imageSize.x), height = uint(p.imageSize.y);
     if (gid.x >= width || gid.y >= height) return;
@@ -1545,6 +1631,11 @@ kernel void ldbComposite(device const float4* source [[buffer(0)]],
     float2 flarePixel = (float2(gid) + 0.5f) / float(flareScatter.scale) - 0.5f;
     float3 flare=sampleBilinear(flareScattered,flarePixel,
         uint(flareScatter.imageSize.x),uint(flareScatter.imageSize.y)).rgb;
+    float2 opticalScatterPixel = (float2(gid) + 0.5f) /
+        float(opticalScatter.scale) - 0.5f;
+    float3 opticalScatterLight = sampleBilinear(opticalScatterScattered,
+        opticalScatterPixel,uint(opticalScatter.imageSize.x),
+        uint(opticalScatter.imageSize.y)).rgb;
     flare+=analyticFlareElements(float2(gid)+.5f,flareSources,p);
     if(p.depthMode>0u) {
         float targetDepth=normalizedDepth(source[index],p);
@@ -1563,6 +1654,10 @@ kernel void ldbComposite(device const float4* source [[buffer(0)]],
         float flareDepth=normalizedDepth(sampleNearest(flareScattered,flarePixel,
             uint(flareScatter.imageSize.x),uint(flareScatter.imageSize.y)),p);
         flare*=protectedLayerAgreement(targetDepth,flareDepth,p);
+        float opticalScatterDepth=normalizedDepth(sampleNearest(
+            opticalScatterScattered,opticalScatterPixel,
+            uint(opticalScatter.imageSize.x),uint(opticalScatter.imageSize.y)),p);
+        opticalScatterLight*=protectedLayerAgreement(targetDepth,opticalScatterDepth,p);
     }
     float apertureMix=clamp(p.apertureResponse,0.0f,1.0f);
     // Without external depth, the shaped optical field is the focus model:
@@ -1593,10 +1688,10 @@ kernel void ldbComposite(device const float4* source [[buffer(0)]],
     // Damage primarily changes the amount and tint of forward scatter. The
     // procedural masks add restrained unevenness; they must never read as
     // bright scratch artwork laid over the photographed scene.
-    float wearScatterGain=clamp(p.frontHaze,0.0f,2.0f)*.075f
-        +marksAmount*(.035f+wearPattern.x*.025f)
-        +scratchesAmount*(.020f+wearPattern.y*.035f)
-        +coatingAmount*(.025f+coatingPattern*.020f);
+    float wearScatterGain=clamp(p.frontHaze,0.0f,2.0f)*.14f
+        +marksAmount*(.018f+wearPattern.x*.28f)
+        +scratchesAmount*(.004f+wearPattern.y*.62f)
+        +coatingAmount*(.018f+coatingPattern*.28f);
     float internalScatterGain=0.0f;
     if(p.internalDirtAmount>0.0f&&p.internalDirtScatter>0.0f) {
         float imageAspect=p.imageSize.x/max(p.imageSize.y,1.0f);
@@ -1612,8 +1707,8 @@ kernel void ldbComposite(device const float4* source [[buffer(0)]],
     }
     float3 result = directOptics
                   + bloom * max(0.0f, p.bloomEnergy)
-                  + bloom * wearScatterGain
-                  + bloom * internalScatterGain
+                  + opticalScatterLight * wearScatterGain
+                  + opticalScatterLight * internalScatterGain
                   + glare * max(0.0f, p.glareEnergy) * glareTint
                   + halo * clamp(p.sphericalHalo, 0.0f, 2.0f) * 0.22f
                   + flare;
@@ -1621,8 +1716,8 @@ kernel void ldbComposite(device const float4* source [[buffer(0)]],
     if (diagnostic == LDBDiagnosticDifference)
         result = float3(0.18f) + (result - source[index].rgb) * 2.0f;
     else if (diagnostic == LDBDiagnosticScatter)
-        result = (bloom * (max(0.0f, p.bloomEnergy)
-                         + wearScatterGain + internalScatterGain)
+        result = (bloom * max(0.0f, p.bloomEnergy)
+                + opticalScatterLight * (wearScatterGain + internalScatterGain)
                 + glare * max(0.0f, p.glareEnergy) * glareTint
                 + halo * clamp(p.sphericalHalo, 0.0f, 2.0f) * 0.22f
                 + flare) * 2.0f;

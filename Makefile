@@ -37,11 +37,11 @@ HAWK_REFERENCE ?= $(CURDIR)/inputs/Reference_Lenses/Hawk V-Lite Vintage `74 Anam
 COOKE_SPECIAL_REFERENCE ?= $(CURDIR)/inputs/Reference_Lenses/Cooke Anamorphic :i Special Flare/CookeSpecial_TIFFs/Cooke Anamorphic i Special Flare 50mm T2.3 at T2.3_log.tif
 ARRI_REVEAL_LUT ?= /Library/Application Support/Blackmagic Design/DaVinci Resolve/LUT/Arri/ARRI_LogC4_v1_LUT_Package/LUTs/ARRI_LogC4-to-Gamma24_Rec709-D65_v1-65.cube
 VALIDATION_ROOT := outputs/engine-validation
-VISUAL_PASS_ID := 85
-VISUAL_PASS_LABEL := Visual Pass $(VISUAL_PASS_ID) - Inward-Sampled Prism Refraction
+VISUAL_PASS_ID := 94
+VISUAL_PASS_LABEL := Visual Pass $(VISUAL_PASS_ID) - Extended Gaussian Glare
 VALIDATION_OUTPUT := $(VALIDATION_ROOT)/passes/pass-$(VISUAL_PASS_ID)
 
-.PHONY: all ofx validate performance-test deploy release aperture-chart guide-examples user-guide presets preset-test install install-user test visual-test visual-check visual-rebuild clean
+.PHONY: all ofx validate performance-test deploy release aperture-chart guide-examples guide-examples-glare user-guide guide-update guide-update-status guide-publish-record presets preset-test install install-user test visual-test visual-check visual-rebuild clean
 
 all: $(METAL_LIB) $(TEST_BIN) $(VISUAL_BIN) $(BENCHMARK_BIN)
 
@@ -132,8 +132,28 @@ guide-examples: $(METAL_LIB) $(GUIDE_EXAMPLES_BIN) presets
 	$(GUIDE_EXAMPLES_BIN) $(METAL_LIB) "$(CURDIR)" "$(GUIDE_EXAMPLES_DIR)"
 	./scripts/build-user-guide.py
 
+# Refresh only examples whose rendered appearance depends on the independent
+# glare threshold/model. Existing reviewed examples remain byte-for-byte intact.
+guide-examples-glare: $(METAL_LIB) $(GUIDE_EXAMPLES_BIN)
+	@for reference in inputs/redistributable/ISO_12233-reschart.tif inputs/redistributable/OGC-TERA-CHART-1.png inputs/redistributable/iphone_milano_dwg_1.tif inputs/redistributable/iphone_milano2___dwg.tif inputs/redistributable/iphone_milano3_dwg.tif inputs/redistributable/Resolve-DWG-Intermediate-to-Rec709-Gamma24-Guide.cube; do test -f "$$reference" || { echo "ERROR: Required guide source is missing: $$reference" >&2; exit 1; }; done
+	@mkdir -p "$(GUIDE_EXAMPLES_DIR)"
+	$(GUIDE_EXAMPLES_BIN) $(METAL_LIB) "$(CURDIR)" "$(GUIDE_EXAMPLES_DIR)" changed-glare
+	./scripts/build-user-guide.py
+
 user-guide:
 	./scripts/build-user-guide.py
+
+# The public guide is hosted outside the release archive. This bundle contains
+# only files that differ from the last explicitly confirmed manual upload.
+guide-update:
+	./scripts/package-guide-update.py bundle
+
+guide-update-status:
+	./scripts/package-guide-update.py status
+
+# Run only after the incremental bundle has been uploaded and checked online.
+guide-publish-record:
+	./scripts/package-guide-update.py record
 
 $(BENCHMARK_BIN): tests/MetalBenchmark.mm src/engine/LDBOpticsEngine.mm include/LDBOpticsEngine.h include/LDBOpticsParameters.h | $(BUILD)
 	$(CXX) -std=c++20 -fobjc-arc -arch arm64 -Iinclude tests/MetalBenchmark.mm src/engine/LDBOpticsEngine.mm -o $@ -framework Foundation -framework Metal
@@ -158,6 +178,8 @@ visual-test: all aperture-chart presets
 		rm -rf "$$staging"; mkdir -p "$$staging" "$(VALIDATION_ROOT)/passes"; \
 		trap 'rm -rf "$$staging"' EXIT; \
 		$(VISUAL_BIN) $(METAL_LIB) "$$staging" "$(APERTURE_CHART)" "$(ISO_CHART)" "$(REAL_FOOTAGE)" "$(ARRI_FOOTAGE)" "$(VISUAL_PASS_ID)" "$(VISUAL_PASS_LABEL)" '$(HAWK_REFERENCE)' '$(COOKE_SPECIAL_REFERENCE)'; \
+		test "$$(find "$$staging" -maxdepth 1 -name '*.tiff' -type f | wc -l | tr -d ' ')" -gt 0 || { echo "ERROR: Visual Pass $(VISUAL_PASS_ID) produced no TIFF outputs." >&2; exit 1; }; \
+		awk '/^Primary review files:/{found=1;next} found && /^  [^ ]/{sub(/^  /, ""); print}' "$$staging/VISUAL-PASS-$(VISUAL_PASS_ID).txt" | while IFS= read -r review; do test -f "$$staging/$$review" || { echo "ERROR: Declared primary review file is missing: $$review" >&2; exit 1; }; done; \
 		mv "$$staging" "$(VALIDATION_OUTPUT)"; \
 		rm -f "$(VALIDATION_ROOT)/latest"; ln -s "passes/pass-$(VISUAL_PASS_ID)" "$(VALIDATION_ROOT)/latest"; \
 		./scripts/prune-visual-passes.sh "$(VALIDATION_ROOT)/passes" 3; \

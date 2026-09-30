@@ -9,3 +9,4 @@ diffractionRayAmount=0.46
 diffractionRayLength=260
 glareEnergy=0.11
 glareRadius=62
+glareThreshold=0.45

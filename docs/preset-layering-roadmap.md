@@ -69,6 +69,20 @@ processing model.
 - Update the guide to explain replacement versus layering before shipping the
   feature.
 
+## Next-build installer migration
+
+Before installing a new factory preset library, the installer must move the
+existing Lens Debaser-managed factory folders (`Demonstrations` and
+`Cinematic Lenses`) into a timestamped legacy archive under the Lens Debaser
+preset directory. It must then install clean copies of the factory folders from
+the current release.
+
+Only factory presets supplied and managed by Lens Debaser may be archived.
+User-created presets, user-created folders, renamed or separately stored preset
+files, and any other content in the preset directory must remain untouched. The
+installer should report the archive location and must avoid merging obsolete
+factory files into the current library.
+
 ## Validation before adoption
 
 Test at least these combinations on charts and real footage:

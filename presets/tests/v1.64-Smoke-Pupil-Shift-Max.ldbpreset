@@ -1,5 +1,5 @@
 LensDebaserPreset=2
-# Family: ABI v16 Smoke
+# Family: ABI v17 Smoke
 # Strength: Pupil Shift Max
 # Maximum isolated Pupil Shift. Compare with Moderate to confirm a continuous radial displacement rather than a stepped shape change.
 apertureAspect=1

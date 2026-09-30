@@ -7,6 +7,7 @@ fieldCurvature=0.1
 fineDetail=0.05
 glareEnergy=0.05
 glareRadius=34
+glareThreshold=0.45
 lateralCABlue=-0.15
 lateralCARed=0.12
 microContrast=0.12

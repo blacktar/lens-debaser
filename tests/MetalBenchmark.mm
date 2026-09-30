@@ -68,7 +68,7 @@ int main(int argc, char** argv) {
         vintage.distortionK1 = -.06f; vintage.vignetteNatural = .35f;
         vintage.cornerSharpnessLoss = .50f; vintage.fieldCurvature = .35f;
         vintage.bloomThreshold = 1; vintage.bloomEnergy = .25f; vintage.bloomRadius = 18;
-        vintage.glareEnergy = .12f; vintage.glareRadius = 42;
+        vintage.glareEnergy = .12f; vintage.glareThreshold = 1; vintage.glareRadius = 42;
         auto anamorphic = vintage;
         anamorphic.anamorphicSqueeze = 2; anamorphic.bloomHorizontalStretch = 4;
         auto detail = neutral;
@@ -117,6 +117,7 @@ int main(int argc, char** argv) {
         hawkFlare.anamorphicFlareColor={.22f,.52f,1.0f};
         hawkFlare.anamorphicFlareGhostColor={.30f,.18f,.68f};
         hawkFlare.glareEnergy=1.28f;
+        hawkFlare.glareThreshold=.44f;
         hawkFlare.glareRadius=900.0f;
         hawkFlare.glareColorAmount=.82f;
         hawkFlare.glareColor={.18f,.42f,1.0f};

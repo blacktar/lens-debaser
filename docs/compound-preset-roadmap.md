@@ -1,5 +1,10 @@
 # Alternative compound preset roadmap
 
+The next-build expansion of Prism Refraction distribution and its validation
+against the Resolve radial prism reference are specified separately in
+`prism-distribution-roadmap.md`. Reassess all prism-based compound candidates
+after that model work is complete.
+
 ## Evaluation
 
 The current engine can support additional compound presets without new shader

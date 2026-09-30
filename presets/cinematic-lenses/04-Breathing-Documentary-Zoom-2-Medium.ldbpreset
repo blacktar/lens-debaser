@@ -11,6 +11,7 @@ distortionK2=0.045
 fineDetail=-0.2
 geometryFieldAmount=1
 glareEnergy=0.1
+glareThreshold=0.45
 lateralCABlue=-0.92
 lateralCARed=0.72
 microContrast=-0.32

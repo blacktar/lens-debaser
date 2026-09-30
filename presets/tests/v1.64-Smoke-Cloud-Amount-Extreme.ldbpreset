@@ -1,5 +1,5 @@
 LensDebaserPreset=2
-# Family: ABI v16 Smoke
+# Family: ABI v17 Smoke
 # Strength: Cloud Amount Extreme
 # Maximum creative-range density. It may approach black locally but must never invert, clip below zero, band or become unstable.
 internalDirtAmount=10

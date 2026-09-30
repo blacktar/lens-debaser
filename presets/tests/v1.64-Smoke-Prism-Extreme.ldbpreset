@@ -1,5 +1,5 @@
 LensDebaserPreset=2
-# Family: ABI v16 Smoke
+# Family: ABI v17 Smoke
 # Strength: Prism Extreme
 # Creative limit test on a high-contrast chart. Displacement and spectral separation may be strong but must remain smooth, bounded and coherent.
 prismAmount=1.7

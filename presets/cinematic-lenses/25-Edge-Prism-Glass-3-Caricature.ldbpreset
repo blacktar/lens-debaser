@@ -9,6 +9,7 @@ cornerSharpnessLoss=0.48
 fieldCurvature=0.22
 glareEnergy=0.08
 glareRadius=34
+glareThreshold=0.45
 lateralCABlue=-0.62
 lateralCARed=0.46
 microContrast=-0.12

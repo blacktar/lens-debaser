@@ -1,11 +1,11 @@
 LensDebaserPreset=2
-# Family: ABI v16 Smoke
-# Strength: Pupil Clipping Max
-# Maximum isolated Pupil Clipping. Compare with Moderate to confirm a continuous field and strength response.
+# Family: ABI v17 Smoke
+# Strength: Pupil Shift Moderate
+# Moderate isolated Pupil Shift. Outer pupils should move radially while the protected centre remains stable.
 apertureAspect=1
 apertureBokehSwirl=0
 apertureCatEye=0
-aperturePupilClip=1
+aperturePupilShift=0.5
 apertureRadius=24
 apertureResponse=1
 apertureShape=0

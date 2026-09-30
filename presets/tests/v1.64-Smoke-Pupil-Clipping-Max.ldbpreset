@@ -1,13 +1,13 @@
 LensDebaserPreset=2
-# Family: ABI v16 Smoke
-# Strength: Pupil Rim Weight Neutral
-# Neutral comparison for the two Rim Weight extremes on the same isolated pupil chart.
+# Family: ABI v17 Smoke
+# Strength: Pupil Clipping Max
+# Maximum isolated Pupil Clipping. Compare with Moderate to confirm a continuous field and strength response.
 apertureAspect=1
 apertureBokehSwirl=0
 apertureCatEye=0
+aperturePupilClip=1
 apertureRadius=24
 apertureResponse=1
-apertureRimWeight=0
 apertureShape=0
 apertureSoftness=0.12
 responseFieldFalloff=0.18

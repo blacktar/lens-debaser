@@ -10,6 +10,7 @@ fieldCurvature=0.38
 fineDetail=-0.32
 glareEnergy=0.95
 glareRadius=76
+glareThreshold=0.3
 longitudinalCA=0.3
 microContrast=-0.62
 responseFieldFalloff=1.72

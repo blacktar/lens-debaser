@@ -8,4 +8,5 @@ glareEnergy=0.58
 glareG=0.72
 glareR=1
 glareRadius=74
+glareThreshold=0.45
 sphericalHalo=0.58

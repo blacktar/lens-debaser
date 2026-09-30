@@ -8,8 +8,9 @@ from lens_profiles import cooke_focal_calibrations, reference_lens_families
 
 ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / "presets"
-CURRENT_PRESET_TAG = "v1.57"
+CURRENT_PRESET_TAG = "v1.64"
 TIERS = (("1-Subtle", 0.35), ("2-Medium", 0.65), ("3-Caricature", 1.0))
+GENERATED_PRESETS = set()
 
 NEUTRAL = {
     "anamorphicSqueeze": 1.0, "captureFocalLength": 50.0,
@@ -22,7 +23,7 @@ NEUTRAL = {
     "aperturePupilShift": 0.0, "aperturePupilClip": 0.0,
     "apertureRimWeight": 0.0,
     "fieldAspect": 1.0, "detailScale": 1.0,
-    "comaThreshold": 0.6, "bloomThreshold": 1.0,
+    "comaThreshold": 0.6, "bloomThreshold": 1.0, "glareThreshold": 0.45,
     "bloomRadius": 12.0, "bloomHorizontalStretch": 1.0,
     "anamorphicFlareRadius": 80.0, "anamorphicFlareThreshold": 1.0,
     "anamorphicFlareCoreAmount": 0.0, "anamorphicFlareAsymmetry": 0.0,
@@ -131,6 +132,12 @@ for family_order, tiers in NEW_STAGE_CHARACTER.items():
 
 def write(path, family, tier, values, note):
     path.parent.mkdir(parents=True, exist_ok=True)
+    values = dict(values)
+    # ABI v17 gives Glare its own threshold. Preserve the authored response of
+    # existing compound recipes while ensuring every newly generated glare
+    # preset states its dependency explicitly.
+    if values.get("glareEnergy", 0.0) > 0.0 and "glareThreshold" not in values:
+        values["glareThreshold"] = values.get("bloomThreshold", NEUTRAL["glareThreshold"])
     lines = ["LensDebaserPreset=2", f"# Family: {family}", f"# Strength: {tier}"]
     if note:
         lines.append(f"# {note}")
@@ -141,11 +148,14 @@ def write(path, family, tier, values, note):
         else:
             text = f"{value:.6f}".rstrip("0").rstrip(".")
         lines.append(f"{key}={text}")
-    path.write_text("\n".join(lines) + "\n")
+    content = "\n".join(lines) + "\n"
+    GENERATED_PRESETS.add(path)
+    if not path.exists() or path.read_text() != content:
+        path.write_text(content)
 
 def generate_demonstrations():
     d = OUT / "demonstrations"
-    if d.exists(): shutil.rmtree(d)
+    d.mkdir(parents=True, exist_ok=True)
     demos = [
       (1,"Demo-Capture",{"captureInfluence":.8,"captureFocalLength":24,"captureAperture":1.6,"captureFocusDistance":90,"captureGate":1,"cornerSharpnessLoss":.68,"fieldCurvature":.46,"longitudinalCA":.28,"vignetteNatural":.22},"Adds peripheral detail loss, field curvature, longitudinal focus color and natural vignetting, then lets the Capture settings coordinate their strength."),
       (2,"Demo-Look",{"lookInfluence":.76,"lookCharacter":.58,"lookVintageBias":.48,"lookExoticBias":.24,"lookAnamorphicBias":.30},"A clearly visible coordinated look demonstrates the macro controls without overwhelming the underlying grade."),
@@ -161,16 +171,16 @@ def generate_demonstrations():
       (12,"Demo-Bloom",{"bloomEnergy":.65,"bloomThreshold":.50,"bloomRadius":54,"bloomHorizontalStretch":1.5},"Scene-linear highlights spread into a clearly visible bloom that preserves surrounding contrast."),
       (13,"Demo-Glare-And-Halo",{"glareEnergy":.58,"glareRadius":74,"glareColorAmount":.34,"glareR":1,"glareG":.72,"glareB":.46,"sphericalHalo":.58},"Bright practicals and windows reveal warm glare and a soft spherical halo."),
       (14,"Demo-Transmission",{"transmissionColorAmount":.40,"transmissionR":1,"transmissionG":.84,"transmissionB":.68,"transmissionDensity":.22,"transmissionContrast":-.30,"transmissionHighlightSoftness":.72},"Neutral greys, skin and highlights show a visible warm transmission bias and softer shoulder."),
-      (15,"Demo-Highlight-Response",{"responseHighlightKnee":1.6,"bloomEnergy":.45,"bloomThreshold":.54,"glareEnergy":.32,"glareRadius":56,"sphericalHalo":.28,"coma":.22,"comaThreshold":.46,"anamorphicFlareAmount":.30,"anamorphicFlareThreshold":.54},"A clear Highlight Knee coordinates several enabled highlight effects without flattening the frame."),
+      (15,"Demo-Highlight-Response",{"responseHighlightKnee":.72,"bloomEnergy":.38,"bloomThreshold":.72,"bloomRadius":28,"glareEnergy":.24,"glareRadius":44,"sphericalHalo":.20,"coma":.14,"comaThreshold":.68},"A moderate Highlight Knee coordinates neutral bloom, glare, halo and coma while preserving shadows and black borders."),
       (16,"Demo-Coma",{"coma":.82,"comaThreshold":.40,"sphericalHalo":.16},"Isolated bright points away from Field Center reveal a clear controlled asymmetric coma tail."),
       (17,"Demo-Variation",{"variationAmount":.60,"variationSeed":27183,"variationFieldAsymmetry":.46,"variationPupilIrregularity":.42,"variationChromaticAsymmetry":.55,"variationTransmissionUnevenness":.40,"fieldCurvature":.50,"apertureResponse":.28,"apertureRadius":9,"lateralCARed":.76,"lateralCABlue":-.94,"transmissionColorAmount":.26},"Compatible field, pupil, chromatic and transmission responses are enabled at clearly visible strengths; change Seed."),
       (18,"Demo-Depth-Input",{"depthMode":2,"depthNear":0,"depthFar":1,"depthFocus":.38,"responseDefocusOnset":.07,"responseDefocusFalloff":.40,"depthEdgeSoftness":.55,"responseScatterEdgeProtection":1,"apertureResponse":.50,"apertureRadius":11,"sphericalHalo":.24},"Connect a depth map to Second RGB; the recipe produces a neutral, clearly readable and protected depth transition without chromatic aberration."),
       (19,"Demo-Blend",{"effectBlend":.5,"cornerSharpnessLoss":.92,"fieldCurvature":.68,"lateralCARed":1.18,"lateralCABlue":-1.42,"bloomEnergy":.40,"bloomThreshold":.52},"A clear compound effect is mixed to 50%; move Blend between source and full processing."),
-      (20,"Demo-Front-Element-Wear",{"frontHaze":.40,"cleaningMarks":.44,"scratchAmount":.22,"scratchDirection":28,"damageScale":1.55,"coatingWear":.38,"coatingWearScale":1.65,"damageSeed":31415},"Highlights reveal cleaning and coating wear while ordinary detail retains useful contrast."),
+      (20,"Demo-Front-Element-Wear",{"frontHaze":.75,"cleaningMarks":.95,"scratchAmount":.40,"scratchDirection":28,"damageScale":1.35,"coatingWear":1.05,"coatingWearScale":1.45,"damageSeed":31415},"Highlights reveal cleaning haze, fixed wiping residue, sparse scratches and localized coating wear while ordinary detail retains useful contrast."),
       (21,"Demo-Refractive-Irregularity",{"refractiveIrregularity":.64,"refractiveScale":1.3,"refractiveEdgeBias":.56,"refractiveAnisotropy":.42,"refractiveRotation":18,"refractiveDispersion":.24,"refractiveSeed":27182},"A grid and high-contrast detail show clear stable local magnification variation with controlled wavelength separation."),
       (22,"Demo-Peripheral-Stretch",{"geometryFieldAmount":.82,"peripheralStretch":.32,"responseFieldOnset":.24,"responseFieldFalloff":1.58},"A grid clearly exposes radial magnification growing gradually toward the perimeter."),
       (23,"Demo-Peripheral-Warp",{"geometryFieldAmount":.82,"peripheralWarp":.40,"responseFieldOnset":.24,"responseFieldFalloff":1.58},"A grid exposes clear nonuniform edge bending while preserving the centre."),
-      (24,"Demo-Internal-Element-Contamination",{"internalDirtAmount":.65,"internalDirtScale":1.7,"internalDirtSmear":.18,"internalDirtScatter":.50,"internalDirtSoftness":.80,"internalDirtComplexity":.50,"internalDirtSeed":16180},"Broad contamination creates visible localized density and illumination-driven veiling without looking pasted on."),
+      (24,"Demo-Internal-Element-Contamination",{"internalDirtAmount":4.0,"internalDirtScale":.62,"internalDirtSmear":.52,"internalDirtScatter":1.45,"internalDirtSoftness":.78,"internalDirtComplexity":.78,"internalDirtSeed":16180},"Localized internal contamination creates clearly visible cloudy density, elongated residue and illumination-driven veiling without becoming a global color treatment."),
       (25,"Demo-Bokeh-Swirl",{"responseFieldOnset":.18,"responseFieldFalloff":1.15,"apertureResponse":.54,"apertureRadius":11,"apertureShape":0,"apertureSoftness":.25,"apertureCatEye":.36,"apertureBokehSwirl":1.9},"Point highlights clearly reveal filled outer pupils with controlled tangential rotation."),
       (26,"Demo-Petzval-Field",{"responseFieldOnset":.18,"responseFieldFalloff":1.26,"fieldCenterX":.49,"fieldCenterY":.51,"cornerSharpnessLoss":.75,"fieldCurvature":.88,"astigmatism":.26,"tangentialSmear":.24,"apertureResponse":.46,"apertureRadius":11,"apertureShape":1,"apertureBladeCount":8,"apertureBladeCurvature":.72,"apertureSoftness":.25,"apertureCatEye":.46,"apertureAspect":1.08,"apertureBokehSwirl":2.0},"A central subject remains legible while curved focus and clear off-axis pupil shaping reinforce one another."),
       (27,"Demo-Structured-Anamorphic-Flare",{"anamorphicSqueeze":2,"anamorphicFlareAmount":.90,"anamorphicFlareRadius":1650,"anamorphicFlareThreshold":.50,"anamorphicFlareThickness":.15,"anamorphicFlareCoreAmount":.30,"anamorphicFlareAsymmetry":.07,"anamorphicFlareGhostAmount":.045,"anamorphicFlareGhostPosition":-.62,"anamorphicFlareGhostScale":.82,"anamorphicFlareGhostCount":3,"anamorphicFlareGhostSpacing":105,"anamorphicFlareGhostScaleDecay":.76,"anamorphicFlareGhostEnergyDecay":.54,"anamorphicFlareBandAmount":.45,"anamorphicFlareBandSeparation":26,"anamorphicFlareSecondaryAmount":.19,"anamorphicFlareSecondaryOffset":190,"anamorphicFlareR":.16,"anamorphicFlareG":.46,"anamorphicFlareB":1,"anamorphicFlareGhostR":.46,"anamorphicFlareGhostG":.28,"anamorphicFlareGhostB":1},"One compact bright source reveals a clear continuous streak and controlled reflection train."),
@@ -184,7 +194,7 @@ def generate_demonstrations():
 
 def generate_lenses():
     d = OUT / "cinematic-lenses"
-    if d.exists(): shutil.rmtree(d)
+    d.mkdir(parents=True, exist_ok=True)
     families = [
       (1,"Golden-Portrait-Prime",recipes(
         {"responseFieldOnset":.28,"responseFieldFalloff":.62,"transmissionR":1,"transmissionG":.96,"transmissionB":.86},
@@ -580,14 +590,7 @@ def generate_reference_calibrations():
 def generate_abi16_smoke_tests():
     """Resolve-facing fixtures for current pupil, cloud and prism controls."""
     d = OUT / "tests"
-    # Smoke fixtures are generated artifacts. Remove superseded variants so
-    # Resolve's folder-backed preset menu cannot retain ambiguous old entries.
-    # Remove every generated smoke fixture before recreating the current set.
-    # The broad pattern also catches Finder/File Provider conflict copies such
-    # as "...Cloud-Softness 2.ldbpreset", which Resolve otherwise lists as a
-    # second preset with the same embedded name.
-    for path in d.glob("v*-Smoke-*.ldbpreset"):
-        path.unlink()
+    d.mkdir(parents=True, exist_ok=True)
     pupil_parent = {
         # Deliberately isolate the ABI-v15 pupil term.  A large circular base
         # footprint and short, still-smooth field ramp make the response
@@ -660,7 +663,7 @@ def generate_abi16_smoke_tests():
          "Creative limit test on a high-contrast chart. Displacement and spectral separation may be strong but must remain smooth, bounded and coherent."),
     )
     for name, values, note in fixtures:
-        write(d / f"{CURRENT_PRESET_TAG}-Smoke-{name}.ldbpreset", "ABI v16 Smoke",
+        write(d / f"{CURRENT_PRESET_TAG}-Smoke-{name}.ldbpreset", "ABI v17 Smoke",
               name.replace('-', ' '), values, note)
 
 def archive_superseded_test_presets():
@@ -690,6 +693,13 @@ def purge_numbered_conflict_copies():
                    OUT / "tests"):
         for path in folder.glob("*.ldbpreset"):
             if re.search(r" \d+$", path.stem):
+                path.unlink()
+
+def prune_stale_factory_presets():
+    """Remove only obsolete generated factory files, preserving unchanged ones."""
+    for folder in (OUT / "demonstrations", OUT / "cinematic-lenses"):
+        for path in folder.glob("*.ldbpreset"):
+            if path not in GENERATED_PRESETS:
                 path.unlink()
 
 def archive_factory_snapshot(version):
@@ -805,6 +815,7 @@ generate_lenses()
 archive_superseded_test_presets()
 generate_reference_calibrations()
 generate_abi16_smoke_tests()
+prune_stale_factory_presets()
 readme()
 purge_numbered_conflict_copies()
 validate_library()

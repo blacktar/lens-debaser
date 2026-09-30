@@ -13,6 +13,7 @@
 !/releases/
 !/releases/*.zip
 !/releases/*.sha256
+/releases/user-guide-updates/
 
 # Generated validation material and scratch work
 /outputs/

@@ -5,7 +5,7 @@ DaVinci Resolve. It models perceptually useful aspects of modern, vintage,
 anamorphic and exotic optics, prioritising pleasing visual approximations and
 interactive performance over scientific lens simulation.
 
-Current development version: **1.57**.
+Current development version: **1.64**.
 
 Read the online [Lens Debaser user guide](https://vidarandersen.com/dmz/lens-debaser-ofx/) for the complete workflow, control reference, depth setup, and preset catalogue.
 
@@ -79,6 +79,18 @@ make deploy
 Fully quit Resolve before deployment. Validation renders, additional camera
 footage, LUTs, user presets and crash reports are intentionally excluded from
 version control.
+
+Builds are promoted incrementally: only intentionally changed artifacts are
+regenerated or replaced, while unchanged files from the previous passed build
+remain in place. After explicit visual sign-off, that merged state is deployed,
+packaged, committed, and pushed to GitHub. See the
+[build promotion workflow](docs/build-promotion-workflow.md).
+
+The externally hosted user guide follows the same incremental rule. For a
+signed-off build, `make guide-update` creates a versioned manual-upload folder
+containing only HTML and image files changed since the last confirmed upload.
+After those files are uploaded and checked on the public page,
+`make guide-publish-record` records the new baseline.
 
 ## Compiled releases
 

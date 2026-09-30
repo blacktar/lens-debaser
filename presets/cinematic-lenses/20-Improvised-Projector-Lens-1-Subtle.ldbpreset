@@ -18,6 +18,7 @@ fieldCenterY=0.46
 fieldCurvature=0.48
 frontHaze=0.08
 glareEnergy=0.15
+glareThreshold=0.45
 longitudinalCA=0.22
 refractiveEdgeBias=0.7
 refractiveIrregularity=0.1

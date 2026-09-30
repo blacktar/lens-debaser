@@ -8,6 +8,7 @@ cornerSharpnessLoss=1.12
 fieldCurvature=0.48
 fineDetail=-0.42
 glareEnergy=0.18
+glareThreshold=0.45
 lateralCABlue=-0.72
 lateralCARed=0.55
 longitudinalCA=0.52

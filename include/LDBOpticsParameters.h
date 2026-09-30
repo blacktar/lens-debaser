@@ -15,7 +15,7 @@ typedef simd_float3 LDBFloat3;
 typedef simd_float4 LDBFloat4;
 #endif
 
-enum : uint32_t { LDBOpticsParameterABIVersion = 16 };
+enum : uint32_t { LDBOpticsParameterABIVersion = 17 };
 
 enum LDBWorkingColorSpace : uint32_t {
     LDBWorkingColorSpaceACEScg = 0,
@@ -217,7 +217,9 @@ struct alignas(16) LDBOpticsParameters {
     // Nonnegative onset uses an independent radial chromatic envelope.
     float chromaticFieldOnset;
     float chromaticFieldFalloff;
-    float reservedV8_0;
+    // ABI v17: independent glare extraction. This reuses an established
+    // reserved slot, preserving the 784-byte constant-buffer layout.
+    float glareThreshold;
     float reservedV8_1;
 
     // ABI v16: coherent directional prism refraction. These reuse the five
@@ -295,7 +297,7 @@ struct alignas(16) LDBFlareSource {
 
 #ifndef __METAL_VERSION__
 static_assert(std::is_standard_layout_v<LDBOpticsParameters>);
-static_assert(sizeof(LDBOpticsParameters) == 784, "LDB optics ABI v15 size changed");
+static_assert(sizeof(LDBOpticsParameters) == 784, "LDB optics ABI v17 size changed");
 static_assert(alignof(LDBOpticsParameters) == 16, "LDB optics ABI v2 alignment changed");
 static_assert(offsetof(LDBOpticsParameters, distortionK1) == 16);
 static_assert(offsetof(LDBOpticsParameters, cornerSharpnessLoss) == 64);
@@ -334,6 +336,7 @@ static_assert(offsetof(LDBOpticsParameters, damageScale) == 592);
 static_assert(offsetof(LDBOpticsParameters, refractiveIrregularity) == 608);
 static_assert(offsetof(LDBOpticsParameters, refractiveRotation) == 624);
 static_assert(offsetof(LDBOpticsParameters, chromaticFieldOnset) == 640);
+static_assert(offsetof(LDBOpticsParameters, glareThreshold) == 648);
 static_assert(offsetof(LDBOpticsParameters, prismAmount) == 656);
 static_assert(offsetof(LDBOpticsParameters, prismSoftness) == 672);
 static_assert(offsetof(LDBOpticsParameters, internalDirtAmount) == 676);
@@ -364,6 +367,7 @@ static inline LDBOpticsParameters LDBNeutralOpticsParameters(float width, float 
     p.workingColorSpace = LDBWorkingColorSpaceACEScg;
     p.transmissionColor = {1.0f, 1.0f, 1.0f};
     p.glareColor = {1.0f, 1.0f, 1.0f};
+    p.glareThreshold = 0.45f;
     p.apertureShape = 0;
     p.apertureBladeCount = 6;
     p.apertureRadius = 6.0f;

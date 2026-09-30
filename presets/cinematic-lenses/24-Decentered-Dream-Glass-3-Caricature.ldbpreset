@@ -20,6 +20,7 @@ fieldCenterX=0.43
 fieldCenterY=0.56
 fieldCurvature=1.22
 glareEnergy=0.28
+glareThreshold=0.45
 lateralCABlue=-1.16
 lateralCARed=0.88
 longitudinalCA=0.72

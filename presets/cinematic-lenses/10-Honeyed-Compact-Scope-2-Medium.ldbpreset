@@ -21,6 +21,7 @@ cornerSharpnessLoss=0.35
 fieldAspect=1.42
 fieldCurvature=0.15
 glareEnergy=0.08
+glareThreshold=0.45
 longitudinalCA=0.14
 responseFieldFalloff=1.62
 responseFieldOnset=0.22

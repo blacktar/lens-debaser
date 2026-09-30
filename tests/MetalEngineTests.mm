@@ -512,6 +512,33 @@ int main(int argc, char **argv) {
                                  wornElement);
     require(maxDifference(image, wornElementOut) > .001f,
             "Front element wear must alter scatter and transmission");
+    auto hazeOnly = neutral;
+    hazeOnly.frontHaze = 1.0f;
+    require(maxDifference(image, render(engine, device, queue, image, width,
+                                        height, hazeOnly)) > .0001f,
+            "Front Haze must independently add highlight veiling");
+    auto marksOnly = neutral;
+    marksOnly.cleaningMarks = 1.0f;
+    marksOnly.damageScale = 1.3f;
+    marksOnly.damageSeed = 1234;
+    require(maxDifference(image, render(engine, device, queue, image, width,
+                                        height, marksOnly)) > .0001f,
+            "Cleaning Marks must independently alter transmission and scatter");
+    auto scratchesOnly = neutral;
+    scratchesOnly.scratchAmount = 1.0f;
+    scratchesOnly.scratchDirection = 27.0f;
+    scratchesOnly.damageScale = 1.3f;
+    scratchesOnly.damageSeed = 1234;
+    require(maxDifference(image, render(engine, device, queue, image, width,
+                                        height, scratchesOnly)) > .0001f,
+            "Deep Scratches must independently alter transmission and scatter");
+    auto coatingOnly = neutral;
+    coatingOnly.coatingWear = 1.0f;
+    coatingOnly.coatingWearScale = 1.4f;
+    coatingOnly.damageSeed = 1234;
+    require(maxDifference(image, render(engine, device, queue, image, width,
+                                        height, coatingOnly)) > .0001f,
+            "Coating Wear must independently alter local transmission and scatter");
     require(maxDifference(wornElementOut,
                           render(engine, device, queue, image, width, height,
                                  wornElement)) < 1e-7f,
@@ -955,6 +982,15 @@ int main(int argc, char **argv) {
                           render(engine, device, queue, kneeImpulse, width,
                                  height, softKneeBloom)) > .00001f,
             "Highlight Knee must soften active scatter eligibility");
+    std::vector<simd_float4> shadowField(
+        width * height, simd_float4{.01f, .01f, .01f, 1.0f});
+    auto maximumKneeBloom = hardKneeBloom;
+    maximumKneeBloom.responseHighlightKnee = 4.0f;
+    require(maxDifference(
+                shadowField,
+                render(engine, device, queue, shadowField, width, height,
+                       maximumKneeBloom)) < 1e-6f,
+            "Highlight Knee must not turn sub-threshold shadows into scatter");
     auto anamorphicFlare = neutral;
     anamorphicFlare.anamorphicFlareAmount = 1.0f;
     anamorphicFlare.anamorphicFlareRadius = 32.0f;
@@ -1624,7 +1660,7 @@ int main(int argc, char **argv) {
     auto glareAudit = neutral;
     glareAudit.glareEnergy = .6f;
     glareAudit.glareRadius = 8;
-    glareAudit.bloomThreshold = 1;
+    glareAudit.glareThreshold = 1;
     auto glareAuditOut =
         render(engine, device, queue, offAxisPoint, width, height, glareAudit);
     auto glareRadiusAudit = glareAudit;
@@ -1640,6 +1676,53 @@ int main(int argc, char **argv) {
                           render(engine, device, queue, offAxisPoint, width,
                                  height, glareTintAudit)) > .0001f,
             "Glare Color must tint active glare");
+
+    std::vector<simd_float4> normalizedGlare(width * height,
+                                             simd_float4{.04f, .04f, .04f, 1});
+    for (int dy = -2; dy <= 2; ++dy)
+      for (int dx = -2; dx <= 2; ++dx)
+        normalizedGlare[(pointY + dy) * width + pointX + dx] =
+            {.92f, .82f, .68f, 1};
+    auto normalizedGlareControl = neutral;
+    normalizedGlareControl.glareEnergy = .8f;
+    normalizedGlareControl.glareRadius = 24;
+    normalizedGlareControl.glareThreshold = .4f;
+    auto normalizedGlareOut = render(engine, device, queue, normalizedGlare,
+                                     width, height, normalizedGlareControl);
+    require(maxDifference(normalizedGlareOut, normalizedGlare) > .0005f,
+            "Glare must respond to normalized image highlights");
+    auto suppressedGlare = normalizedGlareControl;
+    suppressedGlare.glareThreshold = 1.2f;
+    auto neutralNormalized = render(engine, device, queue, normalizedGlare,
+                                    width, height, neutral);
+    auto suppressedGlareOut = render(engine, device, queue, normalizedGlare,
+                                     width, height, suppressedGlare);
+    require(maxDifference(suppressedGlareOut, neutralNormalized) < 1e-5f,
+            "Glare Threshold must independently reject sub-threshold highlights");
+    auto unrelatedBloomThreshold = normalizedGlareControl;
+    unrelatedBloomThreshold.bloomThreshold = 3.5f;
+    require(maxDifference(normalizedGlareOut,
+                          render(engine, device, queue, normalizedGlare, width,
+                                 height, unrelatedBloomThreshold)) < 1e-6f,
+            "Bloom Threshold must not alter Glare");
+    auto glareDifference = normalizedGlareControl;
+    glareDifference.processingFlags = LDBDiagnosticDifference;
+    auto suppressedDifference = suppressedGlare;
+    suppressedDifference.processingFlags = LDBDiagnosticDifference;
+    auto glareScatter = normalizedGlareControl;
+    glareScatter.processingFlags = LDBDiagnosticScatter;
+    auto suppressedScatter = suppressedGlare;
+    suppressedScatter.processingFlags = LDBDiagnosticScatter;
+    require(maxDifference(render(engine, device, queue, normalizedGlare, width,
+                                 height, glareDifference),
+                          render(engine, device, queue, normalizedGlare, width,
+                                 height, suppressedDifference)) > .001f,
+            "Difference diagnostic must expose normalized Glare");
+    require(maxDifference(render(engine, device, queue, normalizedGlare, width,
+                                 height, glareScatter),
+                          render(engine, device, queue, normalizedGlare, width,
+                                 height, suppressedScatter)) > .001f,
+            "Scatter diagnostic must expose normalized Glare");
 
     std::vector<simd_float4> detailPattern(width * height);
     for (uint32_t y = 0; y < height; ++y)

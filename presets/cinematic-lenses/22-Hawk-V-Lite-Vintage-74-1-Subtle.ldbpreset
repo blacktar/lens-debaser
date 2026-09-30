@@ -45,6 +45,7 @@ glareEnergy=0.38
 glareG=0.42
 glareR=0.18
 glareRadius=420
+glareThreshold=0.62
 lateralCABlue=-0.28
 lateralCARed=0.2
 microContrast=-0.06

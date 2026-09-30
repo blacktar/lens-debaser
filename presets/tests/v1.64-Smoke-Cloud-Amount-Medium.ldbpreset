@@ -1,5 +1,5 @@
 LensDebaserPreset=2
-# Family: ABI v16 Smoke
+# Family: ABI v17 Smoke
 # Strength: Cloud Amount Medium
 # Pronounced extended-range density. It should remain smooth and retain image structure without Internal Scatter.
 internalDirtAmount=5

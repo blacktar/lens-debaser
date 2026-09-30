@@ -119,7 +119,7 @@ static void assignValue(LDBOpticsParameters& p,const std::string& key,float v) {
     SET(astigmatism) SET(coma) SET(comaThreshold) SET(sphericalHalo) SET(fieldCurvature) SET(swirl)
     SET(radialSmear) SET(tangentialSmear) SET(microContrast) SET(fineDetail) SET(detailEdgeFalloff)
     SET(sagittalDetail) SET(tangentialDetail) SET(detailScale) SET(bloomEnergy) SET(bloomThreshold)
-    SET(bloomRadius) SET(bloomHorizontalStretch) SET(glareEnergy) SET(glareRadius) SET(effectBlend)
+    SET(bloomRadius) SET(bloomHorizontalStretch) SET(glareEnergy) SET(glareThreshold) SET(glareRadius) SET(effectBlend)
     SET(transmissionColorAmount) SET(glareColorAmount) SET(apertureResponse) SET(apertureRadius)
     SET(apertureBladeCurvature) SET(apertureRotation) SET(apertureSoftness) SET(apertureCatEye)
     SET(apertureAspect) SET(apertureBokehSwirl) SET(aperturePupilShift) SET(aperturePupilClip)
@@ -208,8 +208,9 @@ static std::string guideFileSlug(std::string value) {
 }
 
 int main(int argc,char** argv) {
-    if(argc!=4){std::fprintf(stderr,"usage: %s metallib repo-root output-dir\n",argv[0]);return 2;}
+    if(argc<4||argc>5){std::fprintf(stderr,"usage: %s metallib repo-root output-dir [changed-glare]\n",argv[0]);return 2;}
     @autoreleasepool {
+        const bool changedGlareOnly=argc==5&&std::string(argv[4])=="changed-glare";
         id<MTLDevice> device=MTLCreateSystemDefaultDevice(); if(!device){std::fprintf(stderr,"No Metal device\n");return 3;}
         NSURL* libraryURL=[NSURL fileURLWithPath:[NSString stringWithUTF8String:argv[1]]];
         LDBOpticsEngine engine(device,libraryURL); id<MTLCommandQueue> queue=[device newCommandQueue];
@@ -240,12 +241,14 @@ int main(int argc,char** argv) {
             {"highlight-response",15},{"off-axis",16},{"variation",17},{"front-wear",20},
             {"internal-contamination",24},{"depth",18},{"blend",19}};
         std::unordered_set<std::string> written;
-        for(const auto& source:sources){std::string beforeName=std::string(source.key)+"-before.png";
+        if(!changedGlareOnly) for(const auto& source:sources){std::string beforeName=std::string(source.key)+"-before.png";
             bool milano=std::string(source.key).rfind("milano",0)==0;
             auto before=milano?guideMilanoDisplayFromAP1(*source.pixels,milanoDisplayLUT):
                 guideRec709Gamma24FromAP1(*source.pixels);
             if(!writePNG((out/beforeName).string(),before,source.width,source.height))return 5;written.insert(beforeName);}
         for(const auto& group:groups){
+            if(changedGlareOnly&&std::string(group.slug)!="glare-halo"&&
+               std::string(group.slug)!="highlight-response")continue;
             char preset[80];std::snprintf(preset,sizeof(preset),"%02d-Demo-",group.demo);fs::path presetPath;
             for(auto& f:fs::directory_iterator(root/"presets/demonstrations"))if(f.path().filename().string().rfind(preset,0)==0){presetPath=f.path();break;}
             if(std::string(group.slug)=="blend") {
@@ -282,6 +285,10 @@ int main(int argc,char** argv) {
         }
         std::sort(mediumPresets.begin(),mediumPresets.end());
         for(const auto& presetPath:mediumPresets) {
+            if(changedGlareOnly) {
+                auto candidate=loadPreset(presetPath,chartW,chartH);
+                if(candidate.glareEnergy<=0.0f)continue;
+            }
             std::string presetSlug=guideFileSlug(presetPath.stem().string());
             for(const auto& source:sources) {
                 auto p=loadPreset(presetPath,source.width,source.height);
@@ -294,7 +301,7 @@ int main(int argc,char** argv) {
                 std::printf("Wrote preset %s / %s\n",presetPath.stem().c_str(),source.key);
             }
         }
-        if(mediumPresets.size()!=25) {
+        if(!changedGlareOnly&&mediumPresets.size()!=25) {
             std::fprintf(stderr,"Expected 24 Medium cinematic presets plus Bodycam Edge Stress, found %zu\n",mediumPresets.size());
             return 8;
         }

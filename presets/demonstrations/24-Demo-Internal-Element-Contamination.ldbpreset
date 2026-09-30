@@ -1,11 +1,11 @@
 LensDebaserPreset=2
 # Family: Demo-Internal-Element-Contamination
 # Strength: Educational
-# Broad contamination creates visible localized density and illumination-driven veiling without looking pasted on.
-internalDirtAmount=0.65
-internalDirtComplexity=0.5
-internalDirtScale=1.7
-internalDirtScatter=0.5
+# Localized internal contamination creates clearly visible cloudy density, elongated residue and illumination-driven veiling without becoming a global color treatment.
+internalDirtAmount=4
+internalDirtComplexity=0.78
+internalDirtScale=0.62
+internalDirtScatter=1.45
 internalDirtSeed=16180
-internalDirtSmear=0.18
-internalDirtSoftness=0.8
+internalDirtSmear=0.52
+internalDirtSoftness=0.78
