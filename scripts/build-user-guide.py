@@ -344,6 +344,12 @@ structured_data={
    "license":"https://creativecommons.org/licenses/by-nc-sa/4.0/",
    "url":REPOSITORY_URL,
    "downloadUrl":RELEASES_URL,
+   "featureList":[
+    "Real-time optical-character processing in DaVinci Resolve",
+    "Editable factory and user-created .ldbpreset files",
+    "Highly experimental AI-assisted preset authoring through an external AI client using a version-matched Preset Authoring Kit"
+   ],
+   "softwareHelp":{"@id":f"{GUIDE_URL}#guide"},
    "sameAs":[REPOSITORY_URL],
    "author":{"@type":"Person","name":"Vidar Andersen"},
    "dateModified":RELEASE_DATE_ISO,
@@ -363,6 +369,34 @@ structured_data={
    "license":"https://creativecommons.org/licenses/by-nc-sa/4.0/",
    "isAccessibleForFree":True,
    "image":f"{GUIDE_URL}images/logo.webp"
+  },
+  {
+   "@type":"HowTo",
+   "@id":f"{GUIDE_URL}#ai-preset-howto",
+   "name":f"Create a Lens Debaser {VERSION} preset with an AI assistant",
+   "description":"A highly experimental workflow in which an external AI client uses the version-matched Lens Debaser Preset Authoring Kit to create, validate and attach a downloadable .ldbpreset file. Lens Debaser itself does not connect to an AI service.",
+   "url":f"{GUIDE_URL}#ai-presets",
+   "inLanguage":"en",
+   "about":{"@id":f"{GUIDE_URL}#software"},
+   "tool":[
+    {"@type":"HowToTool","name":"An AI client that accepts file attachments"},
+    {"@type":"HowToTool","name":f"Lens Debaser {VERSION} in DaVinci Resolve"}
+   ],
+   "supply":[
+    {"@type":"HowToSupply","name":f"Lens Debaser {VERSION} Preset Authoring Kit"},
+    {"@type":"HowToSupply","name":"Lens-Debaser-Preset-Schema.json"},
+    {"@type":"HowToSupply","name":"Clean-Slate-Template.ldbpreset"}
+   ],
+   "step":[
+    {"@type":"HowToStep","position":1,"name":"Get the matching authoring kit","text":f"Use the Preset Authoring Kit supplied for Lens Debaser {VERSION}; kits from other releases are not assumed compatible."},
+    {"@type":"HowToStep","position":2,"name":"Start a clean AI conversation","text":"Attach the schema and clean template to a new conversation in an AI client that accepts files."},
+    {"@type":"HowToStep","position":3,"name":"Describe the optical response","text":"Describe the intended centre, edge, highlight, focus, bokeh, chromatic and strength characteristics in visual terms."},
+    {"@type":"HowToStep","position":4,"name":"Request a schema-constrained preset","text":"Tell the assistant to use only documented controls, obey their ranges and dependencies, and create a LensDebaserPreset=2 file."},
+    {"@type":"HowToStep","position":5,"name":"Request the downloadable file","text":"Require the AI client to attach the finished .ldbpreset rather than asking the user to copy text, rename files or use a command line."},
+    {"@type":"HowToStep","position":6,"name":"Validate before loading","text":"Ask the assistant to reopen the generated file and check its header, controls, values, choices, dependencies and required inputs against the attached schema."},
+    {"@type":"HowToStep","position":7,"name":"Test suitable images and motion","text":"Load the preset in Resolve and inspect faces, texture, hard edges, highlights, defocused points, frame boundaries and moving footage at full resolution."},
+    {"@type":"HowToStep","position":8,"name":"Revise one visible problem at a time","text":"Keep the matching schema and current preset attached, request focused changes, validate again and preserve each useful revision under a new name."}
+   ]
   }
  ]
 }
