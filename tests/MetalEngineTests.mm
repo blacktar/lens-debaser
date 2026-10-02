@@ -195,6 +195,30 @@ int main(int argc, char **argv) {
     }
 
     auto neutral = LDBNeutralOpticsParameters(width, height);
+    auto thumbnailScale = neutral;
+    thumbnailScale.renderPixelScale = .25f;
+    thumbnailScale.longitudinalCARadius = 8.0f;
+    thumbnailScale.detailScale = 4.0f;
+    thumbnailScale.bloomRadius = 80.0f;
+    thumbnailScale.glareRadius = 160.0f;
+    thumbnailScale.apertureRadius = 40.0f;
+    thumbnailScale.anamorphicFlareRadius = 800.0f;
+    thumbnailScale.anamorphicFlareGhostSpacing = 200.0f;
+    thumbnailScale.anamorphicFlareBandSeparation = 120.0f;
+    thumbnailScale.anamorphicFlareSecondaryOffset = -400.0f;
+    thumbnailScale.diffractionRayLength = 600.0f;
+    LDBApplyRenderPixelScale(thumbnailScale);
+    require(std::abs(thumbnailScale.longitudinalCARadius - 2.0f) < 1e-6f &&
+                std::abs(thumbnailScale.detailScale - 1.0f) < 1e-6f &&
+                std::abs(thumbnailScale.bloomRadius - 20.0f) < 1e-6f &&
+                std::abs(thumbnailScale.glareRadius - 40.0f) < 1e-6f &&
+                std::abs(thumbnailScale.apertureRadius - 10.0f) < 1e-6f &&
+                std::abs(thumbnailScale.anamorphicFlareRadius - 200.0f) < 1e-6f &&
+                std::abs(thumbnailScale.anamorphicFlareGhostSpacing - 50.0f) < 1e-6f &&
+                std::abs(thumbnailScale.anamorphicFlareBandSeparation - 30.0f) < 1e-6f &&
+                std::abs(thumbnailScale.anamorphicFlareSecondaryOffset + 100.0f) < 1e-6f &&
+                std::abs(thumbnailScale.diffractionRayLength - 150.0f) < 1e-6f,
+            "Pixel-sized optical controls must follow the host render scale");
     auto neutralOut =
         render(engine, device, queue, image, width, height, neutral);
     require(maxDifference(image, neutralOut) < 1e-5f,
@@ -724,9 +748,20 @@ int main(int argc, char **argv) {
     auto blurredAchromatic = blurredChromatic;
     blurredAchromatic.lateralCARed = 0.0f;
     blurredAchromatic.lateralCABlue = 0.0f;
-    auto blurredChromaticOut = render(engine, device, queue, chromaPattern,
+    // The two-pixel checker above is appropriate for detecting bare lateral
+    // CA, but a physically ordered strong PSF removes it before chromatic
+    // displacement. Use broader features here so the test measures whether
+    // downstream CA survives defocus rather than demanding reconstruction of
+    // spatial frequencies that the defocus has correctly eliminated.
+    std::vector<simd_float4> defocusedChromaPattern(width * height);
+    for (uint32_t y = 0; y < height; ++y)
+      for (uint32_t x = 0; x < width; ++x) {
+        float v = ((x / 16 + y / 16) & 1) ? .85f : .15f;
+        defocusedChromaPattern[size_t(y) * width + x] = {v, v, v, 1};
+      }
+    auto blurredChromaticOut = render(engine, device, queue, defocusedChromaPattern,
                                       width, height, blurredChromatic);
-    auto blurredAchromaticOut = render(engine, device, queue, chromaPattern,
+    auto blurredAchromaticOut = render(engine, device, queue, defocusedChromaPattern,
                                        width, height, blurredAchromatic);
     float combinedCentreDifference = 0, combinedEdgeDifference = 0;
     uint32_t combinedCentreCount = 0, combinedEdgeCount = 0;
@@ -754,10 +789,10 @@ int main(int argc, char **argv) {
     independentAchromatic.chromaticFieldOnset = .32f;
     independentAchromatic.chromaticFieldFalloff = .54f;
     require(maxDifference(blurredAchromaticOut,
-                          render(engine, device, queue, chromaPattern, width,
+                          render(engine, device, queue, defocusedChromaPattern, width,
                                  height, independentAchromatic)) < 1e-6f,
             "Independent chromatic envelope must not move the focus field");
-    auto independentOut = render(engine, device, queue, chromaPattern, width,
+    auto independentOut = render(engine, device, queue, defocusedChromaPattern, width,
                                  height, independentChromatic);
     require(maxDifference(blurredChromaticOut, independentOut) > .001f,
             "Independent chromatic envelope must alter the colour field");
@@ -1951,6 +1986,7 @@ int main(int argc, char **argv) {
               "Internal contamination must preserve alpha in every working space");
     }
 
+    std::printf("PASS: host render-scale proportional pixel controls\n");
     std::printf("PASS: neutral identity\n");
     std::printf("PASS: zero blend identity\n");
     std::printf("PASS: vignette field response\n");

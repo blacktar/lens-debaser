@@ -103,6 +103,17 @@ int main(int argc, char** argv) {
         extremeField.astigmatism=1.45f;extremeField.radialSmear=.48f;
         extremeField.tangentialSmear=1.35f;extremeField.responseFieldOnset=.13f;
         extremeField.responseFieldFalloff=1.4f;
+        auto internalFieldEdge=neutral;
+        internalFieldEdge.apertureResponse=1.0f;
+        internalFieldEdge.apertureRadius=27.0f;
+        internalFieldEdge.apertureSoftness=.38f;
+        internalFieldEdge.astigmatism=.20f;
+        internalFieldEdge.cornerSharpnessLoss=1.42f;
+        internalFieldEdge.fieldAspect=1.58f;
+        internalFieldEdge.fieldCurvature=.72f;
+        internalFieldEdge.responseFieldOnset=.24f;
+        internalFieldEdge.responseFieldFalloff=.82f;
+        internalFieldEdge.tangentialSmear=.28f;
         auto depthBloom=vintage;
         depthBloom.depthMode=2;depthBloom.depthChannel=4;depthBloom.depthFocus=.5f;
         auto depthHalo=aberration;
@@ -180,7 +191,7 @@ int main(int argc, char** argv) {
             struct ABCase { const char* name; const LDBOpticsParameters* p; } cases[]={
                 {"geometry",&geometry},{"ca+defocus",&chromaticDefocus},
                 {"bokeh-swirl",&bokehSwirl},{"petzval",&petzval},
-                {"extreme-field",&extremeField}};
+                {"extreme-field",&extremeField},{"internal-edge",&internalFieldEdge}};
             std::printf("\nOptical blur A/B (interleaved baseline then candidate)\n");
             for(const auto& c:cases) {
                 std::string baseName=std::string(c.name)+"-base";

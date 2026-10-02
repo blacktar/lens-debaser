@@ -17,6 +17,8 @@ BENCHMARK_BIN := $(BUILD)/ldb-optics-benchmark
 APERTURE_CHART_BIN := $(BUILD)/ldb-aperture-chart
 SYNTHETIC_OPTICAL_CHART_BIN := $(BUILD)/ldb-synthetic-optical-chart
 GUIDE_EXAMPLES_BIN := $(BUILD)/ldb-guide-examples
+FIELD_PSF_AIR := $(BUILD)/experiments/LDBOptics-field-psf.air
+FIELD_PSF_LIB := $(BUILD)/experiments/LDBOptics-field-psf.metallib
 GUIDE_EXAMPLES_DIR := docs/user-guide/images/examples
 APERTURE_CHART := outputs/aperture-pupil-test-acescg-linear.tiff
 SYNTHETIC_OPTICAL_CHART := inputs/redistributable/LDB-Synthetic-Optical-Chart.png
@@ -40,11 +42,11 @@ HAWK_REFERENCE ?= $(CURDIR)/inputs/Reference_Lenses/Hawk V-Lite Vintage `74 Anam
 COOKE_SPECIAL_REFERENCE ?= $(CURDIR)/inputs/Reference_Lenses/Cooke Anamorphic :i Special Flare/CookeSpecial_TIFFs/Cooke Anamorphic i Special Flare 50mm T2.3 at T2.3_log.tif
 ARRI_REVEAL_LUT ?= /Library/Application Support/Blackmagic Design/DaVinci Resolve/LUT/Arri/ARRI_LogC4_v1_LUT_Package/LUTs/ARRI_LogC4-to-Gamma24_Rec709-D65_v1-65.cube
 VALIDATION_ROOT := outputs/engine-validation
-VISUAL_PASS_ID := 99
-VISUAL_PASS_LABEL := Visual Pass $(VISUAL_PASS_ID) - Progressive Bokeh Swirl Response
+VISUAL_PASS_ID := 100
+VISUAL_PASS_LABEL := Visual Pass $(VISUAL_PASS_ID) - Continuous Field and Aperture PSF
 VALIDATION_OUTPUT := $(VALIDATION_ROOT)/passes/pass-$(VISUAL_PASS_ID)
 
-.PHONY: all ofx validate version-check performance-test deploy release aperture-chart synthetic-optical-chart guide-examples guide-examples-glare guide-examples-presets-166 guide-examples-presets-166b guide-examples-presets-167 guide-examples-preset-26 optical-model-validation optical-model-benchmark full-library-validation user-guide guide-update guide-update-status guide-publish-record presets preset-test preset-schema preset-authoring-kit validate-user-preset install install-user test visual-test visual-check visual-rebuild clean
+.PHONY: all ofx validate version-check performance-test deploy release aperture-chart synthetic-optical-chart guide-examples guide-examples-glare guide-examples-presets-166 guide-examples-presets-166b guide-examples-presets-167 guide-examples-preset-26 optical-model-validation optical-model-benchmark field-psf-experiment field-psf-library-experiment light-transport-audit full-preset-release-comparison full-library-validation user-guide guide-update guide-update-status guide-publish-record presets preset-test preset-schema preset-authoring-kit validate-user-preset install install-user test visual-test visual-check visual-rebuild clean
 
 all: $(METAL_LIB) $(TEST_BIN) $(VISUAL_BIN) $(BENCHMARK_BIN)
 
@@ -134,6 +136,13 @@ $(METAL_AIR): src/metal/LDBOptics.metal include/LDBOpticsParameters.h | $(BUILD)
 $(METAL_LIB): $(METAL_AIR)
 	$(METALLIB) $< -o $@
 
+$(FIELD_PSF_AIR): src/metal/LDBOptics.metal include/LDBOpticsParameters.h | $(BUILD)
+	mkdir -p $(BUILD)/experiments
+	$(METAL) -c $< -o $@ -std=metal3.1 -DLDB_EXPERIMENT_CONTINUOUS_FIELD_PSF=1 -Iinclude -isysroot $(SDKROOT) -fmodules-cache-path=$(CURDIR)/$(BUILD)/module-cache
+
+$(FIELD_PSF_LIB): $(FIELD_PSF_AIR)
+	$(METALLIB) $< -o $@
+
 $(TEST_BIN): tests/MetalEngineTests.mm src/engine/LDBOpticsEngine.mm include/LDBOpticsEngine.h include/LDBOpticsParameters.h include/LDBColorReference.h | $(BUILD)
 	$(CXX) -std=c++20 -fobjc-arc -arch arm64 -Iinclude tests/MetalEngineTests.mm src/engine/LDBOpticsEngine.mm -o $@ -framework Foundation -framework Metal
 
@@ -205,6 +214,43 @@ optical-model-benchmark: $(METAL_LIB) $(BENCHMARK_BIN)
 	@mkdir -p outputs/experiments/optical-model-candidate
 	$(BENCHMARK_BIN) $(METAL_LIB) | tee outputs/experiments/optical-model-candidate/benchmark.txt
 
+# Escalation layer 1: compare the passed registered sharp/blur composite with
+# a continuously growing field PSF. This never replaces the shipping metallib,
+# presets, guide images, visual archives, or release bundle.
+field-psf-experiment: $(METAL_LIB) $(FIELD_PSF_LIB) $(GUIDE_EXAMPLES_BIN) $(BENCHMARK_BIN)
+	@for reference in inputs/redistributable/ISO_12233-reschart.tif inputs/redistributable/LDB-Synthetic-Optical-Chart.png inputs/redistributable/iphone_milano_dwg_1.tif inputs/redistributable/iphone_milano2___dwg.tif inputs/redistributable/iphone_milano3_dwg.tif inputs/redistributable/Resolve-DWG-Intermediate-to-Rec709-Gamma24-Guide.cube; do test -f "$$reference" || { echo "ERROR: Required validation source is missing: $$reference" >&2; exit 1; }; done
+	rm -rf outputs/experiments/field-psf-layer-1
+	mkdir -p outputs/experiments/field-psf-layer-1/current outputs/experiments/field-psf-layer-1/continuous-psf
+	$(GUIDE_EXAMPLES_BIN) $(METAL_LIB) "$(CURDIR)" outputs/experiments/field-psf-layer-1/current field-psf-validation
+	$(GUIDE_EXAMPLES_BIN) $(FIELD_PSF_LIB) "$(CURDIR)" outputs/experiments/field-psf-layer-1/continuous-psf field-psf-validation
+	$(BENCHMARK_BIN) $(METAL_LIB) $(FIELD_PSF_LIB) | tee outputs/experiments/field-psf-layer-1/benchmark.txt
+	./scripts/build-field-psf-report.py outputs/experiments/field-psf-layer-1
+	@printf '\nExperimental comparison: outputs/experiments/field-psf-layer-1/index.html\n'
+
+# Expanded review after the focused Internal Field Edge FX candidate passes its
+# first inspection. Select only factory presets that activate field blur or the
+# aperture reconstruction, but render every available strength and all five
+# validation sources. Release and guide assets remain untouched.
+field-psf-library-experiment: $(METAL_LIB) $(FIELD_PSF_LIB) $(GUIDE_EXAMPLES_BIN) $(BENCHMARK_BIN)
+	@for reference in inputs/redistributable/ISO_12233-reschart.tif inputs/redistributable/LDB-Synthetic-Optical-Chart.png inputs/redistributable/iphone_milano_dwg_1.tif inputs/redistributable/iphone_milano2___dwg.tif inputs/redistributable/iphone_milano3_dwg.tif inputs/redistributable/Resolve-DWG-Intermediate-to-Rec709-Gamma24-Guide.cube; do test -f "$$reference" || { echo "ERROR: Required validation source is missing: $$reference" >&2; exit 1; }; done
+	rm -rf outputs/experiments/field-psf-library
+	mkdir -p outputs/experiments/field-psf-library/current outputs/experiments/field-psf-library/continuous-psf
+	$(GUIDE_EXAMPLES_BIN) $(METAL_LIB) "$(CURDIR)" outputs/experiments/field-psf-library/current field-psf-library-validation
+	$(GUIDE_EXAMPLES_BIN) $(FIELD_PSF_LIB) "$(CURDIR)" outputs/experiments/field-psf-library/continuous-psf field-psf-library-validation
+	$(BENCHMARK_BIN) $(METAL_LIB) $(FIELD_PSF_LIB) | tee outputs/experiments/field-psf-library/benchmark.txt
+	./scripts/build-field-psf-report.py outputs/experiments/field-psf-library
+	@printf '\nFull relevant-preset comparison: outputs/experiments/field-psf-library/index.html\n'
+
+# One-command audit of every factory preset against an immutable packaged
+# release. Pass BASELINE_VERSION=x.y to select another retained release.
+full-preset-release-comparison:
+	./scripts/run-full-preset-visual-comparison.sh "$(or $(BASELINE_VERSION),1.67)"
+
+# Append or refresh only the controlled highlight fixtures and rebuild the
+# existing report. It deliberately preserves all completed preset renders.
+light-transport-audit:
+	./scripts/run-light-transport-audit.sh "$(or $(BASELINE_VERSION),1.67)"
+
 # Render the complete current demonstration and cinematic-preset library into
 # an isolated candidate folder. Existing guide images remain untouched until
 # the candidate has been reviewed and explicitly accepted.
@@ -261,7 +307,9 @@ visual-test: all aperture-chart presets
 		rm -rf "$$staging"; mkdir -p "$$staging" "$(VALIDATION_ROOT)/passes"; \
 		trap 'rm -rf "$$staging"' EXIT; \
 		$(VISUAL_BIN) $(METAL_LIB) "$$staging" "$(APERTURE_CHART)" "$(ISO_CHART)" "$(REAL_FOOTAGE)" "$(ARRI_FOOTAGE)" "$(VISUAL_PASS_ID)" "$(VISUAL_PASS_LABEL)" '$(HAWK_REFERENCE)' '$(COOKE_SPECIAL_REFERENCE)'; \
-		test "$$(find "$$staging" -maxdepth 1 -name '*.tiff' -type f | wc -l | tr -d ' ')" -gt 0 || { echo "ERROR: Visual Pass $(VISUAL_PASS_ID) produced no TIFF outputs." >&2; exit 1; }; \
+		test -f "$$staging/VISUAL-PASS-$(VISUAL_PASS_ID).txt" || { echo "ERROR: Visual Pass $(VISUAL_PASS_ID) produced no pass manifest." >&2; exit 1; }; \
+		review_count="$$(awk '/^Primary review files:/{found=1;next} found && /^  [^ ]/{count++} END{print count+0}' "$$staging/VISUAL-PASS-$(VISUAL_PASS_ID).txt")"; \
+		test "$$review_count" -gt 0 || { echo "ERROR: Visual Pass $(VISUAL_PASS_ID) declared no primary review files." >&2; exit 1; }; \
 		awk '/^Primary review files:/{found=1;next} found && /^  [^ ]/{sub(/^  /, ""); print}' "$$staging/VISUAL-PASS-$(VISUAL_PASS_ID).txt" | while IFS= read -r review; do test -f "$$staging/$$review" || { echo "ERROR: Declared primary review file is missing: $$review" >&2; exit 1; }; done; \
 		mv "$$staging" "$(VALIDATION_OUTPUT)"; \
 		rm -f "$(VALIDATION_ROOT)/latest"; ln -s "passes/pass-$(VISUAL_PASS_ID)" "$(VALIDATION_ROOT)/latest"; \

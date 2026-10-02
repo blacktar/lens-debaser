@@ -1,0 +1,36 @@
+LensDebaserPreset=2
+# Family: ABI v18 Smoke
+# Strength: Resolve Edge FX Depth Input
+# Resolve-reference reconstruction using Second RGB as a feathered mask: white central ellipse stays focused, black periphery defocuses; radial prism and custom purple/green focus colors remain internal.
+apertureRadius=12
+apertureResponse=0.68
+apertureShape=0
+apertureSoftness=0.38
+depthEdgeSoftness=0.62
+depthFar=1
+depthFocus=1
+depthMode=2
+depthNear=0
+farFocusB=0.48
+farFocusG=1
+farFocusR=0.34
+fieldAspect=1.58
+fieldCenterX=0.5
+fieldCenterY=0.5
+fieldRotation=0
+lateralCABlue=-0.78
+lateralCARed=0.62
+longitudinalCA=0.2
+longitudinalCARadius=5.5
+nearFocusB=1
+nearFocusG=0.34
+nearFocusR=0.72
+prismAmount=0.09
+prismDirection=0
+prismDispersion=1.82
+prismDistribution=3
+responseDefocusFalloff=0.56
+responseDefocusOnset=0.04
+responseFieldFalloff=0.82
+responseFieldOnset=0.24
+responseScatterEdgeProtection=1

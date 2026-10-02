@@ -81,7 +81,9 @@ struct alignas(16) LDBOpticsParameters {
     float tangentialDetail;
     float detailScale;
     float comaThreshold;
-    float reservedDetail1;
+    // Host render scale for pixel-sized kernels. Resolve thumbnails and proxy
+    // renders must preserve the same proportional optical footprint.
+    float renderPixelScale;
 
     float bloomEnergy;
     float bloomThreshold;
@@ -373,6 +375,7 @@ static inline LDBOpticsParameters LDBNeutralOpticsParameters(float width, float 
     p.imageCircleAspect = 1.0f;
     p.imageCircleSoftness = 0.1f;
     p.detailScale = 1.0f;
+    p.renderPixelScale = 1.0f;
     p.comaThreshold = 0.6f;
     p.effectBlend = 1.0f;
     p.workingColorSpace = LDBWorkingColorSpaceACEScg;
@@ -431,3 +434,19 @@ static inline LDBOpticsParameters LDBNeutralOpticsParameters(float width, float 
     p.internalDirtScale = 1.0f;
     return p;
 }
+
+#ifndef __METAL_VERSION__
+static inline void LDBApplyRenderPixelScale(LDBOpticsParameters &p) {
+    const float scale = p.renderPixelScale > 0.0001f ? p.renderPixelScale : 1.0f;
+    p.longitudinalCARadius *= scale;
+    p.detailScale *= scale;
+    p.bloomRadius *= scale;
+    p.glareRadius *= scale;
+    p.apertureRadius *= scale;
+    p.anamorphicFlareRadius *= scale;
+    p.anamorphicFlareGhostSpacing *= scale;
+    p.anamorphicFlareBandSeparation *= scale;
+    p.anamorphicFlareSecondaryOffset *= scale;
+    p.diffractionRayLength *= scale;
+}
+#endif

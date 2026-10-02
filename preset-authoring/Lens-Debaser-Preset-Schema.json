@@ -1,7 +1,7 @@
 {
   "title": "Lens Debaser AI Preset Authoring Schema",
   "schema_version": 1,
-  "target_plugin_version": "1.67",
+  "target_plugin_version": "1.68",
   "preset_format": 2,
   "header": "LensDebaserPreset=2",
   "syntax": {

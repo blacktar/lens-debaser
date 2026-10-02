@@ -320,6 +320,9 @@ void LDBOpticsEngine::encode(id<MTLCommandBuffer> commandBuffer,
   LDBOpticsParameters p = parameters;
   p.imageSize = {float(width), float(height)};
   applyCaptureAndLookMappings(p);
+  // Capture and Look can add pixel-radius contributions, so host render
+  // scaling must happen only after those macros have resolved.
+  LDBApplyRenderPixelScale(p);
   NSUInteger byteCount =
       NSUInteger(width) * NSUInteger(height) * sizeof(simd_float4);
   std::vector<id<MTLBuffer>> pooledBuffers;
@@ -452,11 +455,12 @@ void LDBOpticsEngine::encode(id<MTLCommandBuffer> commandBuffer,
       break;
     memoryScale *= 2;
   }
+  const float pixelScale = std::max(p.renderPixelScale, 0.0001f);
   const float wearRadius = wearScatterActive
-      ? 8.0f + std::clamp(p.damageScale, .25f, 4.0f) * 8.0f
+      ? (8.0f + std::clamp(p.damageScale, .25f, 4.0f) * 8.0f) * pixelScale
       : 0.0f;
   const float internalRadius = internalScatterActive
-      ? 12.0f + std::clamp(p.internalDirtScatter, 0.0f, 2.0f) * 18.0f
+      ? (12.0f + std::clamp(p.internalDirtScatter, 0.0f, 2.0f) * 18.0f) * pixelScale
       : 0.0f;
   const float opticalScatterRadius = std::max(wearRadius, internalRadius);
   const float effectiveBloomRadius = p.bloomRadius;
@@ -484,7 +488,8 @@ void LDBOpticsEngine::encode(id<MTLCommandBuffer> commandBuffer,
   // quarter resolution; reserve 8x for genuinely long glare fields.
   if (p.glareRadius <= 160.0f)
     glareScale = std::max(memoryScale, std::min(glareScale, 4u));
-  float haloRadius = 2.0f + std::clamp(p.sphericalHalo, 0.0f, 2.0f) * 16.0f;
+  float haloRadius =
+      (2.0f + std::clamp(p.sphericalHalo, 0.0f, 2.0f) * 16.0f) * pixelScale;
   uint32_t haloScale =
       std::max(memoryScale, scatterScale(haloRadius));
   // Long anamorphic streaks can span most of a 2K/4K gate.  The former

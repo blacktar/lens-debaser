@@ -1168,7 +1168,10 @@ int main(int argc, char** argv) {
         ellipticalBokehSwirl.fieldRotation=18.0f;
         save("91-aperture-bokeh-swirl-elliptical.tiff",
              displayPreview(render(engine,device,queue,apertureChart,width,height,ellipticalBokehSwirl)));
-        if(passNumber==99) {
+        // This remains the current bokeh/field-PSF review set until a later
+        // pass explicitly replaces it. The manifest likewise carries these
+        // files forward for pass 99 and newer.
+        if(passNumber>=99) {
             save("491-bokeh-swirl-range-source.tiff",displayPreview(apertureChart));
             const float swirlValues[]={0.0f,3.0f,6.0f,9.0f,12.0f};
             const char* swirlNames[]={"492-bokeh-swirl-00.tiff",

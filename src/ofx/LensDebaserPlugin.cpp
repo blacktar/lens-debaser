@@ -14,7 +14,7 @@
 #include <vector>
 
 namespace {
-constexpr const char *kName = "Lens Debaser 1.67";
+constexpr const char *kName = "Lens Debaser 1.68";
 constexpr const char *kIdentifier = "com.ldb.LensDebaser";
 constexpr const char *kDepthClipName = "Depth";
 struct DoubleSpec {
@@ -395,6 +395,14 @@ public:
     processor.setGPURenderArgs(a);
     processor.setRenderWindow(a.renderWindow);
     processor.p = parameters(a.time);
+    // OFX pixel-sized controls are expressed at full render scale. Resolve's
+    // node thumbnails and proxy renders provide smaller images plus a render
+    // scale; carry that ratio into the engine so the optical footprint remains
+    // proportional to the full-size result.
+    const double renderScale =
+        std::max(0.0001, std::sqrt(std::max(a.renderScale.x, 0.0001) *
+                                  std::max(a.renderScale.y, 0.0001)));
+    processor.p.renderPixelScale = float(renderScale);
     processor.process();
   }
   bool isIdentity(const OFX::IsIdentityArguments &a, OFX::Clip *&clip,

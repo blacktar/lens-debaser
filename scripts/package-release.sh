@@ -8,6 +8,7 @@ release_root="$project_dir/releases"
 temporary_root="$(mktemp -d "${TMPDIR:-/tmp}/lens-debaser-release.XXXXXX")"
 stage_dir="$temporary_root/$release_name"
 archive="$release_root/$release_name.zip"
+authoring_archive="$release_root/Lens-Debaser-Preset-Authoring-Kit-$version.zip"
 
 cleanup() {
   rm -rf "$temporary_root"
@@ -34,11 +35,14 @@ xattr -cr "$stage_dir/LensDebaser.ofx.bundle"
 codesign --force --deep --sign - "$stage_dir/LensDebaser.ofx.bundle"
 codesign --verify --deep --strict --verbose=2 "$stage_dir/LensDebaser.ofx.bundle"
 
-rm -f "$archive" "$archive.sha256"
+rm -f "$archive" "$archive.sha256" "$authoring_archive"
 # Distribution archives should contain only the files users need. Resource
 # forks and extended attributes make ditto add a parallel __MACOSX tree of
 # AppleDouble metadata, which is unnecessary for the signed OFX payload.
 ditto -c -k --norsrc --noextattr --keepParent "$stage_dir" "$archive"
+ditto -c -k --norsrc --noextattr --keepParent \
+  "$stage_dir/Preset Authoring Kit" "$authoring_archive"
 (cd "$release_root" && shasum -a 256 "$(basename "$archive")" > "$(basename "$archive").sha256")
 echo "Created $archive"
 echo "Created $archive.sha256"
+echo "Created $authoring_archive"

@@ -31,10 +31,11 @@ def ensure_visible(path: Path) -> None:
             os.chflags(path, current_flags & ~hidden_flags)
 
 
-def file_state(path: Path) -> dict[str, int]:
-    """Return cheap local change metadata without reading file contents."""
+def file_state(path: Path) -> dict[str, int | str]:
+    """Track publishable content exactly; guide assets are distribution files."""
     state = path.stat()
-    return {"size": state.st_size, "mtime_ns": state.st_mtime_ns}
+    return {"size": state.st_size, "mtime_ns": state.st_mtime_ns,
+            "sha256": file_digest(path)}
 
 
 def file_digest(path: Path) -> str:
@@ -46,8 +47,8 @@ def file_digest(path: Path) -> str:
     return digest.hexdigest()
 
 
-def current_manifest() -> dict[str, dict[str, int]]:
-    files: dict[str, dict[str, int]] = {}
+def current_manifest() -> dict[str, dict[str, int | str]]:
+    files: dict[str, dict[str, int | str]] = {}
     for path in sorted(GUIDE_ROOT.rglob("*")):
         # Finder may create conflict copies such as "image 2.png". They are
         # never referenced by the guide and must not enter an upload delta.
@@ -72,11 +73,11 @@ def version() -> str:
         return plistlib.load(handle)["CFBundleShortVersionString"]
 
 
-def write_state(files: dict[str, dict[str, int]]) -> None:
+def write_state(files: dict[str, dict[str, int | str]]) -> None:
     payload = {
-        "format": 2,
+        "format": 3,
         "purpose": "Files confirmed as manually uploaded to the public user guide",
-        "tracking": "Local size and modification time only; no content hashing",
+        "tracking": "Published guide assets tracked by size, modification time and SHA-256",
         "files": files,
     }
     STATE_FILE.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n",
@@ -101,8 +102,53 @@ def changes() -> tuple[list[str], list[str]]:
     return changed, deleted
 
 
-def bundle() -> None:
-    changed, deleted = changes()
+def optical_model_changes(baseline_version: str) -> tuple[list[str], list[str]]:
+    """Select files whose rendered pixels differ from a released engine."""
+    baseline = (ROOT / "outputs" / "experiments" /
+                "full-preset-release-comparison" /
+                f"released-{baseline_version}")
+    if not baseline.is_dir():
+        raise SystemExit(f"Missing released render baseline: {baseline}")
+    examples = GUIDE_ROOT / "images" / "examples"
+    selected = {"Lens-Debaser-User-Guide.html"}
+    for current in examples.glob("preset-*-after.png"):
+        stem = current.name[len("preset-"):-len("-after.png")]
+        released = baseline / f"cinematic-{stem.lower()}.png"
+        if not released.is_file():
+            raise SystemExit(f"Missing released comparison image: {released.name}")
+        if current.read_bytes() != released.read_bytes():
+            selected.add(current.relative_to(GUIDE_ROOT).as_posix())
+    demo_numbers = {
+        "capture":1,"look":2,"geometry":3,"field-shape":4,"focus-field":5,
+        "detail":6,"chromatic":7,"anamorphic":8,"aperture":9,"vignette":10,
+        "image-circle":11,"bloom":12,"glare-halo":13,"transmission":14,
+        "highlight-response":15,"off-axis":16,"variation":17,"depth":18,
+        "front-wear":20,"refractive":21,"internal-contamination":24,
+        "bokeh-swirl":25,"petzval-field":26,"prism":31,
+    }
+    demo_presets = {
+        int(path.name[:2]): path.stem.lower()
+        for path in (ROOT / "presets" / "demonstrations").glob("*.ldbpreset")
+    }
+    for slug, number in demo_numbers.items():
+        for source in ("iso", "optical", "milano1", "milano2", "milano3"):
+            current = examples / f"{slug}-{source}-after.png"
+            released = baseline / f"demo-{demo_presets[number]}-{source}.png"
+            if not current.is_file() or not released.is_file():
+                raise SystemExit(f"Missing demo comparison pair: {current.name}")
+            if current.read_bytes() != released.read_bytes():
+                selected.add(current.relative_to(GUIDE_ROOT).as_posix())
+    # Processing is a diagnostic render rather than the ordinary Demo Detail
+    # output in the release baseline; include it conservatively.
+    selected.add("images/examples/processing-iso-after.png")
+    published = read_published_manifest()
+    current = current_manifest()
+    deleted = sorted(set(published) - set(current))
+    return sorted(selected), deleted
+
+
+def bundle(selected: tuple[list[str], list[str]] | None = None) -> None:
+    changed, deleted = selected if selected is not None else changes()
     release_version = version()
     destination = OUTPUT_ROOT / f"Lens-Debaser-User-Guide-{release_version}"
     # Do not use a dot-prefixed staging directory: macOS may propagate its
@@ -158,13 +204,16 @@ def bundle() -> None:
 
 def main() -> None:
     parser = argparse.ArgumentParser()
-    parser.add_argument("command", choices=("bundle", "record", "status"))
+    parser.add_argument("command", choices=("bundle", "bundle-model", "record", "status"))
+    parser.add_argument("--baseline-version", default="1.67")
     args = parser.parse_args()
     if args.command == "record":
         write_state(current_manifest())
         print(f"Recorded current guide as published in {STATE_FILE}")
     elif args.command == "bundle":
         bundle()
+    elif args.command == "bundle-model":
+        bundle(optical_model_changes(args.baseline_version))
     else:
         changed, deleted = changes()
         print(f"Changed/new files: {len(changed)}")

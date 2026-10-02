@@ -2,6 +2,14 @@
 #include "LDBOpticsParameters.h"
 using namespace metal;
 
+// Promoted for Lens Debaser 1.68 after the focused preset comparison and
+// light-transport audit. Keeping the switch defined here makes the accepted
+// continuous field/aperture PSF the shipping path while preserving the old
+// branch temporarily for controlled regression work.
+#ifndef LDB_EXPERIMENT_CONTINUOUS_FIELD_PSF
+#define LDB_EXPERIMENT_CONTINUOUS_FIELD_PSF 1
+#endif
+
 kernel void ldbPackDepthLuminance(
     device const float4* source [[buffer(0)]],
     device const float4* depthSource [[buffer(1)]],
@@ -385,6 +393,21 @@ static float2 boundedPrismOffset(float2 uv,float2 offset) {
     return offset*(fadeX*fadeY);
 }
 
+#if defined(LDB_EXPERIMENT_CONTINUOUS_FIELD_PSF)
+static float continuousFieldPSFEnvelope(float radius,
+                                        constant LDBOpticsParameters& p) {
+    float onset=clamp(p.responseFieldOnset,0.0f,1.5f);
+    // Preserve a protected centre at exactly zero, but introduce a very soft
+    // toe before the old hard onset so the result does not read as a cut-out
+    // circle. Use almost the full normalized field for the remaining ramp;
+    // only the furthest corners should reach the maximum footprint.
+    float start=onset*0.35f;
+    float end=min(1.5f,onset+max(clamp(p.responseFieldFalloff,0.0f,1.5f)*1.55f,
+                                 0.08f));
+    return smoothstep(start,max(end,start+0.08f),clamp(radius,0.0f,1.5f));
+}
+#endif
+
 // A prism is a coherent displacement, not a noise field. Distribution chooses
 // where the glass acts; Direction controls its physical refraction axis (or
 // rotates the local direction in Radial Field mode). Dispersion is applied
@@ -678,22 +701,43 @@ kernel void ldbOpticsMain(device const float4* source [[buffer(0)]],
     // expressed directly in powers of radius. Scale those established curves
     // relative to their original smoothstep(0,1) envelope so the defaults are
     // unchanged while custom onset/falloff values affect every field family.
-    float curvatureBlur = clamp(p.fieldCurvature, 0.0f, 2.0f) * radius * radius * radius * radius * 2.4f;
-    float fieldBlur = max(0.0f, clamp(p.cornerSharpnessLoss, 0.0f, 2.0f) * radius * radius * 2.4f + curvatureBlur);
+    float hostPixelScale=max(p.renderPixelScale,0.0001f);
+    float curvatureBlur = clamp(p.fieldCurvature, 0.0f, 2.0f) * radius * radius * radius * radius * 2.4f*hostPixelScale;
+    float fieldBlur = max(0.0f, clamp(p.cornerSharpnessLoss, 0.0f, 2.0f) * radius * radius * 2.4f*hostPixelScale + curvatureBlur);
     fieldBlur*=fieldResponseScale;
     float astigmatism = clamp(p.astigmatism, -2.0f, 2.0f);
     float radialSmear = clamp(p.radialSmear, 0.0f, 2.0f);
     float tangentSmear = clamp(p.tangentialSmear, 0.0f, 2.0f);
-    float radialCharacter = max(astigmatism, 0.0f) * 3.5f + radialSmear * 4.5f;
-    float tangentCharacter = max(-astigmatism, 0.0f) * 3.5f + tangentSmear * 4.5f;
+    float radialCharacter = (max(astigmatism, 0.0f) * 3.5f + radialSmear * 4.5f)*hostPixelScale;
+    float tangentCharacter = (max(-astigmatism, 0.0f) * 3.5f + tangentSmear * 4.5f)*hostPixelScale;
     float radialWidth = fieldBlur + fieldEnvelope * radialCharacter;
     float tangentWidth = fieldBlur + fieldEnvelope * tangentCharacter;
     float characterMix = fieldEnvelope * (abs(astigmatism) * 0.60f
                        + radialSmear * 0.45f + tangentSmear * 0.45f);
     float focusMix = clamp(fieldBlur * 0.32f + characterMix, 0.0f, 1.0f);
+    float4 optical;
+#if defined(LDB_EXPERIMENT_CONTINUOUS_FIELD_PSF)
+    // Experimental A/B path: radialWidth and tangentWidth already collapse to
+    // zero through the field envelope, at which point smoothAxisBlur returns
+    // the centre sample. Match the old mixture's second moment by scaling the
+    // footprint without retaining a registered sharp image underneath it.
+    // The first candidate matched only the mixture's mathematical variance;
+    // without the old sharp core that looked substantially stronger. Calibrate
+    // perceptual size downward and extend the spatial transition so established
+    // preset values remain useful rather than immediately reaching maximum blur.
+    float continuousEnvelope=continuousFieldPSFEnvelope(radius,p);
+    float envelopeScale=continuousEnvelope/max(fieldEnvelope,0.001f);
+    float continuousScale=0.70f*envelopeScale*pow(focusMix,0.90f);
+    float4 radialBlur=smoothAxisBlur(source,basePixel,radial,
+                                     radialWidth*continuousScale,width,height);
+    float4 tangentBlur=smoothAxisBlur(source,basePixel,tangent,
+                                      tangentWidth*continuousScale,width,height);
+    optical=(radialBlur+tangentBlur)*0.5f;
+#else
     float4 radialBlur=smoothAxisBlur(source,basePixel,radial,radialWidth,width,height);
     float4 tangentBlur=smoothAxisBlur(source,basePixel,tangent,tangentWidth,width,height);
-    float4 optical = mix(center, (radialBlur + tangentBlur) * 0.5f, focusMix);
+    optical=mix(center,(radialBlur+tangentBlur)*0.5f,focusMix);
+#endif
 
     // A compact isotropic low-pass isolates focus-transition chroma. In the
     // default depth-free mode the image transition selects the tint, preserving
@@ -810,7 +854,7 @@ kernel void ldbOpticsMain(device const float4* source [[buffer(0)]],
         constexpr int comaSteps = 12;
         for (int i=0;i<comaSteps;++i) {
             float t=(float(i)+0.5f)/float(comaSteps);
-            float distance=comaStrength*12.0f*t;
+            float distance=comaStrength*12.0f*hostPixelScale*t;
             // Broaden away from the source so point highlights read as a
             // continuous comet/fan rather than a thin diagonal scratch.
             float wing=distance*(0.12f+0.45f*t);
@@ -1152,6 +1196,26 @@ kernel void ldbBlurAperture(device const float4* source [[buffer(0)]],
         // that area at a radius derived from sample density, instead of leaving
         // the points visible or applying a fixed blur that fails at large radii.
         float reconstructionRadius=clamp(scatter.radiusX*0.16f,0.75f,4.0f);
+#if defined(LDB_EXPERIMENT_CONTINUOUS_FIELD_PSF)
+        if(p.depthMode==0u) {
+            float2 uv=(float2(gid)+0.5f)/scatter.imageSize;
+            float2 field=uv-p.fieldCenter;
+            float fieldAngle=p.fieldRotation*(M_PI_F/180.0f);
+            float fs=sin(fieldAngle),fc=cos(fieldAngle);
+            float2 local=float2(fc*field.x+fs*field.y,
+                                -fs*field.x+fc*field.y);
+            float aspect=sqrt(clamp(p.fieldAspect,0.25f,4.0f));
+            float fieldRadius=clamp(length(float2(local.x*aspect,
+                                                   local.y/aspect))*2.0f,
+                                    0.0f,1.5f);
+            float envelope=continuousFieldPSFEnvelope(fieldRadius,p);
+            reconstructionRadius*=0.70f*pow(envelope,1.15f);
+            if(reconstructionRadius<=.001f) {
+                destination[gid.y*width+gid.x]=source[gid.y*width+gid.x];
+                return;
+            }
+        }
+#endif
         float4 centreSample=source[gid.y*width+gid.x];
         float targetDepth=0.0f;
         if(p.depthMode>0u) {
@@ -1204,6 +1268,15 @@ kernel void ldbBlurAperture(device const float4* source [[buffer(0)]],
     float onset=clamp(p.responseFieldOnset,0.0f,1.5f);
     float fieldEnd=onset+max(clamp(p.responseFieldFalloff,0.0f,1.5f),0.08f);
     float fieldEnvelope=smoothstep(onset,fieldEnd,fieldRadius);
+#if defined(LDB_EXPERIMENT_CONTINUOUS_FIELD_PSF)
+    // In the experiment the pupil itself grows from a delta response at the
+    // protected centre.  All three passes must converge to identity together;
+    // otherwise the reconstruction passes leave a faint global soft layer.
+    if(p.depthMode==0u&&fieldEnvelope<=0.0001f) {
+        destination[gid.y*width+gid.x]=source[gid.y*width+gid.x];
+        return;
+    }
+#endif
     float bokehSwirl=clamp(p.apertureBokehSwirl,0.0f,12.0f)*fieldEnvelope;
     float catEye=clamp(p.apertureCatEye,0.0f,1.0f)*smoothstep(0.15f,1.0f,fieldRadius);
     float pupilShift=clamp(p.aperturePupilShift,0.0f,1.0f)*fieldEnvelope;
@@ -1213,6 +1286,14 @@ kernel void ldbBlurAperture(device const float4* source [[buffer(0)]],
     float2 apertureY=float2(-apertureX.y,apertureX.x);
     float reconstructionRadius=clamp(scatter.radiusX*0.16f,0.75f,4.0f);
     float radius=max(scatter.radiusX-min(reconstructionRadius*0.65f,scatter.radiusX*0.15f),0.0f);
+#if defined(LDB_EXPERIMENT_CONTINUOUS_FIELD_PSF)
+    if(p.depthMode==0u) {
+        float continuousEnvelope=continuousFieldPSFEnvelope(fieldRadius,p);
+        float continuousScale=0.70f*pow(continuousEnvelope,1.15f);
+        reconstructionRadius*=continuousScale;
+        radius*=continuousScale;
+    }
+#endif
     float4 centreSample=source[gid.y*width+gid.x];
     float targetDepth=0.0f;
     if(p.depthMode>0u) {
@@ -1691,7 +1772,8 @@ static float3 analyticFlareElements(float2 pixel,
         if(rayAmount>1e-6f) {
             float2 delta=pixel-sourcePosition;
             float length=max(p.diffractionRayLength,1.0f);
-            float coreWidth=1.15f+sourceRadius*.36f;
+            float coreWidth=1.15f*max(p.renderPixelScale,0.0001f)
+                           +sourceRadius*.36f;
             float wingWidth=coreWidth*2.8f;
             float core=exp(-.5f*(delta.x/coreWidth)*(delta.x/coreWidth))
                       *exp(-abs(delta.y)/(length*.22f));
@@ -1713,7 +1795,8 @@ static float3 analyticFlareElements(float2 pixel,
         if(ghostAmount>1e-6f&&index==0u) {
             float2 primaryGhostCentre=opticalCentre
                 +p.anamorphicFlareGhostPosition*(sourcePosition-opticalCentre);
-            float baseRadius=(24.0f+sourceRadius*3.0f)
+            float baseRadius=(24.0f*max(p.renderPixelScale,0.0001f)
+                             +sourceRadius*3.0f)
                 *clamp(p.anamorphicFlareGhostScale,.25f,3.0f);
             uint ghostCount=uint(clamp(round(p.anamorphicFlareGhostCount),1.0f,6.0f));
             float2 pathDirection=normalize(sourcePosition-opticalCentre+float2(1e-4f,0.0f));
@@ -1815,6 +1898,7 @@ kernel void ldbComposite(device const float4* source [[buffer(0)]],
     // toward the edge. Previously this happened only when Bokeh Swirl was
     // nonzero, so ordinary depth-free aperture blur was global and Field
     // Onset/Falloff could not create spherical edge defocus.
+    #if !defined(LDB_EXPERIMENT_CONTINUOUS_FIELD_PSF)
     if(p.depthMode==0u&&apertureMix>0.0f) {
         float2 uv=(float2(gid)+0.5f)/p.imageSize;
         float2 field=uv-p.fieldCenter;
@@ -1828,6 +1912,7 @@ kernel void ldbComposite(device const float4* source [[buffer(0)]],
         float envelope=smoothstep(onset,fieldEnd,clamp(radius,0.0f,1.5f));
         apertureMix*=envelope;
     }
+    #endif
     float3 directOptics=mix(direct[index].rgb,apertureScattered[index].rgb,apertureMix);
     float2 wearUV=(float2(gid)+0.5f)/p.imageSize;
     float3 wearPattern=frontElementPattern(wearUV,p);

@@ -5,7 +5,7 @@ DaVinci Resolve. It models perceptually useful aspects of modern, vintage,
 anamorphic and exotic optics, prioritising pleasing visual approximations and
 interactive performance over scientific lens simulation.
 
-Current development version: **1.67**.
+Current development version: **1.68**.
 
 Read the online [Lens Debaser user guide](https://vidarandersen.com/dmz/lens-debaser-ofx/) for the complete workflow, control reference, depth setup, and preset catalogue.
 

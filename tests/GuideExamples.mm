@@ -208,7 +208,7 @@ static std::string guideFileSlug(std::string value) {
 }
 
 int main(int argc,char** argv) {
-    if(argc<4||argc>5){std::fprintf(stderr,"usage: %s metallib repo-root output-dir [changed-glare|changed-presets-166|changed-presets-166b|changed-presets-167|changed-preset-26|optical-model-validation]\n",argv[0]);return 2;}
+    if(argc<4||argc>5){std::fprintf(stderr,"usage: %s metallib repo-root output-dir [changed-glare|changed-presets-166|changed-presets-166b|changed-presets-167|changed-preset-26|optical-model-validation|field-psf-validation|field-psf-library-validation|all-preset-library-validation|light-transport-validation]\n",argv[0]);return 2;}
     @autoreleasepool {
         const bool changedGlareOnly=argc==5&&std::string(argv[4])=="changed-glare";
         const bool changedPresets166=argc==5&&std::string(argv[4])=="changed-presets-166";
@@ -217,6 +217,14 @@ int main(int argc,char** argv) {
         const bool changedPreset26=argc==5&&std::string(argv[4])=="changed-preset-26";
         const bool opticalModelValidation=
             argc==5&&std::string(argv[4])=="optical-model-validation";
+        const bool fieldPSFValidation=
+            argc==5&&std::string(argv[4])=="field-psf-validation";
+        const bool fieldPSFLibraryValidation=
+            argc==5&&std::string(argv[4])=="field-psf-library-validation";
+        const bool allPresetLibraryValidation=
+            argc==5&&std::string(argv[4])=="all-preset-library-validation";
+        const bool lightTransportValidation=
+            argc==5&&std::string(argv[4])=="light-transport-validation";
         id<MTLDevice> device=MTLCreateSystemDefaultDevice(); if(!device){std::fprintf(stderr,"No Metal device\n");return 3;}
         NSURL* libraryURL=[NSURL fileURLWithPath:[NSString stringWithUTF8String:argv[1]]];
         LDBOpticsEngine engine(device,libraryURL); id<MTLCommandQueue> queue=[device newCommandQueue];
@@ -240,6 +248,133 @@ int main(int argc,char** argv) {
         const GuideSource sources[]={{"iso",&iso,chartW,chartH},{"optical",&optical,chartW,chartH},
             {"milano1",&milano1,milanoW,milanoH},{"milano2",&milano2,milanoW,milanoH},
             {"milano3",&milano3,milanoW,milanoH}};
+
+        if(lightTransportValidation) {
+            constexpr uint32_t fixtureW=960,fixtureH=540;
+            std::vector<simd_float4> fixture(size_t(fixtureW)*fixtureH,
+                                             simd_float4{.008f,.008f,.008f,1.0f});
+            const simd_float2 positions[]={{.5f,.5f},{.72f,.5f},{.94f,.5f},
+                                           {.5f,.18f},{.88f,.18f}};
+            const float energies[]={8.0f,6.0f,8.0f,3.0f,12.0f};
+            for(uint32_t y=0;y<fixtureH;++y)for(uint32_t x=0;x<fixtureW;++x) {
+                simd_float2 uv={(float(x)+.5f)/fixtureW,(float(y)+.5f)/fixtureH};
+                float value=.008f;
+                for(size_t i=0;i<std::size(positions);++i) {
+                    simd_float2 delta=(uv-positions[i])*
+                        simd_make_float2(float(fixtureW)/fixtureH,1.0f);
+                    float r2=simd_dot(delta,delta);
+                    value+=energies[i]*exp(-r2/(2.0f*.0022f*.0022f));
+                }
+                fixture[size_t(y)*fixtureW+x]={value,value,value,1.0f};
+            }
+            auto field=[](uint32_t w,uint32_t h) {
+                auto p=LDBNeutralOpticsParameters(w,h);
+                p.apertureResponse=1.0f;p.apertureRadius=27.0f;
+                p.apertureSoftness=.38f;p.astigmatism=.20f;
+                p.cornerSharpnessLoss=1.42f;p.fieldAspect=1.58f;
+                p.fieldCurvature=.72f;p.tangentialSmear=.28f;
+                p.responseFieldOnset=.24f;p.responseFieldFalloff=.82f;
+                return p;
+            };
+            struct AuditCase { const char* name; int kind; } cases[]={
+                {"direct-field-only",0},{"aperture-psf-only",1},{"bloom-only",2},
+                {"psf-plus-bloom",3},{"psf-plus-glare",4},{"psf-plus-halo",5},
+                {"psf-plus-combined-scatter",6}};
+            std::ofstream metrics(out/"light-transport-metrics.tsv");
+            metrics<<"case\tinput_energy\toutput_energy\tpeak\n";
+            constexpr simd_float3 luma={.272229f,.674082f,.053689f};
+            double inputEnergy=0.0;
+            for(const auto& px:fixture)inputEnergy+=px.x*luma.x+px.y*luma.y+px.z*luma.z;
+            for(const auto& audit:cases) {
+                auto p=field(fixtureW,fixtureH);
+                if(audit.kind==0)p.apertureResponse=0.0f;
+                if(audit.kind==2)p=LDBNeutralOpticsParameters(fixtureW,fixtureH);
+                if(audit.kind==2||audit.kind==3||audit.kind==6) {
+                    p.bloomEnergy=.55f;p.bloomThreshold=.45f;p.bloomRadius=42.0f;
+                }
+                if(audit.kind==4||audit.kind==6) {
+                    p.glareEnergy=.45f;p.glareThreshold=.45f;p.glareRadius=72.0f;
+                }
+                if(audit.kind==5||audit.kind==6)p.sphericalHalo=.72f;
+                auto result=render(engine,device,queue,fixture,fixtureW,fixtureH,p);
+                double outputEnergy=0.0,peak=0.0;
+                for(const auto& px:result) {
+                    double y=px.x*luma.x+px.y*luma.y+px.z*luma.z;
+                    outputEnergy+=y;peak=std::max(peak,y);
+                }
+                metrics<<audit.name<<'\t'<<inputEnergy<<'\t'<<outputEnergy<<'\t'<<peak<<'\n';
+                auto display=guideRec709Gamma24FromAP1(result);
+                std::string name=std::string("audit-")+audit.name+".png";
+                if(!writePNG((out/name).string(),display,fixtureW,fixtureH))return 10;
+                std::printf("Wrote light-transport audit / %s\n",audit.name);
+            }
+            return 0;
+        }
+
+        if(fieldPSFValidation) {
+            fs::path presetPath=root/"presets/cinematic-lenses/26-Internal-Field-Edge-FX.ldbpreset";
+            if(!fs::is_regular_file(presetPath)) {
+                std::fprintf(stderr,"Missing Internal Field Edge FX preset: %s\n",presetPath.c_str());
+                return 9;
+            }
+            for(const auto& source:sources) {
+                auto p=loadPreset(presetPath,source.width,source.height);
+                auto result=render(engine,device,queue,*source.pixels,source.width,source.height,p);
+                bool milano=std::string(source.key).rfind("milano",0)==0;
+                auto display=milano?guideMilanoDisplayFromAP1(result,milanoDisplayLUT):
+                    guideRec709Gamma24FromAP1(result);
+                std::string name=std::string("26-internal-field-edge-fx-")+source.key+".png";
+                if(!writePNG((out/name).string(),display,source.width,source.height))return 10;
+                std::printf("Wrote field-PSF validation / %s\n",source.key);
+            }
+            return 0;
+        }
+
+        if(fieldPSFLibraryValidation||allPresetLibraryValidation) {
+            const char* presetRootEnvironment=std::getenv("LDB_PRESET_ROOT");
+            fs::path presetRoot=presetRootEnvironment&&*presetRootEnvironment?
+                fs::path(presetRootEnvironment):root/"presets";
+            struct PresetCollection { const char* slug; fs::path path; } collections[]={
+                {"demo",presetRoot/"demonstrations"},
+                {"cinematic",presetRoot/"cinematic-lenses"}};
+            size_t renderedPresets=0;
+            for(const auto& collection:collections) {
+                std::vector<fs::path> presetPaths;
+                for(const auto& entry:fs::directory_iterator(collection.path))
+                    if(entry.path().extension()==".ldbpreset")presetPaths.push_back(entry.path());
+                std::sort(presetPaths.begin(),presetPaths.end());
+                for(const auto& presetPath:presetPaths) {
+                    auto probe=loadPreset(presetPath,chartW,chartH);
+                    const bool relevant=probe.apertureResponse>1e-6f||
+                        probe.cornerSharpnessLoss>1e-6f||probe.fieldCurvature>1e-6f||
+                        fabs(probe.astigmatism)>1e-6f||probe.radialSmear>1e-6f||
+                        probe.tangentialSmear>1e-6f;
+                    if(!allPresetLibraryValidation&&!relevant)continue;
+                    ++renderedPresets;
+                    std::string presetSlug=std::string(collection.slug)+"-"+
+                        guideFileSlug(presetPath.stem().string());
+                    for(const auto& source:sources) {
+                        auto p=loadPreset(presetPath,source.width,source.height);
+                        auto result=render(engine,device,queue,*source.pixels,
+                                           source.width,source.height,p);
+                        bool milano=std::string(source.key).rfind("milano",0)==0;
+                        auto display=milano?guideMilanoDisplayFromAP1(result,milanoDisplayLUT):
+                            guideRec709Gamma24FromAP1(result);
+                        std::string name=presetSlug+"-"+source.key+".png";
+                        if(!writePNG((out/name).string(),display,source.width,source.height))return 10;
+                        std::printf("Wrote field-PSF library %s / %s / %s\n",
+                                    collection.slug,presetPath.stem().c_str(),source.key);
+                    }
+                }
+            }
+            if(renderedPresets==0) {
+                std::fprintf(stderr,"No presets selected for validation.\n");
+                return 11;
+            }
+            std::printf("Rendered %zu %s presets.\n",renderedPresets,
+                        allPresetLibraryValidation?"factory":"relevant field/aperture");
+            return 0;
+        }
 
         if(opticalModelValidation) {
             constexpr int families[]={5,6,11,16,18,19,20,24};

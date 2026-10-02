@@ -8,7 +8,7 @@ from lens_profiles import cooke_focal_calibrations, reference_lens_families
 
 ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / "presets"
-CURRENT_PRESET_TAG = "v1.67"
+CURRENT_PRESET_TAG = "v1.68"
 TIERS = (("1-Subtle", 0.35), ("2-Medium", 0.65), ("3-Caricature", 1.0))
 GENERATED_PRESETS = set()
 
