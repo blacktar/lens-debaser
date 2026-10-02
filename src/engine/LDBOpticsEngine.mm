@@ -51,6 +51,7 @@ struct LDBBufferPool {
 struct LDBOpticsEngine::Impl {
   id<MTLDevice> device = nil;
   id<MTLComputePipelineState> opticsPipeline = nil;
+  id<MTLComputePipelineState> chromaticPipeline = nil;
   id<MTLComputePipelineState> packDepthPipeline = nil;
   id<MTLComputePipelineState> decodePipeline = nil;
   id<MTLComputePipelineState> downsamplePipeline = nil;
@@ -265,6 +266,8 @@ LDBOpticsEngine::LDBOpticsEngine(id<MTLDevice> device, NSURL *metallibURL)
   }
   impl_->opticsPipeline =
       makePipeline(device, library, @"ldbOpticsMain", impl_->error);
+  impl_->chromaticPipeline =
+      makePipeline(device, library, @"ldbChromaticPSF", impl_->error);
   impl_->packDepthPipeline =
       makePipeline(device, library, @"ldbPackDepthLuminance", impl_->error);
   impl_->decodePipeline =
@@ -406,9 +409,19 @@ void LDBOpticsEngine::encode(id<MTLCommandBuffer> commandBuffer,
   bool apertureActive = p.apertureResponse > 0.0f && p.apertureRadius > 0.0f;
   bool anyScatter = scatterActive[0] || scatterActive[1] || scatterActive[2] ||
                     scatterActive[3] || scatterActive[4];
+  const bool chromaticActive =
+      impl_->chromaticPipeline &&
+      (p.lateralCARed != 0.0f || p.lateralCABlue != 0.0f ||
+       p.anamorphicAberration != 0.0f ||
+       (p.refractiveIrregularity != 0.0f && p.refractiveDispersion != 0.0f) ||
+       (p.prismAmount != 0.0f && p.prismDispersion != 0.0f) ||
+       (p.variationAmount != 0.0f &&
+        p.variationChromaticAsymmetry != 0.0f));
   id<MTLBuffer> linearSource =
       linearAP1Input ? opticalSource : scratch(byteCount);
   id<MTLBuffer> direct = scratch(byteCount);
+  id<MTLBuffer> achromaticDirect = chromaticActive
+      ? scratch(byteCount) : direct;
   auto scatterScale = [](float radius) -> uint32_t {
     if (radius > 48.0f)
       return 8;
@@ -607,7 +620,7 @@ void LDBOpticsEngine::encode(id<MTLCommandBuffer> commandBuffer,
       apertureActive ? apertureTemporary1 : direct;
   id<MTLBuffer> linearResult =
       linearAP1Input ? destination : scratch(byteCount);
-  if (!linearSource || !direct || !bloomSource ||
+  if (!linearSource || !direct || !achromaticDirect || !bloomSource ||
       !bloomTemporary || !bloomScattered || !glareSource || !glareTemporary ||
       !glareScattered || !haloSource || !haloTemporary || !haloScattered ||
       !flareSource || !flareTemporary || !flareScattered || !flareReconstructed ||
@@ -631,10 +644,20 @@ void LDBOpticsEngine::encode(id<MTLCommandBuffer> commandBuffer,
   encoder = [commandBuffer computeCommandEncoder];
   [encoder setComputePipelineState:impl_->opticsPipeline];
   [encoder setBuffer:linearSource offset:0 atIndex:0];
-  [encoder setBuffer:direct offset:0 atIndex:1];
+  [encoder setBuffer:achromaticDirect offset:0 atIndex:1];
   [encoder setBytes:&p length:sizeof(p) atIndex:2];
   dispatchImage(encoder, impl_->opticsPipeline, width, height);
   [encoder endEncoding];
+
+  if (chromaticActive) {
+    encoder = [commandBuffer computeCommandEncoder];
+    [encoder setComputePipelineState:impl_->chromaticPipeline];
+    [encoder setBuffer:achromaticDirect offset:0 atIndex:0];
+    [encoder setBuffer:direct offset:0 atIndex:1];
+    [encoder setBytes:&p length:sizeof(p) atIndex:2];
+    dispatchImage(encoder, impl_->chromaticPipeline, width, height);
+    [encoder endEncoding];
+  }
 
   for (uint32_t scatterKind = 0; scatterKind < 5; ++scatterKind) {
     if (!scatterActive[scatterKind])
@@ -728,7 +751,7 @@ void LDBOpticsEngine::encode(id<MTLCommandBuffer> commandBuffer,
   if (apertureActive) {
     constexpr float pi = 3.14159265358979323846f;
     float rotation = p.apertureRotation * pi / 180.0f;
-    float radius = std::clamp(p.apertureRadius, 0.0f, 24.0f);
+    float radius = std::clamp(p.apertureRadius, 0.0f, 48.0f);
     id<MTLBuffer> passSources[3] = {direct, apertureTemporary1,
                                     apertureTemporary2};
     id<MTLBuffer> passDestinations[3] = {apertureTemporary1, apertureTemporary2,

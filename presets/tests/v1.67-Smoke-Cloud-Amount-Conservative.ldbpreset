@@ -1,5 +1,5 @@
 LensDebaserPreset=2
-# Family: ABI v17 Smoke
+# Family: ABI v18 Smoke
 # Strength: Cloud Amount Conservative
 # Conservative natural-range density. Compare on real footage against Medium and Extreme at Fit and 100%.
 internalDirtAmount=1

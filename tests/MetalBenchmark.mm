@@ -38,8 +38,8 @@ static Result benchmark(const char* name, LDBOpticsEngine& engine, id<MTLDevice>
 
 int main(int argc, char** argv) {
     @autoreleasepool {
-        if (argc != 2) {
-            std::fprintf(stderr, "usage: ldb-optics-benchmark LDBOptics.metallib\n");
+        if (argc != 2 && argc != 3) {
+            std::fprintf(stderr, "usage: ldb-optics-benchmark baseline.metallib [candidate.metallib]\n");
             return 1;
         }
         constexpr uint32_t width = 1920, height = 1080;
@@ -49,6 +49,12 @@ int main(int argc, char** argv) {
         id<MTLCommandQueue> queue = [device newCommandQueue];
         LDBOpticsEngine engine(device, [NSURL fileURLWithPath:[NSString stringWithUTF8String:argv[1]]]);
         if (!engine.valid()) return 3;
+        std::unique_ptr<LDBOpticsEngine> candidate;
+        if(argc==3) {
+            candidate=std::make_unique<LDBOpticsEngine>(device,
+                [NSURL fileURLWithPath:[NSString stringWithUTF8String:argv[2]]]);
+            if(!candidate->valid())return 3;
+        }
         NSUInteger bytes = NSUInteger(width) * height * sizeof(simd_float4);
         id<MTLBuffer> source = [device newBufferWithLength:bytes options:MTLResourceStorageModeShared];
         id<MTLBuffer> destination = [device newBufferWithLength:bytes options:MTLResourceStorageModeShared];
@@ -82,7 +88,8 @@ int main(int argc, char** argv) {
         auto depthAperture=aperture;
         depthAperture.depthMode=2;depthAperture.depthChannel=4;depthAperture.depthFocus=.5f;
         auto bokehSwirl=aperture;
-        bokehSwirl.apertureBokehSwirl=2.0f;bokehSwirl.apertureCatEye=.35f;
+        bokehSwirl.apertureRadius=40.0f;bokehSwirl.apertureBokehSwirl=10.0f;
+        bokehSwirl.apertureCatEye=.80f;
         bokehSwirl.responseFieldOnset=.22f;bokehSwirl.responseFieldFalloff=.82f;
         auto petzval=bokehSwirl;
         petzval.apertureShape=1;petzval.apertureBladeCount=8;
@@ -91,6 +98,11 @@ int main(int argc, char** argv) {
         petzval.cornerSharpnessLoss=.82f;petzval.fieldCurvature=.82f;
         petzval.astigmatism=.30f;petzval.tangentialSmear=.24f;
         petzval.responseFieldOnset=.16f;petzval.responseFieldFalloff=1.16f;
+        auto extremeField=neutral;
+        extremeField.cornerSharpnessLoss=1.85f;extremeField.fieldCurvature=1.7f;
+        extremeField.astigmatism=1.45f;extremeField.radialSmear=.48f;
+        extremeField.tangentialSmear=1.35f;extremeField.responseFieldOnset=.13f;
+        extremeField.responseFieldFalloff=1.4f;
         auto depthBloom=vintage;
         depthBloom.depthMode=2;depthBloom.depthChannel=4;depthBloom.depthFocus=.5f;
         auto depthHalo=aberration;
@@ -138,6 +150,11 @@ int main(int argc, char** argv) {
         prism.prismDispersion=.75f;
         prism.prismEdgeBias=.55f;
         prism.prismSoftness=.35f;
+        auto prismRadial=prism;
+        prismRadial.prismDistribution=LDBPrismRadialField;
+        prismRadial.fieldAspect=1.55f;
+        prismRadial.responseFieldOnset=.2f;
+        prismRadial.responseFieldFalloff=.9f;
         auto frontWear=neutral;
         auto chromaticDefocus=neutral;
         chromaticDefocus.lateralCARed=6.0f;
@@ -159,11 +176,28 @@ int main(int argc, char** argv) {
         internalDirt.internalDirtSmear=.45f;internalDirt.internalDirtScatter=1.35f;
         internalDirt.internalDirtSeed=16180;
         std::printf("Metal device: %s\n", device.name.UTF8String);
+        if(candidate) {
+            struct ABCase { const char* name; const LDBOpticsParameters* p; } cases[]={
+                {"geometry",&geometry},{"ca+defocus",&chromaticDefocus},
+                {"bokeh-swirl",&bokehSwirl},{"petzval",&petzval},
+                {"extreme-field",&extremeField}};
+            std::printf("\nOptical blur A/B (interleaved baseline then candidate)\n");
+            for(const auto& c:cases) {
+                std::string baseName=std::string(c.name)+"-base";
+                std::string testName=std::string(c.name)+"-test";
+                auto base=benchmark(baseName.c_str(),engine,device,queue,source,destination,width,height,*c.p,frames);
+                auto test=benchmark(testName.c_str(),*candidate,device,queue,source,destination,width,height,*c.p,frames);
+                std::printf("  %-12s GPU %+6.1f%%  wall %+6.1f%%\n",c.name,
+                    (test.gpuMs/base.gpuMs-1.0)*100.0,(test.wallMs/base.wallMs-1.0)*100.0);
+            }
+            return 0;
+        }
         benchmark("neutral", engine, device, queue, source, destination, width, height, neutral, frames);
         benchmark("warp-only", engine, device, queue, source, destination, width, height, warpOnly, frames);
         benchmark("geometry", engine, device, queue, source, destination, width, height, geometry, frames);
         benchmark("refractive", engine, device, queue, source, destination, width, height, refractive, frames);
         benchmark("prism", engine, device, queue, source, destination, width, height, prism, frames);
+        benchmark("prism-radial", engine, device, queue, source, destination, width, height, prismRadial, frames);
         benchmark("front-wear", engine, device, queue, source, destination, width, height, frontWear, frames);
         benchmark("internal-dirt", engine, device, queue, source, destination, width, height, internalDirt, frames);
         benchmark("ca+defocus", engine, device, queue, source, destination, width, height, chromaticDefocus, frames);

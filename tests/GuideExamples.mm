@@ -148,7 +148,7 @@ static void assignValue(LDBOpticsParameters& p,const std::string& key,float v) {
     if(key=="opticalCenterX")p.opticalCenter.x=v; else if(key=="opticalCenterY")p.opticalCenter.y=v;
     else if(key=="fieldCenterX")p.fieldCenter.x=v; else if(key=="fieldCenterY")p.fieldCenter.y=v;
     else if(key=="apertureShape")p.apertureShape=uint32_t(v); else if(key=="apertureBladeCount")p.apertureBladeCount=uint32_t(v);
-    else if(key=="depthMode")p.depthMode=uint32_t(v); else if(key=="variationSeed")p.variationSeed=uint32_t(v);
+    else if(key=="depthMode")p.depthMode=uint32_t(v); else if(key=="prismDistribution")p.prismDistribution=uint32_t(v); else if(key=="variationSeed")p.variationSeed=uint32_t(v);
     else if(key=="damageSeed")p.damageSeed=uint32_t(v); else if(key=="refractiveSeed")p.refractiveSeed=uint32_t(v);
     else if(key=="internalDirtSeed")p.internalDirtSeed=uint32_t(v);
     else if(key=="transmissionR")p.transmissionColor.x=v; else if(key=="transmissionG")p.transmissionColor.y=v; else if(key=="transmissionB")p.transmissionColor.z=v;
@@ -208,9 +208,14 @@ static std::string guideFileSlug(std::string value) {
 }
 
 int main(int argc,char** argv) {
-    if(argc<4||argc>5){std::fprintf(stderr,"usage: %s metallib repo-root output-dir [changed-glare]\n",argv[0]);return 2;}
+    if(argc<4||argc>5){std::fprintf(stderr,"usage: %s metallib repo-root output-dir [changed-glare|changed-presets-166|changed-presets-166b|changed-presets-167|optical-model-validation]\n",argv[0]);return 2;}
     @autoreleasepool {
         const bool changedGlareOnly=argc==5&&std::string(argv[4])=="changed-glare";
+        const bool changedPresets166=argc==5&&std::string(argv[4])=="changed-presets-166";
+        const bool changedPresets166b=argc==5&&std::string(argv[4])=="changed-presets-166b";
+        const bool changedPresets167=argc==5&&std::string(argv[4])=="changed-presets-167";
+        const bool opticalModelValidation=
+            argc==5&&std::string(argv[4])=="optical-model-validation";
         id<MTLDevice> device=MTLCreateSystemDefaultDevice(); if(!device){std::fprintf(stderr,"No Metal device\n");return 3;}
         NSURL* libraryURL=[NSURL fileURLWithPath:[NSString stringWithUTF8String:argv[1]]];
         LDBOpticsEngine engine(device,libraryURL); id<MTLCommandQueue> queue=[device newCommandQueue];
@@ -234,14 +239,113 @@ int main(int argc,char** argv) {
         const GuideSource sources[]={{"iso",&iso,chartW,chartH},{"ogc",&ogc,chartW,chartH},
             {"milano1",&milano1,milanoW,milanoH},{"milano2",&milano2,milanoW,milanoH},
             {"milano3",&milano3,milanoW,milanoH}};
+
+        if(opticalModelValidation) {
+            constexpr int families[]={5,6,11,16,18,19,20,24};
+            for(int family:families) {
+                char prefix[8]; std::snprintf(prefix,sizeof(prefix),"%02d-",family);
+                std::vector<fs::path> variants;
+                for(const auto& entry:fs::directory_iterator(root/"presets/cinematic-lenses"))
+                    if(entry.path().extension()==".ldbpreset"&&
+                       entry.path().filename().string().rfind(prefix,0)==0)
+                        variants.push_back(entry.path());
+                std::sort(variants.begin(),variants.end());
+                if(variants.size()!=3) {
+                    std::fprintf(stderr,"Expected three variants for family %02d, found %zu\n",family,variants.size());
+                    return 9;
+                }
+                for(const auto& presetPath:variants) {
+                    std::string presetSlug=guideFileSlug(presetPath.stem().string());
+                    for(const auto& source:sources) {
+                        if(std::string(source.key)!="iso"&&std::string(source.key)!="milano1")continue;
+                        auto p=loadPreset(presetPath,source.width,source.height);
+                        auto result=render(engine,device,queue,*source.pixels,source.width,source.height,p);
+                        bool milano=std::string(source.key)=="milano1";
+                        auto display=milano?guideMilanoDisplayFromAP1(result,milanoDisplayLUT):
+                            guideRec709Gamma24FromAP1(result);
+                        std::string name=presetSlug+"-"+source.key+".png";
+                        if(!writePNG((out/name).string(),display,source.width,source.height))return 10;
+                        std::printf("Wrote optical-model validation %s / %s\n",presetPath.stem().c_str(),source.key);
+                    }
+                }
+            }
+            // Decompose the three most demanding Caricature presets. These
+            // renders distinguish field-kernel artifacts from aperture and
+            // chromatic behavior before another subsystem is changed.
+            struct Isolation { int family; const char* label; } isolations[]={
+                {5,"no-aperture"},{5,"aperture-only"},
+                {6,"no-aperture"},{6,"aperture-only"},
+                {18,"no-chromatic"},{18,"chromatic-only"},
+                {19,"no-chromatic"},{19,"chromatic-only"}};
+            for(const auto& isolation:isolations) {
+                char prefix[12];std::snprintf(prefix,sizeof(prefix),"%02d-",isolation.family);
+                fs::path presetPath;
+                for(const auto& entry:fs::directory_iterator(root/"presets/cinematic-lenses"))
+                    if(entry.path().filename().string().rfind(prefix,0)==0&&
+                       entry.path().stem().string().find("-3-Caricature")!=std::string::npos) {
+                        presetPath=entry.path();break;
+                    }
+                auto p=loadPreset(presetPath,chartW,chartH);
+                std::string label=isolation.label;
+                if(label=="no-aperture")p.apertureResponse=0.0f;
+                if(label=="aperture-only") {
+                    p.cornerSharpnessLoss=p.fieldCurvature=p.astigmatism=0.0f;
+                    p.radialSmear=p.tangentialSmear=p.longitudinalCA=0.0f;
+                }
+                if(label=="no-chromatic") {
+                    p.lateralCARed=p.lateralCABlue=p.longitudinalCA=0.0f;
+                    p.refractiveDispersion=0.0f;
+                }
+                if(label=="chromatic-only") {
+                    p.cornerSharpnessLoss=p.fieldCurvature=p.astigmatism=0.0f;
+                    p.radialSmear=p.tangentialSmear=0.0f;
+                }
+                auto result=render(engine,device,queue,iso,chartW,chartH,p);
+                std::string name="isolate-"+std::to_string(isolation.family)+"-"+label+"-iso.png";
+                if(!writePNG((out/name).string(),guideRec709Gamma24FromAP1(result),chartW,chartH))return 12;
+                std::printf("Wrote optical-model isolation %02d / %s\n",isolation.family,isolation.label);
+            }
+            // A single off-axis impulse exposes separated blur lobes more
+            // clearly than a photograph. Record energy and RMS spread so the
+            // candidate cannot appear smoother simply by losing brightness.
+            std::vector<simd_float4> impulse(size_t(chartW)*chartH,simd_float4{0,0,0,1});
+            const uint32_t impulseX=120,impulseY=110;
+            impulse[size_t(impulseY)*chartW+impulseX]={8,8,8,1};
+            auto diagnostic=LDBNeutralOpticsParameters(chartW,chartH);
+            diagnostic.cornerSharpnessLoss=2.0f;
+            diagnostic.fieldCurvature=1.75f;
+            diagnostic.astigmatism=.8f;
+            diagnostic.radialSmear=1.25f;
+            diagnostic.tangentialSmear=1.55f;
+            diagnostic.responseFieldOnset=.05f;
+            diagnostic.responseFieldFalloff=.95f;
+            auto impulseResult=render(engine,device,queue,impulse,chartW,chartH,diagnostic);
+            if(!writePNG((out/"diagnostic-impulse.png").string(),
+                         guideRec709Gamma24FromAP1(impulseResult),chartW,chartH))return 11;
+            double energy=0.0,weightedRadius2=0.0,peak=0.0;
+            for(uint32_t y=0;y<chartH;++y)for(uint32_t x=0;x<chartW;++x){
+                const auto& px=impulseResult[size_t(y)*chartW+x];
+                double luma=std::max(0.0,double(px.x*.272229f+px.y*.674082f+px.z*.053689f));
+                double dx=double(x)-impulseX,dy=double(y)-impulseY;
+                energy+=luma; weightedRadius2+=luma*(dx*dx+dy*dy); peak=std::max(peak,luma);
+            }
+            std::ofstream metrics(out/"metrics.txt");
+            metrics<<"Impulse input energy: 8\n"
+                   <<"Impulse output energy: "<<energy<<"\n"
+                   <<"Impulse energy ratio: "<<energy/8.0<<"\n"
+                   <<"Impulse RMS radius px: "<<std::sqrt(weightedRadius2/std::max(energy,1e-12))<<"\n"
+                   <<"Impulse peak: "<<peak<<"\n";
+            std::printf("Wrote optical A/B impulse diagnostic and metrics\n");
+            return 0;
+        }
         const ExampleGroup groups[]={
             {"presets",2},{"processing",6},{"capture",1},{"look",2},{"geometry",3},{"field-shape",4},
             {"focus-field",5},{"detail",6},{"chromatic",7},{"anamorphic",8},{"refractive",21},{"prism",31},{"aperture",9},
             {"vignette",10},{"image-circle",11},{"bloom",12},{"glare-halo",13},{"transmission",14},
             {"highlight-response",15},{"off-axis",16},{"variation",17},{"front-wear",20},
-            {"internal-contamination",24},{"depth",18},{"blend",19}};
+            {"internal-contamination",24},{"depth",18},{"bokeh-swirl",25},{"petzval-field",26}};
         std::unordered_set<std::string> written;
-        if(!changedGlareOnly) for(const auto& source:sources){std::string beforeName=std::string(source.key)+"-before.png";
+        if(!changedGlareOnly&&!changedPresets166&&!changedPresets166b&&!changedPresets167) for(const auto& source:sources){std::string beforeName=std::string(source.key)+"-before.png";
             bool milano=std::string(source.key).rfind("milano",0)==0;
             auto before=milano?guideMilanoDisplayFromAP1(*source.pixels,milanoDisplayLUT):
                 guideRec709Gamma24FromAP1(*source.pixels);
@@ -249,19 +353,19 @@ int main(int argc,char** argv) {
         for(const auto& group:groups){
             if(changedGlareOnly&&std::string(group.slug)!="glare-halo"&&
                std::string(group.slug)!="highlight-response")continue;
+            if(changedPresets166) {
+                const std::unordered_set<std::string> changed={"capture","look","field-shape",
+                    "focus-field","chromatic","aperture"};
+                if(!changed.count(group.slug))continue;
+            }
+            if(changedPresets166b) {
+                const std::unordered_set<std::string> changed={"focus-field","bokeh-swirl",
+                    "petzval-field"};
+                if(!changed.count(group.slug))continue;
+            }
+            if(changedPresets167&&std::string(group.slug)!="bokeh-swirl")continue;
             char preset[80];std::snprintf(preset,sizeof(preset),"%02d-Demo-",group.demo);fs::path presetPath;
             for(auto& f:fs::directory_iterator(root/"presets/demonstrations"))if(f.path().filename().string().rfind(preset,0)==0){presetPath=f.path();break;}
-            if(std::string(group.slug)=="blend") {
-                auto p=loadPreset(presetPath,chartW,chartH);
-                p.effectBlend=1.0f;
-                auto full=guideRec709Gamma24FromAP1(render(engine,device,queue,iso,chartW,chartH,p));
-                if(!writePNG((out/"blend-iso-100.png").string(),full,chartW,chartH))return 6;
-                p.effectBlend=.5f;
-                auto half=guideRec709Gamma24FromAP1(render(engine,device,queue,iso,chartW,chartH,p));
-                if(!writePNG((out/"blend-iso-50.png").string(),half,chartW,chartH))return 6;
-                std::printf("Wrote blend / iso / 100 and 50 percent\n");
-                continue;
-            }
             for(const auto& source:sources){
                 if(std::string(group.slug)=="processing"&&std::string(source.key)!="iso")continue;
                 auto input=std::string(group.slug)=="depth"?withGuideDepth(*source.pixels,source.width,source.height):*source.pixels;
@@ -289,6 +393,12 @@ int main(int argc,char** argv) {
                 auto candidate=loadPreset(presetPath,chartW,chartH);
                 if(candidate.glareEnergy<=0.0f)continue;
             }
+            if(changedPresets166||changedPresets166b||changedPresets167) {
+                const std::string filename=presetPath.filename().string();
+                if(changedPresets166b||changedPresets167||
+                   (filename.rfind("05-",0)!=0&&filename.rfind("06-",0)!=0&&
+                    filename.rfind("18-",0)!=0&&filename.rfind("19-",0)!=0))continue;
+            }
             std::string presetSlug=guideFileSlug(presetPath.stem().string());
             for(const auto& source:sources) {
                 auto p=loadPreset(presetPath,source.width,source.height);
@@ -301,7 +411,7 @@ int main(int argc,char** argv) {
                 std::printf("Wrote preset %s / %s\n",presetPath.stem().c_str(),source.key);
             }
         }
-        if(!changedGlareOnly&&mediumPresets.size()!=25) {
+        if(!changedGlareOnly&&!changedPresets166&&!changedPresets166b&&!changedPresets167&&mediumPresets.size()!=25) {
             std::fprintf(stderr,"Expected 24 Medium cinematic presets plus Bodycam Edge Stress, found %zu\n",mediumPresets.size());
             return 8;
         }

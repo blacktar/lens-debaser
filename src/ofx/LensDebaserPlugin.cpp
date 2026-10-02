@@ -14,7 +14,7 @@
 #include <vector>
 
 namespace {
-constexpr const char *kName = "Lens Debaser 1.64";
+constexpr const char *kName = "Lens Debaser 1.67";
 constexpr const char *kIdentifier = "com.ldb.LensDebaser";
 constexpr const char *kDepthClipName = "Depth";
 struct DoubleSpec {
@@ -87,9 +87,10 @@ const DoubleSpec kSpecs[] = {
     {"imageCircleSoftness", "Image Circle Softness", .1, 0, 1, .001,
      "Boundary softness used by Mechanical Vignette."},
     {"apertureResponse", "Aperture Response", 0, 0, 1, .001,
-     "Mixes in continuous aperture-shaped defocus; external depth holds Focus "
+     "Enables and mixes shaped aperture and bokeh processing. Zero bypasses "
+     "the aperture stage and its processing cost; external depth holds Focus "
      "Depth sharp and increases defocus away from it."},
-    {"apertureRadius", "Response Radius", 6, 0, 24, .01,
+    {"apertureRadius", "Response Radius", 6, 0, 48, .01,
      "Spatial size of the aperture response in pixels."},
     {"apertureBladeCurvature", "Blade Curvature", .5, 0, 1, .001,
      "Rounds polygonal blades toward a circular response."},
@@ -100,10 +101,10 @@ const DoubleSpec kSpecs[] = {
      "aperture boundary."},
     {"apertureCatEye", "Cat-Eye", 0, 0, 1, .001,
      "Compresses the pupil radially toward the frame edge."},
-    {"apertureAspect", "Pupil Aspect", 1, .25, 4, .001,
+    {"apertureAspect", "Pupil Aspect", 1, .25, 8, .001,
      "Stretches any circular, polygonal or oval pupil before off-axis Cat-Eye "
      "and Bokeh Swirl deformation."},
-    {"apertureBokehSwirl", "Bokeh Swirl", 0, 0, 6, .001,
+    {"apertureBokehSwirl", "Bokeh Swirl", 0, 0, 12, .001,
      "Tangentially reshapes off-axis aperture footprints with a smooth, "
      "bounded response. Values above 1 extend through the creative range."},
     {"aperturePupilShift", "Pupil Shift", 0, 0, 1, .001,
@@ -310,7 +311,7 @@ struct Preset {
       nearFocus{1, .35, .75}, farFocus{.35, 1, .65},
       anamorphicFlare{.35, .55, 1}, anamorphicFlareGhost{.55, .25, 1};
   int apertureShape = 0, apertureBladeCount = 6, depthMode = 0,
-      captureGate = 0;
+      captureGate = 0, prismDistribution = 0;
 };
 
 class Processor final : public OFX::ImageProcessor {
@@ -352,6 +353,7 @@ public:
     apertureShape = fetchChoiceParam("apertureShape");
     depthMode = fetchChoiceParam("depthMode");
     captureGate = fetchChoiceParam("captureGate");
+    prismDistribution = fetchChoiceParam("prismDistribution");
     apertureBladeCount = fetchDoubleParam("apertureBladeCount");
     opticalCenter = fetchDouble2DParam("opticalCenter");
     fieldCenter = fetchDouble2DParam("fieldCenter");
@@ -364,6 +366,7 @@ public:
     updateApertureControls();
     updateChromaticControls();
     updateDepthControls();
+    updatePrismControls();
     updateV4Controls();
   }
   void render(const OFX::RenderArguments &a) override {
@@ -424,8 +427,13 @@ public:
       presetChoice->getValue(index);
       if (index == 0)
         apply(neutralPreset(), true, 0);
-      else if (index == 1)
+      else if (index == 1) {
+        inPresetChange = true;
         comparisonPresetIndex = -1;
+        setEditedPresetIndex(-1);
+        selectPresetIfNeeded(1);
+        inPresetChange = false;
+      }
       else if (index >= 2 && size_t(index - 2) < loaded.size())
         apply(loaded[index - 2], false, index);
       return;
@@ -437,6 +445,8 @@ public:
       updateChromaticControls();
     if (name == "depthMode")
       updateDepthControls();
+    if (name == "prismDistribution" || name == "prismAmount")
+      updatePrismControls();
     if (name == "captureInfluence" || name == "lookInfluence" ||
         name == "variationAmount" || name == "anamorphicFlareAmount" ||
         name == "anamorphicFlareGhostAmount" ||
@@ -446,11 +456,19 @@ public:
       updateV4Controls();
     if (isPresetControl(name)) {
       inPresetChange = true;
-      if (comparisonPresetIndex >= 0 &&
-          matchesPreset(presetForIndex(comparisonPresetIndex), args.time))
+      if (comparisonPresetIndex >= 2) {
+        const bool edited =
+            !matchesPreset(presetForIndex(comparisonPresetIndex), args.time);
+        setEditedPresetIndex(edited ? comparisonPresetIndex : -1);
         selectPresetIfNeeded(comparisonPresetIndex);
-      else
+      } else if (comparisonPresetIndex == 0 &&
+                 matchesPreset(presetForIndex(0), args.time)) {
+        setEditedPresetIndex(-1);
+        selectPresetIfNeeded(0);
+      } else {
+        setEditedPresetIndex(-1);
         selectPresetIfNeeded(1);
+      }
       inPresetChange = false;
     }
   }
@@ -595,13 +613,15 @@ private:
     p.opticalCenter = {float(x), float(y)};
     fieldCenter->getValueAtTime(t, x, y);
     p.fieldCenter = {float(x), float(y)};
-    int s = 0, d = 0, a = 0, dm = 0, cg = 0;
+    int s = 0, d = 0, a = 0, dm = 0, cg = 0, pd = 0;
     workingSpace->getValueAtTime(t, s);
     diagnostic->getValueAtTime(t, d);
     apertureShape->getValueAtTime(t, a);
     depthMode->getValueAtTime(t, dm);
     captureGate->getValueAtTime(t, cg);
+    prismDistribution->getValueAtTime(t, pd);
     p.depthMode = uint32_t(dm);
+    p.prismDistribution = uint32_t(std::clamp(pd, 0, 4));
     p.depthChannel = 0u;
     p.depthNear = float(value("depthNear", t));
     p.depthFar = float(value("depthFar", t));
@@ -628,7 +648,7 @@ private:
         std::clamp(std::llround(value("internalDirtSeed", t)), 0ll, 65535ll));
     double bladeValue = 6;
     apertureBladeCount->getValueAtTime(t, bladeValue);
-    int blades = std::clamp(int(std::lround(bladeValue)), 3, 32);
+    int blades = std::clamp(int(std::lround(bladeValue)), 3, 16);
     p.workingColorSpace = uint32_t(s);
     p.processingFlags = uint32_t(d) << 8;
     p.apertureShape = uint32_t(a);
@@ -676,16 +696,17 @@ private:
     apertureShape->getValueAtTime(time, p.apertureShape);
     depthMode->getValueAtTime(time, p.depthMode);
     captureGate->getValueAtTime(time, p.captureGate);
+    prismDistribution->getValueAtTime(time, p.prismDistribution);
     double blades = 6;
     apertureBladeCount->getValueAtTime(time, blades);
-    p.apertureBladeCount = std::clamp(int(std::lround(blades)), 3, 32);
+    p.apertureBladeCount = std::clamp(int(std::lround(blades)), 3, 16);
     return p;
   }
   bool isPresetControl(const std::string &name) const {
     for (const auto &s : kSpecs)
       if (name == s.id)
         return true;
-    static const std::array<const char *, 18> otherControls = {
+    static const std::array<const char *, 19> otherControls = {
         "opticalCenter",
         "fieldCenter",
         "transmissionColor",
@@ -698,6 +719,7 @@ private:
         "apertureBladeCount",
         "depthMode",
         "captureGate",
+        "prismDistribution",
         "opticalCenterX",
         "opticalCenterY",
         "fieldCenterX",
@@ -736,24 +758,28 @@ private:
            current.apertureShape == target.apertureShape &&
            current.apertureBladeCount == target.apertureBladeCount &&
            current.depthMode == target.depthMode &&
-           current.captureGate == target.captureGate;
+           current.captureGate == target.captureGate &&
+           current.prismDistribution == target.prismDistribution;
   }
   void updateApertureControls() {
     int shape = 0;
     apertureShape->getValue(shape);
-    double catEye = 0;
-    doubles.at("apertureCatEye")->getValue(catEye);
     double response = 0;
     doubles.at("apertureResponse")->getValue(response);
+    const bool active = response > 1e-8;
     bool polygon = shape == 1, oval = shape == 2;
-    apertureBladeCount->setEnabled(polygon);
-    doubles.at("apertureBladeCurvature")->setEnabled(polygon);
-    doubles.at("apertureRotation")->setEnabled(polygon || oval);
-    doubles.at("apertureAspect")->setEnabled(oval || catEye > 1e-8);
-    doubles.at("apertureBokehSwirl")->setEnabled(response > 1e-8);
-    doubles.at("aperturePupilShift")->setEnabled(response > 1e-8);
-    doubles.at("aperturePupilClip")->setEnabled(response > 1e-8);
-    doubles.at("apertureRimWeight")->setEnabled(response > 1e-8);
+    apertureShape->setEnabled(active);
+    doubles.at("apertureRadius")->setEnabled(active);
+    apertureBladeCount->setEnabled(active && polygon);
+    doubles.at("apertureBladeCurvature")->setEnabled(active && polygon);
+    doubles.at("apertureRotation")->setEnabled(active && (polygon || oval));
+    doubles.at("apertureSoftness")->setEnabled(active);
+    doubles.at("apertureCatEye")->setEnabled(active);
+    doubles.at("apertureAspect")->setEnabled(active);
+    doubles.at("apertureBokehSwirl")->setEnabled(active);
+    doubles.at("aperturePupilShift")->setEnabled(active);
+    doubles.at("aperturePupilClip")->setEnabled(active);
+    doubles.at("apertureRimWeight")->setEnabled(active);
   }
   void updateChromaticControls() {
     double amount = 0;
@@ -775,6 +801,18 @@ private:
     doubles.at("responseDefocusFalloff")->setEnabled(active);
     doubles.at("responseScatterEdgeProtection")->setEnabled(active);
     doubles.at("depthEdgeSoftness")->setEnabled(active);
+  }
+  void updatePrismControls() {
+    int mode = 0;
+    prismDistribution->getValue(mode);
+    double amount = 0;
+    doubles.at("prismAmount")->getValue(amount);
+    const bool active = amount > 1e-8;
+    prismDistribution->setEnabled(true);
+    doubles.at("prismDirection")->setEnabled(active);
+    doubles.at("prismDispersion")->setEnabled(active);
+    doubles.at("prismEdgeBias")->setEnabled(active && mode == 0);
+    doubles.at("prismSoftness")->setEnabled(active && mode == 0);
   }
   void updateV4Controls() {
     auto enabledBy = [&](const char *parent,
@@ -853,9 +891,14 @@ private:
                          "geometryFieldAmount", "peripheralStretch",
                          "peripheralWarp", "anamorphicSqueeze", "swirl"}) ||
                      p.center != std::array<double, 2>{.5, .5});
+    const bool apertureActive = p.values.at("apertureResponse") > 1e-8;
+    const bool highlightConsumers =
+        active({"bloomEnergy", "glareEnergy", "sphericalHalo", "coma",
+                "anamorphicFlareAmount", "diffractionRayAmount"});
     setGroupOpen("focusField",
                  active({"cornerSharpnessLoss", "fieldCurvature", "astigmatism",
-                         "radialSmear", "tangentialSmear"}));
+                         "radialSmear", "tangentialSmear"}) ||
+                     apertureActive || p.depthMode > 0);
     setGroupOpen("detail",
                  active({"microContrast", "fineDetail", "detailEdgeFalloff",
                          "sagittalDetail", "tangentialDetail", "detailScale"}));
@@ -883,10 +926,10 @@ private:
     setGroupOpen("offAxis", active({"coma", "comaThreshold"}));
     setGroupOpen("capture", active({"captureInfluence"}));
     setGroupOpen("look", active({"lookInfluence"}));
-    setGroupOpen("fieldShape",
-                 active({"fieldAspect", "fieldRotation", "swirl",
-                         "responseFieldOnset", "responseFieldFalloff"}) ||
-                     p.fieldCenter != std::array<double, 2>{.5, .5});
+    // Field Shape is the shared spatial router for geometry, focus, chromatic,
+    // prism and pupil behavior. Keep it visible so downstream presets do not
+    // conceal the controls that determine where their response develops.
+    setGroupOpen("fieldShape", true);
     setGroupOpen("anamorphic",
                  active({"anamorphicSqueeze", "anamorphicDistortion",
                          "anamorphicAberration", "anamorphicFlareAmount"}));
@@ -898,7 +941,9 @@ private:
                                       "scratchAmount", "coatingWear"}));
     setGroupOpen("lensDirt", active({"internalDirtAmount"}));
     setGroupOpen("refractive", active({"refractiveIrregularity"}));
-    setGroupOpen("highlightResponse", active({"responseHighlightKnee"}));
+    setGroupOpen("prism", active({"prismAmount"}));
+    setGroupOpen("highlightResponse",
+                 active({"responseHighlightKnee"}) || highlightConsumers);
     setGroupOpen("opticsSection",
                  active({"distortionK1",
                          "distortionK2",
@@ -929,7 +974,8 @@ private:
                          "anamorphicAberration",
                          "anamorphicFlareAmount"}) ||
                      p.center != std::array<double, 2>{.5, .5} ||
-                     p.fieldCenter != std::array<double, 2>{.5, .5});
+                     p.fieldCenter != std::array<double, 2>{.5, .5} ||
+                     apertureActive || p.depthMode > 0);
     setGroupOpen(
         "pupilSection",
         active({"apertureResponse", "apertureRadius", "apertureBladeCurvature",
@@ -963,8 +1009,18 @@ private:
     if (current != desired)
       presetChoice->setValue(desired);
   }
+  void setEditedPresetIndex(int index) {
+    if (editedPresetIndex == index)
+      return;
+    int selected = -1;
+    presetChoice->getValue(selected);
+    editedPresetIndex = index;
+    refreshChoices();
+    selectPresetIfNeeded(selected);
+  }
   void apply(const Preset &p, bool clean, int presetIndex = -1) {
     inPresetChange = true;
+    setEditedPresetIndex(-1);
     if (clean)
       cleanSlateComparison = p;
     comparisonPresetIndex =
@@ -987,14 +1043,16 @@ private:
                                    p.anamorphicFlareGhost[1],
                                    p.anamorphicFlareGhost[2]);
     apertureShape->setValue(std::clamp(p.apertureShape, 0, 2));
-    apertureBladeCount->setValue(std::clamp(p.apertureBladeCount, 3, 32));
+    apertureBladeCount->setValue(std::clamp(p.apertureBladeCount, 3, 16));
     depthMode->setValue(std::clamp(p.depthMode, 0, 5));
     captureGate->setValue(std::clamp(p.captureGate, 0, 12));
+    prismDistribution->setValue(std::clamp(p.prismDistribution, 0, 4));
     selectPresetIfNeeded(comparisonPresetIndex);
     endEditBlock();
     updateApertureControls();
     updateChromaticControls();
     updateDepthControls();
+    updatePrismControls();
     updateV4Controls();
     updateGroups(p);
     inPresetChange = false;
@@ -1003,8 +1061,12 @@ private:
     presetChoice->resetOptions();
     presetChoice->appendOption("Clean Slate");
     presetChoice->appendOption("Custom");
-    for (const auto &p : loaded)
-      presetChoice->appendOption(p.name);
+    for (size_t i = 0; i < loaded.size(); ++i) {
+      const int index = int(i) + 2;
+      presetChoice->appendOption(index == editedPresetIndex
+                                     ? "* " + loaded[i].name
+                                     : loaded[i].name);
+    }
   }
   bool readPreset(const std::string &path, Preset &p, bool showError) {
     std::ifstream f(path);
@@ -1049,6 +1111,8 @@ private:
           p.depthMode = int(n);
         else if (key == "captureGate")
           p.captureGate = int(n);
+        else if (key == "prismDistribution")
+          p.prismDistribution = int(n);
         else if (key == "opticalCenterX")
           p.center[0] = n;
         else if (key == "opticalCenterY")
@@ -1166,6 +1230,7 @@ private:
       << "apertureBladeCount=" << p.apertureBladeCount << '\n'
       << "depthMode=" << p.depthMode << '\n'
       << "captureGate=" << p.captureGate << '\n'
+      << "prismDistribution=" << p.prismDistribution << '\n'
       << "opticalCenterX=" << p.center[0] << "\nopticalCenterY=" << p.center[1]
       << '\n'
       << "fieldCenterX=" << p.fieldCenter[0]
@@ -1191,11 +1256,12 @@ private:
   OfxImageEffectHandle handle;
   Preset cleanSlateComparison = neutralPreset();
   int comparisonPresetIndex = 0;
+  int editedPresetIndex = -1;
   OFX::Clip *source = nullptr, *destination = nullptr, *depthInput = nullptr;
   OFX::ChoiceParam *workingSpace = nullptr, *diagnostic = nullptr,
                    *presetChoice = nullptr,
                    *apertureShape = nullptr, *depthMode = nullptr,
-                   *captureGate = nullptr;
+                   *captureGate = nullptr, *prismDistribution = nullptr;
   OFX::DoubleParam *apertureBladeCount = nullptr;
   OFX::Double2DParam *opticalCenter = nullptr, *fieldCenter = nullptr;
   OFX::RGBParam *transmission = nullptr, *glare = nullptr, *nearFocus = nullptr,
@@ -1341,7 +1407,8 @@ void LensDebaserPluginFactory::describeInContext(OFX::ImageEffectDescriptor &d,
   detail->setParent(*opticsSection);
   chromatic->setParent(*opticsSection);
   anamorphic->setParent(*opticsSection);
-  auto *aperture = addGroup(d, *pupil, "aperture", "Aperture", true);
+  auto *aperture =
+      addGroup(d, *pupil, "aperture", "Aperture & Bokeh", true);
   auto *vignette = addGroup(d, *pupil, "vignette", "Vignette");
   auto *imageCircle = addGroup(d, *pupil, "imageCircle", "Image Circle");
   aperture->setParent(*pupilSection);
@@ -1368,6 +1435,18 @@ void LensDebaserPluginFactory::describeInContext(OFX::ImageEffectDescriptor &d,
   refractive->setParent(*opticsSection);
   auto *prism = addGroup(d, *optics, "prism", "Prism Refraction");
   prism->setParent(*opticsSection);
+  auto *prismMode = d.defineChoiceParam("prismDistribution");
+  prismMode->setLabels("Prism Distribution", "Prism Distribution",
+                       "Prism Distribution");
+  for (auto *s : {"Linear Edge", "Uniform", "Bilateral / Axis",
+                  "Radial Field", "Inverse Field"})
+    prismMode->appendOption(s);
+  prismMode->setDefault(0);
+  prismMode->setHint(
+      "Chooses where prism refraction is applied. Linear Edge preserves the "
+      "one-sided wedge. Bilateral, Radial and Inverse modes use Field Shape.");
+  prismMode->setParent(*prism);
+  optics->addChild(*prismMode);
   auto *depthGroup = addGroup(d, *advanced, "depthGroup", "Depth Input");
   depthGroup->setParent(*advancedSection);
   auto *dm = d.defineChoiceParam("depthMode");
@@ -1384,16 +1463,6 @@ void LensDebaserPluginFactory::describeInContext(OFX::ImageEffectDescriptor &d,
       "occlusion. Depth-Free preserves the local approximation.");
   dm->setParent(*depthGroup);
   advanced->addChild(*dm);
-  auto *shape = d.defineChoiceParam("apertureShape");
-  shape->setLabels("Aperture Shape", "Aperture Shape", "Aperture Shape");
-  shape->appendOption("Circular");
-  shape->appendOption("Polygon");
-  shape->appendOption("Oval / Anamorphic");
-  shape->setDefault(0);
-  shape->setHint("Selects the continuous aperture-response approximation; "
-                 "Aperture Response must be above zero.");
-  shape->setParent(*aperture);
-  pupil->addChild(*shape);
   auto *center = d.defineDouble2DParam("opticalCenter");
   center->setLabels("Optical Center", "Optical Center", "Optical Center");
   center->setDimensionLabels("X", "Y");
@@ -1517,14 +1586,26 @@ void LensDebaserPluginFactory::describeInContext(OFX::ImageEffectDescriptor &d,
       blades->setHint("Whole-number blade count used by Polygon shape; high "
                       "counts approach a circular iris.");
       blades->setDefault(6);
-      blades->setRange(3, 32);
-      blades->setDisplayRange(3, 32);
+      blades->setRange(3, 16);
+      blades->setDisplayRange(3, 16);
       blades->setIncrement(1);
       blades->setDigits(0);
       blades->setParent(*aperture);
       pupil->addChild(*blades);
     }
     addDouble(d, s, *g, *p);
+    if (id == "apertureResponse") {
+      auto *shape = d.defineChoiceParam("apertureShape");
+      shape->setLabels("Aperture Shape", "Aperture Shape", "Aperture Shape");
+      shape->appendOption("Circular");
+      shape->appendOption("Polygon");
+      shape->appendOption("Oval / Anamorphic");
+      shape->setDefault(0);
+      shape->setHint(
+          "Selects the pupil used by aperture and bokeh reconstruction.");
+      shape->setParent(*aperture);
+      pupil->addChild(*shape);
+    }
   }
   auto addColor = [&](const char *id, const char *label,
                       OFX::GroupParamDescriptor &g, OFX::PageParamDescriptor &p,

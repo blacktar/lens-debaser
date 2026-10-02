@@ -301,6 +301,41 @@ int main(int argc, char **argv) {
                           render(engine, device, queue, image, width, height,
                                  prismHard)) > .0001f,
             "Prism Softness must shape the edge transition");
+    auto prismUniform = prism;
+    prismUniform.prismDistribution = LDBPrismUniform;
+    auto prismUniformOut = render(engine, device, queue, image, width, height,
+                                  prismUniform);
+    require(maxDifference(prismOut, prismUniformOut) > .001f,
+            "Uniform prism distribution must differ from Linear Edge");
+    auto prismBilateral = prism;
+    prismBilateral.prismDistribution = LDBPrismBilateral;
+    prismBilateral.responseFieldOnset = .2f;
+    prismBilateral.responseFieldFalloff = .55f;
+    auto prismBilateralOut = render(engine, device, queue, image, width, height,
+                                    prismBilateral);
+    require(maxDifference(prismOut, prismBilateralOut) > .001f,
+            "Bilateral prism distribution must refract both sides of its axis");
+    auto prismRadial = prismBilateral;
+    prismRadial.prismDistribution = LDBPrismRadialField;
+    prismRadial.fieldAspect = 1.7f;
+    prismRadial.fieldRotation = 23.0f;
+    auto prismRadialOut = render(engine, device, queue, image, width, height,
+                                 prismRadial);
+    require(maxDifference(prismBilateralOut, prismRadialOut) > .001f,
+            "Radial Field prism distribution must use a local field direction");
+    auto prismRadialShape = prismRadial;
+    prismRadialShape.fieldCenter = {.42f, .58f};
+    prismRadialShape.responseFieldOnset = .45f;
+    require(maxDifference(prismRadialOut,
+                          render(engine, device, queue, image, width, height,
+                                 prismRadialShape)) > .001f,
+            "Radial prism must respond to shared Field Shape controls");
+    auto prismInverse = prismRadial;
+    prismInverse.prismDistribution = LDBPrismInverseField;
+    auto prismInverseOut = render(engine, device, queue, image, width, height,
+                                  prismInverse);
+    require(maxDifference(prismRadialOut, prismInverseOut) > .001f,
+            "Inverse Field prism distribution must protect the perimeter");
     auto anamorphicField = distortion;
     anamorphicField.anamorphicSqueeze = 1.8f;
     require(
@@ -1283,11 +1318,11 @@ int main(int argc, char **argv) {
                                  height, bladeCountAperture)) > .001f,
             "Blade Count must shape polygon response");
     auto manyBladeAperture = polygonAperture;
-    manyBladeAperture.apertureBladeCount = 24;
+    manyBladeAperture.apertureBladeCount = 16;
     require(maxDifference(polygonApertureOut,
                           render(engine, device, queue, focusPattern, width,
                                  height, manyBladeAperture)) > .001f,
-            "Extended creative Blade Count must remain effective above 16");
+            "Blade Count must remain effective through the useful 16-blade maximum");
     auto curvedAperture = polygonAperture;
     curvedAperture.apertureBladeCurvature = .8f;
     require(maxDifference(polygonApertureOut,
@@ -1368,7 +1403,9 @@ int main(int argc, char **argv) {
                                  height, polygonAspect)) > .001f,
             "Pupil Aspect must independently reshape polygonal pupils");
     auto extremeBokeh = spatialAperture;
-    extremeBokeh.apertureBokehSwirl = 6.0f;
+    extremeBokeh.apertureRadius = 48.0f;
+    extremeBokeh.apertureAspect = 8.0f;
+    extremeBokeh.apertureBokehSwirl = 12.0f;
     extremeBokeh.apertureCatEye = 1.0f;
     auto extremeBokehOut = render(engine, device, queue, focusPattern, width,
                                   height, extremeBokeh);
@@ -1378,6 +1415,15 @@ int main(int argc, char **argv) {
                                  std::isfinite(value.z) && std::isfinite(value.w);
                         }),
             "Extreme Bokeh Swirl must retain a finite bounded pupil response");
+    auto midSwirl = spatialAperture;
+    midSwirl.apertureBokehSwirl = 6.0f;
+    auto highSwirl = spatialAperture;
+    highSwirl.apertureBokehSwirl = 12.0f;
+    require(maxDifference(render(engine, device, queue, focusPattern, width,
+                                 height, midSwirl),
+                          render(engine, device, queue, focusPattern, width,
+                                 height, highSwirl)) > .001f,
+            "Expanded Bokeh Swirl range must remain progressive above six");
     auto zeroWidthField = spatialAperture;
     zeroWidthField.responseFieldOnset = .55f;
     zeroWidthField.responseFieldFalloff = 0.0f;

@@ -2,13 +2,13 @@ LensDebaserPreset=2
 # Family: Rotating-Bokeh-Portrait
 # Strength: Subtle
 # Tangentially rotating peripheral bokeh without image-structure swirl; point highlights reveal it best.
-apertureBokehSwirl=1.8
-apertureCatEye=0.18
-apertureRadius=7
-apertureResponse=0.18
+apertureBokehSwirl=2.5
+apertureCatEye=0.28
+apertureRadius=9
+apertureResponse=0.38
 cornerSharpnessLoss=0.38
 fieldAspect=1.06
-fieldCurvature=0.34
+fieldCurvature=0.55
 longitudinalCA=0.1
 responseFieldFalloff=1.52
 responseFieldOnset=0.2

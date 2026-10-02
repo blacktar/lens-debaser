@@ -54,6 +54,32 @@ Academy Color Encoding System (ACES)
 ARRI Log C colour science and official validation LUTs
   https://www.arri.com/en/learn-help/learn-help-camera-system/image-science/log-c
 
+MYT Works camera-resolution test chart
+  https://www.mytworks.com/resources/camera-resolution-test-chart/
+
+
+Implemented optical-model design references
+-------------------------------------------
+
+Lens Debaser's optical model is an original real-time approximation; no source
+code from the publications below is incorporated. The production chromatic
+pipeline uses their relevant image-formation concepts: a common optical point-
+spread response, wavelength-dependent RGB responses, smooth spatially varying
+filter support, and chromatic displacement applied to the optically softened
+image rather than to sharp display-referred channels.
+
+Jeong et al., "Chromatic Aberration Rendering for a Physically-based Camera"
+  https://cg.skku.edu/pub/papers/2016-jeong-cgi-chroma-cam.pdf
+
+Mantiuk et al., "Rendering Algorithms for Aberrated Human Vision Simulation"
+  https://pmc.ncbi.nlm.nih.gov/articles/PMC10023823/
+
+Bauer et al., "Fast Two-step Blind Optical Aberration Correction"
+  https://arxiv.org/abs/2208.00950
+
+NVIDIA Research, "Image-Space Gathering"
+  https://research.nvidia.com/sites/default/files/pubs/2009-08_Image-Space-Gathering/HPG09-ISG.pdf
+
 All product names and trademarks belong to their respective owners. Reference
 use and compatibility statements do not imply affiliation, sponsorship or
 endorsement.

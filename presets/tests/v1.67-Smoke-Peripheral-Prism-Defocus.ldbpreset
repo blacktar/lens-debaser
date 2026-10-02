@@ -1,0 +1,20 @@
+LensDebaserPreset=2
+# Family: ABI v18 Smoke
+# Strength: Peripheral Prism Defocus
+# Resolve-reference reconstruction: a wide central subject island with smooth peripheral defocus, radial prism displacement and controlled red/cyan edge separation.
+astigmatism=0.18
+cornerSharpnessLoss=1.12
+fieldAspect=1.72
+fieldCurvature=0.48
+fieldRotation=0
+fineDetail=-0.1
+lateralCABlue=-0.72
+lateralCARed=0.55
+microContrast=-0.18
+prismAmount=0.46
+prismDirection=0
+prismDispersion=0.36
+prismDistribution=3
+responseFieldFalloff=0.88
+responseFieldOnset=0.3
+tangentialSmear=0.18

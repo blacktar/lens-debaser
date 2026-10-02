@@ -8,7 +8,7 @@ from lens_profiles import cooke_focal_calibrations, reference_lens_families
 
 ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / "presets"
-CURRENT_PRESET_TAG = "v1.64"
+CURRENT_PRESET_TAG = "v1.67"
 TIERS = (("1-Subtle", 0.35), ("2-Medium", 0.65), ("3-Caricature", 1.0))
 GENERATED_PRESETS = set()
 
@@ -52,10 +52,11 @@ NEUTRAL = {
     "anamorphicFlareB": 1.0,
     "anamorphicFlareGhostR": 0.55, "anamorphicFlareGhostG": 0.25,
     "anamorphicFlareGhostB": 1.0,
-    "prismEdgeBias": 0.65, "prismSoftness": 0.3,
+    "prismDistribution": 0, "prismEdgeBias": 0.65, "prismSoftness": 0.3,
 }
 
 FIXED = {"apertureShape", "apertureBladeCount", "depthMode", "captureGate",
+         "prismDistribution",
          "variationSeed"}
 
 def triplet(folder, order, family, target, note=""):
@@ -95,8 +96,8 @@ CINEMATIC_TIER_REVISIONS = {
   2:{"Medium":{"microContrast":-.38,"fineDetail":-.22,"cornerSharpnessLoss":.68,"sphericalHalo":.22,"transmissionColorAmount":.32},"Caricature":{"microContrast":-.72,"fineDetail":-.42,"cornerSharpnessLoss":1.12,"longitudinalCA":.52,"sphericalHalo":.55,"bloomEnergy":.42,"transmissionColorAmount":.52}},
   3:{"Medium":{"microContrast":-.55,"glareEnergy":.55,"glareRadius":88,"bloomEnergy":.46,"bloomThreshold":.40,"sphericalHalo":.38},"Caricature":{"microContrast":-.92,"glareEnergy":1.15,"glareRadius":125,"bloomEnergy":.9,"bloomThreshold":.20,"sphericalHalo":.9,"transmissionHighlightSoftness":1.6}},
   4:{"Medium":{"detailEdgeFalloff":.68,"cornerSharpnessLoss":.72,"astigmatism":.30,"lateralCARed":.72,"lateralCABlue":-.92,"variationAmount":.46},"Caricature":{"detailEdgeFalloff":1.15,"cornerSharpnessLoss":1.2,"astigmatism":.62,"radialSmear":.52,"lateralCARed":1.45,"lateralCABlue":-1.85,"variationAmount":.82}},
-  5:{"Medium":{"apertureResponse":.58,"apertureRadius":12,"apertureCatEye":.42,"apertureBokehSwirl":3.2,"fieldCurvature":.88},"Caricature":{"apertureResponse":.82,"apertureRadius":16,"apertureCatEye":.72,"apertureBokehSwirl":6,"fieldCurvature":1.4,"tangentialSmear":.72}},
-  6:{"Medium":{"apertureResponse":.55,"apertureRadius":12,"apertureAspect":1.12,"apertureCatEye":.52,"apertureBokehSwirl":3.2},"Caricature":{"apertureResponse":.80,"apertureRadius":16,"apertureAspect":1.22,"apertureCatEye":.88,"apertureBokehSwirl":6,"astigmatism":.95,"tangentialSmear":.88}},
+  5:{"Subtle":{"apertureResponse":.38,"apertureRadius":9,"apertureCatEye":.28,"apertureBokehSwirl":2.5,"fieldCurvature":.55},"Medium":{"apertureResponse":.65,"apertureRadius":13,"apertureCatEye":.50,"apertureBokehSwirl":4.0,"fieldCurvature":1.05},"Caricature":{"apertureResponse":.90,"apertureRadius":18,"apertureCatEye":.78,"apertureBokehSwirl":6,"fieldCurvature":1.6,"tangentialSmear":.85}},
+  6:{"Subtle":{"apertureResponse":.36,"apertureRadius":9,"apertureAspect":1.08,"apertureCatEye":.34,"apertureBokehSwirl":2.3},"Medium":{"apertureResponse":.64,"apertureRadius":13,"apertureAspect":1.16,"apertureCatEye":.62,"apertureBokehSwirl":4.1},"Caricature":{"apertureResponse":.90,"apertureRadius":18,"apertureAspect":1.30,"apertureCatEye":.94,"apertureBokehSwirl":6,"astigmatism":1.1,"tangentialSmear":1.05}},
   7:{"Medium":{"apertureResponse":.50,"apertureRadius":11,"apertureRimWeight":.30,"sphericalHalo":.55,"fieldCurvature":.78},"Caricature":{"apertureRadius":15,"apertureResponse":.75,"apertureRimWeight":.55,"sphericalHalo":1.2,"fieldCurvature":1.35,"longitudinalCA":.75}},
   8:{"Medium":{"sphericalHalo":.9,"glareEnergy":.48,"bloomEnergy":.4,"transmissionHighlightSoftness":.9},"Caricature":{"sphericalHalo":1.8,"glareEnergy":.95,"bloomEnergy":.8,"transmissionHighlightSoftness":1.8,"cornerSharpnessLoss":.82}},
   9:{"Medium":{"anamorphicAberration":.9,"anamorphicFlareAmount":1.35,"anamorphicFlareThreshold":.30,"apertureAspect":2.4,"apertureBokehSwirl":2.2},"Caricature":{"anamorphicAberration":1.7,"anamorphicFlareAmount":2.2,"anamorphicFlareThreshold":.14,"apertureAspect":3.0,"apertureBokehSwirl":4.2,"lateralCARed":1.5,"lateralCABlue":-2}},
@@ -108,8 +109,8 @@ CINEMATIC_TIER_REVISIONS = {
   15:{"Medium":{"cornerSharpnessLoss":.68,"fieldCurvature":.52,"variationAmount":.65,"variationFieldAsymmetry":.6,"variationChromaticAsymmetry":.75},"Caricature":{"cornerSharpnessLoss":1.2,"fieldCurvature":.95,"variationAmount":1,"variationFieldAsymmetry":1,"variationPupilIrregularity":.8,"variationChromaticAsymmetry":1.35}},
   16:{"Medium":{"imageCircleSize":.9,"vignetteMechanical":.28,"cornerSharpnessLoss":1.15,"coma":.48,"lateralCARed":1.65,"lateralCABlue":-2.1},"Caricature":{"imageCircleSize":.76,"vignetteMechanical":.52,"cornerSharpnessLoss":1.65,"coma":.95,"lateralCARed":3.1,"lateralCABlue":-3.8,"sphericalHalo":1}},
   17:{"Medium":{"captureInfluence":.9,"cornerSharpnessLoss":1.1,"fieldCurvature":1.05,"longitudinalCA":.82,"apertureResponse":.42,"apertureRadius":10},"Caricature":{"captureInfluence":1,"cornerSharpnessLoss":1.65,"fieldCurvature":1.55,"longitudinalCA":1.4,"apertureResponse":.65,"apertureRadius":14,"sphericalHalo":1}},
-  18:{"Medium":{"responseFieldOnset":.16,"responseFieldFalloff":.38,"cornerSharpnessLoss":1.05,"fieldCurvature":.8,"lateralCARed":1.1,"lateralCABlue":-1.45},"Caricature":{"responseFieldOnset":.1,"responseFieldFalloff":.28,"cornerSharpnessLoss":1.7,"fieldCurvature":1.4,"astigmatism":1,"lateralCARed":2.5,"lateralCABlue":-3.2}},
-  19:{"Medium":{"cornerSharpnessLoss":1.35,"fieldCurvature":1.2,"astigmatism":.95,"tangentialSmear":.8,"variationFieldAsymmetry":.9},"Caricature":{"cornerSharpnessLoss":1.85,"fieldCurvature":1.7,"astigmatism":1.45,"tangentialSmear":1.35,"lateralCARed":2.2,"lateralCABlue":-2.8}},
+  18:{"Subtle":{"responseFieldOnset":.20,"cornerSharpnessLoss":.55,"fieldCurvature":.34,"astigmatism":.20,"lateralCARed":.38,"lateralCABlue":-.50},"Medium":{"responseFieldOnset":.14,"responseFieldFalloff":.34,"cornerSharpnessLoss":1.25,"fieldCurvature":1.0,"astigmatism":.65,"lateralCARed":1.35,"lateralCABlue":-1.75},"Caricature":{"responseFieldOnset":.08,"responseFieldFalloff":.24,"cornerSharpnessLoss":1.9,"fieldCurvature":1.65,"astigmatism":1.2,"lateralCARed":2.8,"lateralCABlue":-3.6}},
+  19:{"Subtle":{"cornerSharpnessLoss":.82,"fieldCurvature":.74,"astigmatism":.52,"tangentialSmear":.40,"variationAmount":.34,"variationFieldAsymmetry":.50},"Medium":{"cornerSharpnessLoss":1.5,"fieldCurvature":1.4,"astigmatism":1.05,"tangentialSmear":.95,"variationAmount":.62,"variationFieldAsymmetry":1.0},"Caricature":{"cornerSharpnessLoss":2.0,"fieldCurvature":1.9,"astigmatism":1.6,"tangentialSmear":1.5,"lateralCARed":2.5,"lateralCABlue":-3.2,"variationAmount":1.0,"variationFieldAsymmetry":1.0}},
   20:{"Medium":{"apertureResponse":.52,"apertureRadius":12,"apertureBokehSwirl":2.8,"aperturePupilShift":.10,"apertureRimWeight":.28,"sphericalHalo":.8,"glareEnergy":.55,"variationPupilIrregularity":.85},"Caricature":{"apertureResponse":.75,"apertureRadius":15,"apertureBokehSwirl":4.8,"aperturePupilShift":.20,"aperturePupilClip":.14,"apertureRimWeight":.52,"sphericalHalo":1.5,"glareEnergy":1.1,"longitudinalCA":1.25,"variationPupilIrregularity":1}},
 }
 
@@ -157,15 +158,15 @@ def generate_demonstrations():
     d = OUT / "demonstrations"
     d.mkdir(parents=True, exist_ok=True)
     demos = [
-      (1,"Demo-Capture",{"captureInfluence":.8,"captureFocalLength":24,"captureAperture":1.6,"captureFocusDistance":90,"captureGate":1,"cornerSharpnessLoss":.68,"fieldCurvature":.46,"longitudinalCA":.28,"vignetteNatural":.22},"Adds peripheral detail loss, field curvature, longitudinal focus color and natural vignetting, then lets the Capture settings coordinate their strength."),
-      (2,"Demo-Look",{"lookInfluence":.76,"lookCharacter":.58,"lookVintageBias":.48,"lookExoticBias":.24,"lookAnamorphicBias":.30},"A clearly visible coordinated look demonstrates the macro controls without overwhelming the underlying grade."),
+      (1,"Demo-Capture",{"captureInfluence":1,"captureFocalLength":24,"captureAperture":1.6,"captureFocusDistance":90,"captureGate":1,"cornerSharpnessLoss":1.05,"fieldCurvature":.72,"longitudinalCA":.46,"vignetteNatural":.34},"Adds peripheral detail loss, field curvature, longitudinal focus color and natural vignetting, then lets the Capture settings coordinate their strength."),
+      (2,"Demo-Look",{"lookInfluence":1,"lookCharacter":.76,"lookVintageBias":.62,"lookExoticBias":.34,"lookAnamorphicBias":.42},"A clearly visible coordinated look demonstrates the macro controls without overwhelming the underlying grade."),
       (3,"Demo-Field-Gated-Geometry",{"distortionK1":.016,"distortionK2":.030,"moustacheK3":.038,"geometryFieldAmount":.82,"opticalCenterX":.48,"opticalCenterY":.52,"fieldCenterX":.5,"fieldCenterY":.5,"fieldAspect":1,"responseFieldOnset":.26,"responseFieldFalloff":1.58},"A grid exposes controlled distortion developing gradually outside a protected centre."),
-      (4,"Demo-Field-Shape",{"fieldAspect":1.75,"fieldRotation":24,"fieldCenterX":.44,"fieldCenterY":.55,"responseFieldOnset":.22,"responseFieldFalloff":1.30,"cornerSharpnessLoss":.80,"fieldCurvature":.60,"astigmatism":.32,"lateralCARed":.55,"lateralCABlue":-.68},"Clear focus and chromatic dependencies make Field Center, Aspect, Rotation, Onset and Falloff visible."),
-      (5,"Demo-Focus-And-Field",{"cornerSharpnessLoss":.92,"astigmatism":.44,"fieldCurvature":.74,"radialSmear":.32,"tangentialSmear":.54,"responseFieldOnset":.22,"responseFieldFalloff":1.28},"Fine texture reveals a clear gradual loss of peripheral definition and directional detail."),
+      (4,"Demo-Field-Shape",{"fieldAspect":1.9,"fieldRotation":28,"fieldCenterX":.42,"fieldCenterY":.57,"responseFieldOnset":.18,"responseFieldFalloff":1.24,"cornerSharpnessLoss":1.2,"fieldCurvature":.92,"astigmatism":.52,"lateralCARed":1.0,"lateralCABlue":-1.25},"Clear focus and chromatic dependencies make Field Center, Aspect, Rotation, Onset and Falloff visible."),
+      (5,"Demo-Focus-And-Field",{"cornerSharpnessLoss":2.0,"astigmatism":1.05,"fieldCurvature":1.65,"radialSmear":.82,"tangentialSmear":1.28,"responseFieldOnset":.12,"responseFieldFalloff":1.12},"Fine texture reveals a clear gradual loss of peripheral definition and directional detail."),
       (6,"Demo-Detail-Transfer",{"microContrast":-.50,"fineDetail":-.34,"detailEdgeFalloff":.76,"sagittalDetail":.38,"tangentialDetail":-.34,"detailScale":2},"Fabric, foliage and resolution charts expose a visible directional detail response."),
-      (7,"Demo-Chromatic-Aberration",{"lateralCARed":1.5,"lateralCABlue":-1.8,"chromaticFieldOnset":.26,"chromaticFieldFalloff":1.26,"longitudinalCA":.55,"longitudinalCARadius":6,"nearFocusR":1,"nearFocusG":.34,"nearFocusB":.76,"farFocusR":.32,"farFocusG":1,"farFocusB":.62},"High-contrast outer edges show clear but controlled lateral separation; defocused detail shows longitudinal color."),
+      (7,"Demo-Chromatic-Aberration",{"lateralCARed":2.2,"lateralCABlue":-2.7,"chromaticFieldOnset":.22,"chromaticFieldFalloff":1.20,"longitudinalCA":.82,"longitudinalCARadius":8,"nearFocusR":1,"nearFocusG":.34,"nearFocusB":.76,"farFocusR":.32,"farFocusG":1,"farFocusB":.62},"High-contrast outer edges show clear but controlled lateral separation; defocused detail shows longitudinal color."),
       (8,"Demo-Anamorphic",{"anamorphicSqueeze":2,"anamorphicDistortion":.034,"anamorphicAberration":.76,"anamorphicFlareAmount":.92,"anamorphicFlareRadius":240,"anamorphicFlareThreshold":.42,"anamorphicFlareR":.18,"anamorphicFlareG":.46,"anamorphicFlareB":1},"Lines reveal cylindrical geometry while strong highlights reveal a controlled blue streak."),
-      (9,"Demo-Aperture",{"responseFieldOnset":.18,"responseFieldFalloff":1.18,"apertureResponse":.54,"apertureRadius":11,"apertureShape":1,"apertureBladeCount":7,"apertureBladeCurvature":.56,"apertureRotation":14,"apertureSoftness":.25,"apertureCatEye":.40,"apertureAspect":1.16,"apertureBokehSwirl":1.65},"Point highlights clearly reveal a softly shaped seven-blade pupil, Cat-Eye and controlled tangential rotation."),
+      (9,"Demo-Aperture-And-Bokeh",{"responseFieldOnset":.14,"responseFieldFalloff":1.12,"apertureResponse":.76,"apertureRadius":15,"apertureShape":1,"apertureBladeCount":7,"apertureBladeCurvature":.56,"apertureRotation":14,"apertureSoftness":.22,"apertureCatEye":.56,"apertureAspect":1.18,"apertureBokehSwirl":2.8},"Point highlights clearly reveal a softly shaped seven-blade pupil, Cat-Eye and controlled tangential rotation."),
       (10,"Demo-Vignette",{"vignetteNatural":.46,"vignetteOptical":.30,"vignetteMechanical":.15},"The three attenuation types combine into a clear but grade-friendly edge falloff."),
       (11,"Demo-Image-Circle",{"vignetteMechanical":.62,"imageCircleSize":.90,"imageCircleAspect":1.42,"imageCircleSoftness":.26},"Mechanical Vignette is enabled so Size, Aspect and Softness clearly shape coverage without producing a hard tunnel."),
       (12,"Demo-Bloom",{"bloomEnergy":.65,"bloomThreshold":.50,"bloomRadius":54,"bloomHorizontalStretch":1.5},"Scene-linear highlights spread into a clearly visible bloom that preserves surrounding contrast."),
@@ -175,19 +176,18 @@ def generate_demonstrations():
       (16,"Demo-Coma",{"coma":.82,"comaThreshold":.40,"sphericalHalo":.16},"Isolated bright points away from Field Center reveal a clear controlled asymmetric coma tail."),
       (17,"Demo-Variation",{"variationAmount":.60,"variationSeed":27183,"variationFieldAsymmetry":.46,"variationPupilIrregularity":.42,"variationChromaticAsymmetry":.55,"variationTransmissionUnevenness":.40,"fieldCurvature":.50,"apertureResponse":.28,"apertureRadius":9,"lateralCARed":.76,"lateralCABlue":-.94,"transmissionColorAmount":.26},"Compatible field, pupil, chromatic and transmission responses are enabled at clearly visible strengths; change Seed."),
       (18,"Demo-Depth-Input",{"depthMode":2,"depthNear":0,"depthFar":1,"depthFocus":.38,"responseDefocusOnset":.07,"responseDefocusFalloff":.40,"depthEdgeSoftness":.55,"responseScatterEdgeProtection":1,"apertureResponse":.50,"apertureRadius":11,"sphericalHalo":.24},"Connect a depth map to Second RGB; the recipe produces a neutral, clearly readable and protected depth transition without chromatic aberration."),
-      (19,"Demo-Blend",{"effectBlend":.5,"cornerSharpnessLoss":.92,"fieldCurvature":.68,"lateralCARed":1.18,"lateralCABlue":-1.42,"bloomEnergy":.40,"bloomThreshold":.52},"A clear compound effect is mixed to 50%; move Blend between source and full processing."),
       (20,"Demo-Front-Element-Wear",{"frontHaze":.75,"cleaningMarks":.95,"scratchAmount":.40,"scratchDirection":28,"damageScale":1.35,"coatingWear":1.05,"coatingWearScale":1.45,"damageSeed":31415},"Highlights reveal cleaning haze, fixed wiping residue, sparse scratches and localized coating wear while ordinary detail retains useful contrast."),
       (21,"Demo-Refractive-Irregularity",{"refractiveIrregularity":.64,"refractiveScale":1.3,"refractiveEdgeBias":.56,"refractiveAnisotropy":.42,"refractiveRotation":18,"refractiveDispersion":.24,"refractiveSeed":27182},"A grid and high-contrast detail show clear stable local magnification variation with controlled wavelength separation."),
       (22,"Demo-Peripheral-Stretch",{"geometryFieldAmount":.82,"peripheralStretch":.32,"responseFieldOnset":.24,"responseFieldFalloff":1.58},"A grid clearly exposes radial magnification growing gradually toward the perimeter."),
       (23,"Demo-Peripheral-Warp",{"geometryFieldAmount":.82,"peripheralWarp":.40,"responseFieldOnset":.24,"responseFieldFalloff":1.58},"A grid exposes clear nonuniform edge bending while preserving the centre."),
       (24,"Demo-Internal-Element-Contamination",{"internalDirtAmount":4.0,"internalDirtScale":.62,"internalDirtSmear":.52,"internalDirtScatter":1.45,"internalDirtSoftness":.78,"internalDirtComplexity":.78,"internalDirtSeed":16180},"Localized internal contamination creates clearly visible cloudy density, elongated residue and illumination-driven veiling without becoming a global color treatment."),
-      (25,"Demo-Bokeh-Swirl",{"responseFieldOnset":.18,"responseFieldFalloff":1.15,"apertureResponse":.54,"apertureRadius":11,"apertureShape":0,"apertureSoftness":.25,"apertureCatEye":.36,"apertureBokehSwirl":1.9},"Point highlights clearly reveal filled outer pupils with controlled tangential rotation."),
-      (26,"Demo-Petzval-Field",{"responseFieldOnset":.18,"responseFieldFalloff":1.26,"fieldCenterX":.49,"fieldCenterY":.51,"cornerSharpnessLoss":.75,"fieldCurvature":.88,"astigmatism":.26,"tangentialSmear":.24,"apertureResponse":.46,"apertureRadius":11,"apertureShape":1,"apertureBladeCount":8,"apertureBladeCurvature":.72,"apertureSoftness":.25,"apertureCatEye":.46,"apertureAspect":1.08,"apertureBokehSwirl":2.0},"A central subject remains legible while curved focus and clear off-axis pupil shaping reinforce one another."),
+      (25,"Demo-Bokeh-Swirl",{"responseFieldOnset":.09,"responseFieldFalloff":.92,"apertureResponse":.96,"apertureRadius":21,"apertureShape":0,"apertureSoftness":.18,"apertureCatEye":.76,"apertureBokehSwirl":8.0},"Point highlights clearly reveal filled outer pupils with pronounced tangential rotation."),
+      (26,"Demo-Petzval-Field",{"responseFieldOnset":.11,"responseFieldFalloff":1.12,"fieldCenterX":.48,"fieldCenterY":.52,"cornerSharpnessLoss":1.6,"fieldCurvature":1.7,"astigmatism":.78,"tangentialSmear":.72,"apertureResponse":.88,"apertureRadius":18,"apertureShape":1,"apertureBladeCount":8,"apertureBladeCurvature":.72,"apertureSoftness":.20,"apertureCatEye":.80,"apertureAspect":1.16,"apertureBokehSwirl":5.0},"A central subject remains legible while curved focus and clear off-axis pupil shaping reinforce one another."),
       (27,"Demo-Structured-Anamorphic-Flare",{"anamorphicSqueeze":2,"anamorphicFlareAmount":.90,"anamorphicFlareRadius":1650,"anamorphicFlareThreshold":.50,"anamorphicFlareThickness":.15,"anamorphicFlareCoreAmount":.30,"anamorphicFlareAsymmetry":.07,"anamorphicFlareGhostAmount":.045,"anamorphicFlareGhostPosition":-.62,"anamorphicFlareGhostScale":.82,"anamorphicFlareGhostCount":3,"anamorphicFlareGhostSpacing":105,"anamorphicFlareGhostScaleDecay":.76,"anamorphicFlareGhostEnergyDecay":.54,"anamorphicFlareBandAmount":.45,"anamorphicFlareBandSeparation":26,"anamorphicFlareSecondaryAmount":.19,"anamorphicFlareSecondaryOffset":190,"anamorphicFlareR":.16,"anamorphicFlareG":.46,"anamorphicFlareB":1,"anamorphicFlareGhostR":.46,"anamorphicFlareGhostG":.28,"anamorphicFlareGhostB":1},"One compact bright source reveals a clear continuous streak and controlled reflection train."),
       (28,"Demo-Diffraction-Rays",{"anamorphicFlareAmount":.16,"anamorphicFlareThreshold":.54,"anamorphicFlareCoreAmount":.30,"diffractionRayAmount":.46,"diffractionRayLength":260,"glareEnergy":.11,"glareRadius":62},"Compact clipped highlights produce visible vertical diffraction rays with a continuous taper."),
       (29,"Demo-Pupil-Decenter-Clipping",{"responseFieldOnset":.14,"responseFieldFalloff":1.08,"apertureResponse":.54,"apertureRadius":12,"apertureShape":0,"apertureSoftness":.25,"aperturePupilShift":.38,"aperturePupilClip":.32},"Outer pupils visibly shift and close while retaining a smooth filled footprint."),
-      (30,"Demo-Bubble-Rim-Bokeh",{"responseFieldOnset":.16,"responseFieldFalloff":1.15,"apertureResponse":.54,"apertureRadius":12,"apertureShape":0,"apertureSoftness":.22,"apertureCatEye":.20,"apertureBokehSwirl":.72,"apertureRimWeight":.16},"Point highlights form a clear bubble rim around a filled pupil without overpowering the scene."),
-      (31,"Demo-Prism-Refraction",{"prismAmount":.72,"prismDirection":14,"prismDispersion":.58,"prismEdgeBias":.50,"prismSoftness":.38},"Straight lines and fine texture reveal a smooth one-sided prism displacement with controlled spectral separation."),
+      (30,"Demo-Bubble-Rim-Bokeh",{"responseFieldOnset":.13,"responseFieldFalloff":1.10,"apertureResponse":.76,"apertureRadius":15,"apertureShape":0,"apertureSoftness":.16,"apertureCatEye":.28,"apertureBokehSwirl":1.1,"apertureRimWeight":.38},"Point highlights form a clear bubble rim around a filled pupil without overpowering the scene."),
+      (31,"Demo-Prism-Refraction",{"prismDistribution":3,"prismAmount":.72,"prismDirection":0,"prismDispersion":.58,"fieldAspect":1.55,"fieldRotation":0,"responseFieldOnset":.22,"responseFieldFalloff":.92},"Straight lines and fine texture reveal a smooth radial prism displacement shaped by the shared Field controls."),
     ]
     for order,name,values,note in demos:
         write(d / f"{order:02d}-{name}.ldbpreset", name, "Educational", values, note)
@@ -647,7 +647,7 @@ def generate_abi16_smoke_tests():
          "Use the isolated point-highlight chart. A restrained tangential pupil rotation should emerge smoothly outside the protected centre."),
         ("Bokeh-Swirl-Medium", {"apertureResponse":1.0,"apertureRadius":18,"apertureShape":0,"apertureSoftness":.16,"apertureCatEye":.42,"apertureBokehSwirl":3.2,"responseFieldOnset":.14,"responseFieldFalloff":.72},
          "Use the isolated point-highlight chart. Peripheral pupils should be clearly tangential and filled, without sparse streaks or repeated dots."),
-        ("Bokeh-Swirl-Extreme", {"apertureResponse":1.0,"apertureRadius":22,"apertureShape":0,"apertureSoftness":.12,"apertureCatEye":.72,"apertureBokehSwirl":6.0,"responseFieldOnset":.10,"responseFieldFalloff":.72},
+        ("Bokeh-Swirl-Extreme", {"apertureResponse":1.0,"apertureRadius":40,"apertureShape":0,"apertureSoftness":.12,"apertureCatEye":.82,"apertureBokehSwirl":12.0,"responseFieldOnset":.10,"responseFieldFalloff":.72},
          "Use the isolated point-highlight chart. This creative limit must remain bounded, filled and continuous rather than collapsing into lines."),
         ("Petzval-Conservative", {"cornerSharpnessLoss":.42,"fieldCurvature":.38,"astigmatism":.10,"tangentialSmear":.08,"apertureResponse":.30,"apertureRadius":9,"apertureShape":1,"apertureBladeCount":8,"apertureBladeCurvature":.72,"apertureAspect":1.04,"apertureCatEye":.24,"apertureBokehSwirl":1.2,"responseFieldOnset":.18,"responseFieldFalloff":1.16},
          "Use a portrait or detailed central subject with peripheral lights. Look for a protected subject island, gradual curved focus and restrained rotating pupils."),
@@ -661,9 +661,19 @@ def generate_abi16_smoke_tests():
          "Use a high-contrast chart and real footage. The prism edge should be obvious but continuous, without duplicated tiles, banding or a hard boundary."),
         ("Prism-Extreme", {"prismAmount":1.70,"prismDirection":20,"prismDispersion":1.50,"prismEdgeBias":.38,"prismSoftness":.22},
          "Creative limit test on a high-contrast chart. Displacement and spectral separation may be strong but must remain smooth, bounded and coherent."),
+        ("Prism-Uniform", {"prismDistribution":1,"prismAmount":.65,"prismDirection":12,"prismDispersion":.45},
+         "Uniform control case. The whole frame should move coherently without a spatial boundary or edge clamp streak."),
+        ("Prism-Bilateral", {"prismDistribution":2,"prismAmount":.72,"prismDirection":0,"prismDispersion":.48,"fieldAspect":1.65,"fieldRotation":0,"responseFieldOnset":.22,"responseFieldFalloff":.78},
+         "Both sides should refract smoothly in opposing directions while the central axis remains protected."),
+        ("Prism-Radial", {"prismDistribution":3,"prismAmount":.72,"prismDirection":0,"prismDispersion":.48,"fieldAspect":1.65,"fieldRotation":0,"responseFieldOnset":.22,"responseFieldFalloff":.78},
+         "Refraction should radiate smoothly from the elliptical Field Center and follow Aspect, Rotation, Onset and Falloff."),
+        ("Prism-Inverse-Field", {"prismDistribution":4,"prismAmount":.72,"prismDirection":12,"prismDispersion":.48,"fieldAspect":1.35,"fieldRotation":-8,"responseFieldOnset":.18,"responseFieldFalloff":.68},
+         "The prism response should be strongest inside the shaped central field and fade smoothly toward the perimeter."),
+        ("Peripheral-Prism-Defocus", {"prismDistribution":3,"prismAmount":.46,"prismDirection":0,"prismDispersion":.36,"fieldAspect":1.72,"fieldRotation":0,"responseFieldOnset":.30,"responseFieldFalloff":.88,"cornerSharpnessLoss":1.12,"fieldCurvature":.48,"astigmatism":.18,"tangentialSmear":.18,"lateralCARed":.55,"lateralCABlue":-.72,"microContrast":-.18,"fineDetail":-.10},
+         "Resolve-reference reconstruction: a wide central subject island with smooth peripheral defocus, radial prism displacement and controlled red/cyan edge separation."),
     )
     for name, values, note in fixtures:
-        write(d / f"{CURRENT_PRESET_TAG}-Smoke-{name}.ldbpreset", "ABI v17 Smoke",
+        write(d / f"{CURRENT_PRESET_TAG}-Smoke-{name}.ldbpreset", "ABI v18 Smoke",
               name.replace('-', ' '), values, note)
 
 def archive_superseded_test_presets():
@@ -714,7 +724,8 @@ def archive_factory_snapshot(version):
             shutil.copytree(source, destination / folder_name)
 
 def readme():
-    (OUT / "README.md").write_text("""# Lens Debaser preset libraries
+    path = OUT / "README.md"
+    content = """# Lens Debaser preset libraries
 
 All files are editable plain-text `.ldbpreset` files. Loading one preset in a
 folder populates Lens Debaser's Preset menu with every valid preset in that
@@ -722,7 +733,7 @@ same folder.
 
 ## demonstrations
 
-Thirty-one single, moderate educational presets. Dependencies are intentionally enabled where a control would be
+Thirty single, moderate educational presets. Dependencies are intentionally enabled where a control would be
 neutral on its own. `Demo-Depth-Input` requires a depth map on the dedicated
 Depth Map RGB connector and assumes `Near Black` interpretation.
 
@@ -741,12 +752,14 @@ by applying one global multiplier to a family recipe.
 Processing settings such as Input Working Space and Diagnostic View are not
 stored in these presets. Always set Input Working Space to match the image
 entering Lens Debaser.
-""")
+"""
+    if not path.exists() or path.read_text() != content:
+        path.write_text(content)
 
 def validate_library():
     demos = sorted((OUT / "demonstrations").glob("*.ldbpreset"))
     lenses = sorted((OUT / "cinematic-lenses").glob("*.ldbpreset"))
-    assert len(demos) == 31, f"expected 31 demonstration presets, found {len(demos)}"
+    assert len(demos) == 30, f"expected 30 demonstration presets, found {len(demos)}"
     assert len(lenses) == 73, f"expected 73 cinematic presets, found {len(lenses)}"
     prism_lenses = [path for path in lenses if path.name.startswith("25-Edge-Prism-Glass-")]
     assert len(prism_lenses) == 3, "expected three Edge Prism Glass strength presets"
@@ -767,14 +780,14 @@ def validate_library():
         response = float(values.get("apertureResponse", 0.0))
         radius = float(values.get("apertureRadius", NEUTRAL["apertureRadius"]))
         assert response <= 1.0, f"aperture response exceeds UI range in {path.name}"
-        assert radius <= 24.0, f"aperture radius exceeds UI range in {path.name}"
+        assert radius <= 48.0, f"aperture radius exceeds UI range in {path.name}"
         if response > 0:
             assert "responseFieldOnset" in values, f"missing focus onset in {path.name}"
             assert "responseFieldFalloff" in values, f"missing focus falloff in {path.name}"
             assert float(values["responseFieldFalloff"]) >= .40, f"unsafe abrupt focus falloff in {path.name}"
-        assert float(values.get("apertureBokehSwirl", 0.0)) <= 6.0
+        assert float(values.get("apertureBokehSwirl", 0.0)) <= 12.0
     smoke = sorted((OUT / "tests").glob(f"{CURRENT_PRESET_TAG}-Smoke-*.ldbpreset"))
-    assert len(smoke) == 21, f"expected 21 current-build smoke presets, found {len(smoke)}"
+    assert len(smoke) == 26, f"expected 26 current-build smoke presets, found {len(smoke)}"
     smoke_names = [path.stem for path in smoke]
     assert len(smoke_names) == len(set(smoke_names)), "duplicate smoke preset filenames"
 
@@ -819,4 +832,4 @@ prune_stale_factory_presets()
 readme()
 purge_numbered_conflict_copies()
 validate_library()
-print("Generated 104 Lens Debaser presets.")
+print("Generated 103 Lens Debaser factory presets.")

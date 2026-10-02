@@ -1,10 +1,10 @@
 LensDebaserPreset=2
-# Family: ABI v17 Smoke
+# Family: ABI v18 Smoke
 # Strength: Bokeh Swirl Extreme
 # Use the isolated point-highlight chart. This creative limit must remain bounded, filled and continuous rather than collapsing into lines.
-apertureBokehSwirl=6
-apertureCatEye=0.72
-apertureRadius=22
+apertureBokehSwirl=12
+apertureCatEye=0.82
+apertureRadius=40
 apertureResponse=1
 apertureShape=0
 apertureSoftness=0.12

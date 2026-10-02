@@ -1,5 +1,5 @@
 LensDebaserPreset=2
-# Family: ABI v17 Smoke
+# Family: ABI v18 Smoke
 # Strength: Bokeh Swirl Medium
 # Use the isolated point-highlight chart. Peripheral pupils should be clearly tangential and filled, without sparse streaks or repeated dots.
 apertureBokehSwirl=3.2

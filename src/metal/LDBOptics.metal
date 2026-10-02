@@ -305,13 +305,31 @@ static float depthSampleAgreement(float targetDepth,float sampleDepth,
 static float4 smoothAxisBlur(device const float4* image, float2 pixel, float2 axis,
                              float radius, uint width, uint height) {
     if (radius <= 0.001f) return sampleBilinear(image, pixel, width, height);
-    float2 halfOffset = axis * radius * 0.5f;
-    float2 fullOffset = axis * radius;
-    return sampleBilinear(image, pixel, width, height) * 0.40f
-         + (sampleBilinear(image, pixel + halfOffset, width, height)
-          + sampleBilinear(image, pixel - halfOffset, width, height)) * 0.20f
-         + (sampleBilinear(image, pixel + fullOffset, width, height)
-          + sampleBilinear(image, pixel - fullOffset, width, height)) * 0.10f;
+    // Seventeen smoothly weighted samples prevent a wide footprint from
+    // resolving into the five discrete copies produced by the legacy kernel.
+    // The normalized locations cover three standard deviations; bilinear
+    // source reads keep fractional radii continuous.
+    // Moderate footprints use 17 samples. Very wide off-axis footprints use
+    // 33 so their sample spacing does not resolve as faint parallel copies.
+    // This branch is experimental and is benchmarked separately with the
+    // extreme-field case before any production adoption.
+    int pairs = radius > 7.25f ? 16 : 8;
+    float4 result = sampleBilinear(image, pixel, width, height);
+    float weightSum = 1.0f;
+    for (int i = 1; i <= 16; ++i) {
+        if (i > pairs) continue;
+        float position = float(i) / float(pairs);
+        float weight = exp(-4.5f * position * position);
+        // Match the legacy five-tap kernel's second moment (0.30*r^2).
+        // Without this scale the Gaussian candidate has only 60% of the
+        // baseline RMS width, making a quality comparison misleadingly easy.
+        float matchedSpread = pairs == 16 ? 1.6602315f : 1.6557839f;
+        float2 offset = axis * radius * position * matchedSpread;
+        result += (sampleBilinear(image, pixel + offset, width, height)
+                 + sampleBilinear(image, pixel - offset, width, height)) * weight;
+        weightSum += 2.0f * weight;
+    }
+    return result / weightSum;
 }
 
 static float3 smoothIsotropicBlur(device const float4* image,float2 pixel,float radius,
@@ -355,15 +373,64 @@ static float2 refractiveOffsetAt(float2 uv, constant LDBOpticsParameters& p) {
     return imageGradient*amount*edge*.0075f;
 }
 
-// A prism is a coherent wedge, not a noise field. Its displacement follows a
-// single direction and enters smoothly from the selected edge. Direction is
-// also the physical refraction axis; dispersion is applied later around the
-// green-channel base sample.
+static float2 boundedPrismOffset(float2 uv,float2 offset) {
+    // Fade only inside the small region where a displacement would otherwise
+    // ask the shared sampler to clamp multiple output pixels to one border
+    // pixel. The optical response remains unchanged through the usable frame
+    // and arrives smoothly at zero at an unavailable source boundary.
+    float availableX=offset.x>=0.0f?1.0f-uv.x:uv.x;
+    float availableY=offset.y>=0.0f?1.0f-uv.y:uv.y;
+    float fadeX=smoothstep(0.0f,max(abs(offset.x)*1.5f,.002f),availableX);
+    float fadeY=smoothstep(0.0f,max(abs(offset.y)*1.5f,.002f),availableY);
+    return offset*(fadeX*fadeY);
+}
+
+// A prism is a coherent displacement, not a noise field. Distribution chooses
+// where the glass acts; Direction controls its physical refraction axis (or
+// rotates the local direction in Radial Field mode). Dispersion is applied
+// later around the green-channel base sample.
 static float2 prismOffsetAt(float2 uv, constant LDBOpticsParameters& p) {
     float amount=clamp(p.prismAmount,0.0f,2.0f);
     if(amount<=0.0f)return 0.0f;
     float angle=p.prismDirection*(M_PI_F/180.0f);
     float2 axis=float2(cos(angle),sin(angle));
+
+    if(p.prismDistribution==LDBPrismUniform)
+        return boundedPrismOffset(uv,-axis*(amount*.035f));
+
+    float2 field=uv-p.fieldCenter;
+    float fieldAngle=p.fieldRotation*(M_PI_F/180.0f);
+    float fs=sin(fieldAngle),fc=cos(fieldAngle);
+    float2 local=float2(fc*field.x+fs*field.y,-fs*field.x+fc*field.y);
+    float aspect=sqrt(clamp(p.fieldAspect,.25f,4.0f));
+    float2 metric=float2(local.x*aspect,local.y/aspect);
+    float radius=clamp(length(metric)*2.0f,0.0f,1.5f);
+    float fieldOnset=clamp(p.responseFieldOnset,0.0f,1.5f);
+    float fieldEnd=fieldOnset+max(clamp(p.responseFieldFalloff,0.0f,1.5f),.08f);
+    float fieldEnvelope=smoothstep(fieldOnset,fieldEnd,radius);
+
+    if(p.prismDistribution==LDBPrismBilateral) {
+        float side=local.x<0.0f?-1.0f:1.0f;
+        float axisRadius=clamp(abs(metric.x)*2.0f,0.0f,1.5f);
+        float envelope=smoothstep(fieldOnset,fieldEnd,axisRadius);
+        return boundedPrismOffset(uv,-axis*(side*amount*envelope*.035f));
+    }
+    if(p.prismDistribution==LDBPrismRadialField) {
+        float2 localRadial=normalize(float2(local.x*aspect*aspect,
+                                             local.y/(aspect*aspect))
+                                      +float2(1e-6f,0.0f));
+        float2 radial=float2(fc*localRadial.x-fs*localRadial.y,
+                             fs*localRadial.x+fc*localRadial.y);
+        float rs=sin(angle),rc=cos(angle);
+        float2 rotated=float2(rc*radial.x-rs*radial.y,
+                              rs*radial.x+rc*radial.y);
+        return boundedPrismOffset(uv,-rotated*(amount*fieldEnvelope*.035f));
+    }
+    if(p.prismDistribution==LDBPrismInverseField)
+        return boundedPrismOffset(uv,-axis*(amount*(1.0f-fieldEnvelope)*.035f));
+
+    // Linear Edge is the released v16 response and remains the default for
+    // old presets and projects.
     float edgeCoordinate=clamp(dot(uv-p.fieldCenter,axis)+.5f,0.0f,1.0f);
     float onset=clamp(p.prismEdgeBias,0.0f,.98f);
     float end=min(onset+max(p.prismSoftness,.01f),1.0f);
@@ -575,7 +642,6 @@ kernel void ldbOpticsMain(device const float4* source [[buffer(0)]],
     float caB = p.lateralCABlue * opticalRadius * opticalRadius * chromaticResponseScale;
     float2 pixelScale = p.imageSize;
     float4 center = sampleBilinear(source, basePixel, width, height);
-    float3 undispersedCenter = center.rgb;
     float2 redOffset=opticalRadial*caR*pixelScale*.002f;
     float2 blueOffset=opticalRadial*caB*pixelScale*.002f;
     float irregularDispersion=clamp(p.refractiveDispersion,0.0f,2.0f);
@@ -601,15 +667,6 @@ kernel void ldbOpticsMain(device const float4* source [[buffer(0)]],
         redOffset+=float2(horizontalPixels,0.0f);
         blueOffset-=float2(horizontalPixels,0.0f);
     }
-    center.r=sampleBilinear(source,basePixel+redOffset,width,height).r;
-    center.b=sampleBilinear(source,basePixel+blueOffset,width,height).b;
-    float3 softenedChromatic=center.rgb;
-    float3 halfChromatic=undispersedCenter;
-    halfChromatic.r=sampleBilinear(source,basePixel+redOffset*.5f,width,height).r;
-    halfChromatic.b=sampleBilinear(source,basePixel+blueOffset*.5f,width,height).b;
-    // A short triangular footprint turns large peripheral channel offsets into
-    // optical colour spread instead of a second crisp copy of the subject.
-    softenedChromatic=(undispersedCenter+halfChromatic*2.0f+center.rgb)*.25f;
 
     // These are normalized perceptual controls. Each must remain independently
     // visible; earlier versions merely modulated an existing field blur by 1–2%,
@@ -637,7 +694,6 @@ kernel void ldbOpticsMain(device const float4* source [[buffer(0)]],
     float4 radialBlur=smoothAxisBlur(source,basePixel,radial,radialWidth,width,height);
     float4 tangentBlur=smoothAxisBlur(source,basePixel,tangent,tangentWidth,width,height);
     float4 optical = mix(center, (radialBlur + tangentBlur) * 0.5f, focusMix);
-    optical.rgb += (softenedChromatic - undispersedCenter) * focusMix;
 
     // A compact isotropic low-pass isolates focus-transition chroma. In the
     // default depth-free mode the image transition selects the tint, preserving
@@ -712,7 +768,13 @@ kernel void ldbOpticsMain(device const float4* source [[buffer(0)]],
         // here, so taper only the positive (sharpening) side by the amount of
         // defocus already reconstructed. Negative detail controls remain fully
         // active and can continue to remove texture from a defocused image.
-        float focusPreservation=1.0f-focusMix;
+        // Positive transfer is an upstream lens-MTF characteristic. In this
+        // fused approximation its source-derived bands are evaluated after
+        // field reconstruction, so attenuate them by the *remaining* MTF
+        // twice: once for contrast surviving the optical loss and once for
+        // the ability of that surviving contrast to carry enhancement. This
+        // prevents a strong defocus from being sharpened back into texture.
+        float focusPreservation=(1.0f-focusMix)*(1.0f-focusMix);
         float fineControl=min(p.fineDetail,0.0f)
                          +max(p.fineDetail,0.0f)*focusPreservation;
         float microControl=min(p.microContrast,0.0f)
@@ -726,10 +788,16 @@ kernel void ldbOpticsMain(device const float4* source [[buffer(0)]],
         transfer += fieldWeight * (radialBand * sagittalControl
                                   + tangentBand * tangentialControl) * 0.35f;
         transfer -= edgeLoss * (fineBand * 0.45f + mediumBand * 0.25f);
-        float3 localMin = min(center.rgb, min(fineBase.rgb, outerBase.rgb));
-        float3 localMax = max(center.rgb, max(fineBase.rgb, outerBase.rgb));
-        float3 allowance = (localMax - localMin) * 0.08f + 1e-5f;
-        optical.rgb = clamp(optical.rgb + transfer, localMin - allowance, localMax + allowance);
+        float transferActivity=abs(fineControl)+abs(microControl)
+                              +abs(sagittalControl)+abs(tangentialControl)
+                              +abs(edgeLoss);
+        if(transferActivity>1e-7f) {
+            float3 localMin = min(center.rgb, min(fineBase.rgb, outerBase.rgb));
+            float3 localMax = max(center.rgb, max(fineBase.rgb, outerBase.rgb));
+            float3 allowance = (localMax - localMin) * 0.08f + 1e-5f;
+            optical.rgb = clamp(optical.rgb + transfer,
+                                localMin - allowance,localMax + allowance);
+        }
     }
 
     // Perceptual coma is restricted to super-white/specular energy. Applying a
@@ -853,6 +921,88 @@ kernel void ldbOpticsMain(device const float4* source [[buffer(0)]],
     // depth-aware aperture and scatter compare warped colour against an
     // unwarped depth map near strong distortion and peripheral warps.
     direct[index] = float4(optical.rgb, center.a);
+}
+
+// Wavelength-dependent PSF approximation. Geometry and field
+// softness are reconstructed first. Lateral dispersion then shifts the centre
+// of each already-softened colour-channel PSF. This is the inexpensive local,
+// space-variant equivalent of convolving with separate R/G/B kernels and
+// avoids adding sharp zero/half/full-offset copies after optical blur.
+kernel void ldbChromaticPSF(
+    device const float4* achromatic [[buffer(0)]],
+    device float4* output [[buffer(1)]],
+    constant LDBOpticsParameters& p [[buffer(2)]],
+    uint2 gid [[thread_position_in_grid]]) {
+    uint width=uint(p.imageSize.x),height=uint(p.imageSize.y);
+    if(gid.x>=width||gid.y>=height)return;
+    uint index=gid.y*width+gid.x;
+    float2 uv=(float2(gid)+.5f)/p.imageSize;
+    float2 opticalField=uv-p.opticalCenter;
+    float fieldAspect=sqrt(max(p.anamorphicSqueeze,.001f));
+    float opticalRadius=clamp(length(float2(opticalField.x*fieldAspect,
+                                             opticalField.y))*2.0f,0.0f,1.5f);
+    float2 opticalRadial=normalize(float2(opticalField.x*fieldAspect*fieldAspect,
+                                          opticalField.y)+float2(1e-6f,0.0f));
+    float fieldOnset=clamp(p.responseFieldOnset,0.0f,1.5f);
+    float fieldEnd=fieldOnset+max(clamp(p.responseFieldFalloff,0.0f,1.5f),.08f);
+    float established=smoothstep(0.0f,1.0f,opticalRadius);
+    float chromaticEnvelope=smoothstep(fieldOnset,fieldEnd,opticalRadius);
+    if(p.chromaticFieldOnset>=0.0f){
+        float onset=clamp(p.chromaticFieldOnset,0.0f,1.5f);
+        float end=onset+max(clamp(p.chromaticFieldFalloff,0.0f,1.5f),.08f);
+        chromaticEnvelope=smoothstep(onset,end,opticalRadius);
+    }
+    float response=established>1e-6f
+        ?clamp(chromaticEnvelope/established,0.0f,4.0f):0.0f;
+    float2 redOffset=opticalRadial*p.lateralCARed*opticalRadius*opticalRadius
+                    *response*p.imageSize*.002f;
+    float2 blueOffset=opticalRadial*p.lateralCABlue*opticalRadius*opticalRadius
+                     *response*p.imageSize*.002f;
+    float2 refractive=refractiveOffsetAt(uv,p)*p.imageSize
+                     *clamp(p.refractiveDispersion,0.0f,2.0f)*chromaticEnvelope;
+    redOffset+=refractive*.055f;
+    blueOffset-=refractive*.075f;
+    float2 prism=prismOffsetAt(uv,p)*p.imageSize*clamp(p.prismDispersion,0.0f,2.0f);
+    redOffset+=prism*.16f;
+    blueOffset-=prism*.22f;
+    float variation=clamp(p.variationAmount,0.0f,1.0f);
+    if(variation>0.0f&&p.variationChromaticAsymmetry!=0.0f){
+        float phase=variationPhase(p.variationSeed);
+        float2 axis=float2(cos(phase),sin(phase));
+        float signedField=dot(opticalField,axis)*2.0f;
+        float shift=clamp(p.variationChromaticAsymmetry,-2.0f,2.0f)*variation
+                   *signedField*opticalRadius*p.imageSize.x*.0012f*chromaticEnvelope;
+        redOffset+=axis*shift;
+        blueOffset-=axis*shift;
+    }
+    if(p.anamorphicAberration!=0.0f){
+        float shift=clamp(p.anamorphicAberration,-2.0f,2.0f)*opticalRadius
+                   *opticalRadius*response*p.imageSize.x*.0015f;
+        redOffset.x+=shift;
+        blueOffset.x-=shift;
+    }
+
+    float2 pixel=float2(gid);
+    float4 center=achromatic[index];
+    // Three bilinear reads are the common path. Only offsets wider than two
+    // pixels receive a compact three-point spectral footprint, centred on the
+    // displaced PSF rather than spanning back to the undispersed image.
+    float red=sampleBilinear(achromatic,pixel+redOffset,width,height).r;
+    float blue=sampleBilinear(achromatic,pixel+blueOffset,width,height).b;
+    float redLength=length(redOffset),blueLength=length(blueOffset);
+    if(redLength>2.0f){
+        float2 band=redOffset/redLength*min(redLength*.18f,1.5f);
+        red=sampleBilinear(achromatic,pixel+redOffset,width,height).r*.5f
+           +(sampleBilinear(achromatic,pixel+redOffset-band,width,height).r
+            +sampleBilinear(achromatic,pixel+redOffset+band,width,height).r)*.25f;
+    }
+    if(blueLength>2.0f){
+        float2 band=blueOffset/blueLength*min(blueLength*.18f,1.5f);
+        blue=sampleBilinear(achromatic,pixel+blueOffset,width,height).b*.5f
+            +(sampleBilinear(achromatic,pixel+blueOffset-band,width,height).b
+             +sampleBilinear(achromatic,pixel+blueOffset+band,width,height).b)*.25f;
+    }
+    output[index]=float4(red,center.g,blue,center.a);
 }
 
 static int scatterTapLimit(constant LDBOpticsParameters& p) {
@@ -1054,7 +1204,7 @@ kernel void ldbBlurAperture(device const float4* source [[buffer(0)]],
     float onset=clamp(p.responseFieldOnset,0.0f,1.5f);
     float fieldEnd=onset+max(clamp(p.responseFieldFalloff,0.0f,1.5f),0.08f);
     float fieldEnvelope=smoothstep(onset,fieldEnd,fieldRadius);
-    float bokehSwirl=clamp(p.apertureBokehSwirl,0.0f,6.0f)*fieldEnvelope;
+    float bokehSwirl=clamp(p.apertureBokehSwirl,0.0f,12.0f)*fieldEnvelope;
     float catEye=clamp(p.apertureCatEye,0.0f,1.0f)*smoothstep(0.15f,1.0f,fieldRadius);
     float pupilShift=clamp(p.aperturePupilShift,0.0f,1.0f)*fieldEnvelope;
     float pupilClip=clamp(p.aperturePupilClip,0.0f,1.0f)*fieldEnvelope;
@@ -1080,8 +1230,8 @@ kernel void ldbBlurAperture(device const float4* source [[buffer(0)]],
     // Oval mode made it silently inert for polygonal pupils (including the
     // Petzval factory family), even though real squeezed pupils can retain a
     // bladed outline.  Circular remains circular at the neutral value of one.
-    float aspect=sqrt(clamp(p.apertureAspect,0.25f,4.0f));
-    uint blades=clamp(p.apertureBladeCount,3u,32u);
+    float aspect=sqrt(clamp(p.apertureAspect,0.25f,8.0f));
+    uint blades=clamp(p.apertureBladeCount,3u,16u);
     float curvature=clamp(p.apertureBladeCurvature,0.0f,1.0f);
     // Do not privilege a zero-offset source sample: it leaves a concentrated
     // copy of point highlights inside an otherwise defocused pupil footprint.
@@ -1133,12 +1283,12 @@ kernel void ldbBlurAperture(device const float4* source [[buffer(0)]],
         // non-zero radial width prevents extreme settings from collapsing into arcs.
         float radialScale=mix(1.0f,0.58f,catEye);
         // Bokeh Swirl should read as a rotating off-axis pupil, not as a
-        // vanishingly thin tangential streak.  The former linear mapping grew
-        // a value of six to 6.7x by roughly 0.05x; that footprint was too large
-        // and thin for a 96-sample filled pupil and could expose sampling
-        // structure.  This rational response keeps the whole 0..6 creative
-        // range useful while asymptotically limiting the deformation.
-        float swirlResponse=bokehSwirl/(1.0f+0.75f*bokehSwirl);
+        // vanishingly thin tangential streak. Preserve approximately the
+        // established response around five while allowing the extended 0..12
+        // range to progress instead of saturating almost completely by five.
+        // The shallow quadratic taper keeps the maximum footprint bounded for
+        // the 96-sample filled pupil.
+        float swirlResponse=bokehSwirl*(0.22f-0.003f*bokehSwirl);
         radialScale*=1.0f/(1.0f+0.32f*swirlResponse);
         float tangentialScale=1.0f+0.72f*swirlResponse;
         float radialComponent=dot(offset,radial);

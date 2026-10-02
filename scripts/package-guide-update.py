@@ -4,7 +4,6 @@
 from __future__ import annotations
 
 import argparse
-import hashlib
 import json
 import plistlib
 import shutil
@@ -18,23 +17,21 @@ OUTPUT_ROOT = ROOT / "releases" / "user-guide-updates"
 PUBLISHABLE_SUFFIXES = {".html", ".png", ".webp", ".svg", ".jpg", ".jpeg"}
 
 
-def digest(path: Path) -> str:
-    value = hashlib.sha256()
-    with path.open("rb") as handle:
-        for block in iter(lambda: handle.read(1024 * 1024), b""):
-            value.update(block)
-    return value.hexdigest()
+def file_state(path: Path) -> dict[str, int]:
+    """Return cheap local change metadata without reading file contents."""
+    state = path.stat()
+    return {"size": state.st_size, "mtime_ns": state.st_mtime_ns}
 
 
-def current_manifest() -> dict[str, str]:
-    files: dict[str, str] = {}
+def current_manifest() -> dict[str, dict[str, int]]:
+    files: dict[str, dict[str, int]] = {}
     for path in sorted(GUIDE_ROOT.rglob("*")):
         if path.is_file() and path.suffix.lower() in PUBLISHABLE_SUFFIXES:
-            files[path.relative_to(GUIDE_ROOT).as_posix()] = digest(path)
+            files[path.relative_to(GUIDE_ROOT).as_posix()] = file_state(path)
     return files
 
 
-def read_published_manifest() -> dict[str, str]:
+def read_published_manifest() -> dict[str, object]:
     if not STATE_FILE.exists():
         raise SystemExit(
             "No published guide baseline exists. After confirming the hosted "
@@ -48,10 +45,11 @@ def version() -> str:
         return plistlib.load(handle)["CFBundleShortVersionString"]
 
 
-def write_state(files: dict[str, str]) -> None:
+def write_state(files: dict[str, dict[str, int]]) -> None:
     payload = {
-        "format": 1,
+        "format": 2,
         "purpose": "Files confirmed as manually uploaded to the public user guide",
+        "tracking": "Local size and modification time only; no content hashing",
         "files": files,
     }
     STATE_FILE.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n",
@@ -61,8 +59,21 @@ def write_state(files: dict[str, str]) -> None:
 def changes() -> tuple[list[str], list[str]]:
     published = read_published_manifest()
     current = current_manifest()
-    changed = sorted(name for name, value in current.items()
-                     if published.get(name) != value)
+    # Format 1 stored content hashes. Migrate without rereading image data by
+    # treating files modified after that manifest was recorded as changed.
+    # The next explicit publish record writes the inexpensive format-2 state.
+    legacy_cutoff_ns = STATE_FILE.stat().st_mtime_ns
+    changed = []
+    for name, value in current.items():
+        previous = published.get(name)
+        if previous is None:
+            changed.append(name)
+        elif isinstance(previous, dict):
+            if previous != value:
+                changed.append(name)
+        elif value["mtime_ns"] > legacy_cutoff_ns:
+            changed.append(name)
+    changed.sort()
     deleted = sorted(set(published) - set(current))
     return changed, deleted
 

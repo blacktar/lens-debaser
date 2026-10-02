@@ -1,0 +1,12 @@
+LensDebaserPreset=2
+# Family: ABI v18 Smoke
+# Strength: Prism Bilateral
+# Both sides should refract smoothly in opposing directions while the central axis remains protected.
+fieldAspect=1.65
+fieldRotation=0
+prismAmount=0.72
+prismDirection=0
+prismDispersion=0.48
+prismDistribution=2
+responseFieldFalloff=0.78
+responseFieldOnset=0.22

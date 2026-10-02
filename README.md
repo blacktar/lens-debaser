@@ -5,7 +5,7 @@ DaVinci Resolve. It models perceptually useful aspects of modern, vintage,
 anamorphic and exotic optics, prioritising pleasing visual approximations and
 interactive performance over scientific lens simulation.
 
-Current development version: **1.64**.
+Current development version: **1.67**.
 
 Read the online [Lens Debaser user guide](https://vidarandersen.com/dmz/lens-debaser-ofx/) for the complete workflow, control reference, depth setup, and preset catalogue.
 
@@ -124,8 +124,11 @@ adapter were created by Vidar Andersen and are distributed under this same
 license. Their asset-level attribution is recorded in
 [`inputs/redistributable/README.md`](inputs/redistributable/README.md).
 
-Third-party software, platform, colour-science and test-chart acknowledgements
-are listed in [`resources/THIRD-PARTY-NOTICES.txt`](resources/THIRD-PARTY-NOTICES.txt).
+Third-party software, platform, colour-science, test-chart and implemented
+optical-model design acknowledgements are listed in
+[`resources/THIRD-PARTY-NOTICES.txt`](resources/THIRD-PARTY-NOTICES.txt).
+The notice distinguishes incorporated OpenFX support code from publications
+that informed Lens Debaser's original real-time optical approximation.
 The online user guide also contains a consolidated
 [Acknowledgements & Credits](https://vidarandersen.com/dmz/lens-debaser-ofx/#credits)
 section.

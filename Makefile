@@ -26,6 +26,7 @@ OFX_BUILD := $(BUILD)/ofx
 OFX_BUNDLE := $(BUILD)/LensDebaser.ofx.bundle
 OFX_BINARY := $(OFX_BUNDLE)/Contents/MacOS/LensDebaser.ofx
 PRODUCT_LABEL := $(shell /usr/libexec/PlistBuddy -c 'Print :CFBundleName' resources/Info.plist 2>/dev/null)
+PRODUCT_VERSION := $(shell /usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' resources/Info.plist 2>/dev/null)
 PRODUCT_BUILD := $(shell /usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' resources/Info.plist 2>/dev/null)
 OFX_SUPPORT_SOURCES := ofxsCore ofxsImageEffect ofxsInteract ofxsLog ofxsMultiThread ofxsParams ofxsProperty ofxsPropertyValidation
 OFX_SUPPORT_OBJECTS := $(addprefix $(OFX_BUILD)/,$(addsuffix .o,$(OFX_SUPPORT_SOURCES)))
@@ -37,11 +38,11 @@ HAWK_REFERENCE ?= $(CURDIR)/inputs/Reference_Lenses/Hawk V-Lite Vintage `74 Anam
 COOKE_SPECIAL_REFERENCE ?= $(CURDIR)/inputs/Reference_Lenses/Cooke Anamorphic :i Special Flare/CookeSpecial_TIFFs/Cooke Anamorphic i Special Flare 50mm T2.3 at T2.3_log.tif
 ARRI_REVEAL_LUT ?= /Library/Application Support/Blackmagic Design/DaVinci Resolve/LUT/Arri/ARRI_LogC4_v1_LUT_Package/LUTs/ARRI_LogC4-to-Gamma24_Rec709-D65_v1-65.cube
 VALIDATION_ROOT := outputs/engine-validation
-VISUAL_PASS_ID := 94
-VISUAL_PASS_LABEL := Visual Pass $(VISUAL_PASS_ID) - Extended Gaussian Glare
+VISUAL_PASS_ID := 99
+VISUAL_PASS_LABEL := Visual Pass $(VISUAL_PASS_ID) - Progressive Bokeh Swirl Response
 VALIDATION_OUTPUT := $(VALIDATION_ROOT)/passes/pass-$(VISUAL_PASS_ID)
 
-.PHONY: all ofx validate performance-test deploy release aperture-chart guide-examples guide-examples-glare user-guide guide-update guide-update-status guide-publish-record presets preset-test install install-user test visual-test visual-check visual-rebuild clean
+.PHONY: all ofx validate version-check performance-test deploy release aperture-chart guide-examples guide-examples-glare guide-examples-presets-166 guide-examples-presets-166b guide-examples-presets-167 optical-model-validation optical-model-benchmark full-library-validation user-guide guide-update guide-update-status guide-publish-record presets preset-test install install-user test visual-test visual-check visual-rebuild clean
 
 all: $(METAL_LIB) $(TEST_BIN) $(VISUAL_BIN) $(BENCHMARK_BIN)
 
@@ -55,7 +56,12 @@ release: validate ofx
 # Deployment validation is a correctness and visual-output gate. Keep the
 # sustained benchmark explicit: it is sensitive to machine load and thermal
 # state, and is required when processing changes rather than for every install.
-validate: preset-test test visual-check
+validate: version-check preset-test test visual-check
+
+version-check:
+	@grep -Fq 'constexpr const char *kName = "$(PRODUCT_LABEL)";' src/ofx/LensDebaserPlugin.cpp || { echo "ERROR: OFX display name does not match $(PRODUCT_LABEL)." >&2; exit 1; }
+	@grep -Fq 'Current development version: **$(PRODUCT_VERSION)**.' README.md || { echo "ERROR: README version does not match $(PRODUCT_VERSION)." >&2; exit 1; }
+	@grep -Fq 'CURRENT_PRESET_TAG = "v$(PRODUCT_VERSION)"' scripts/generate-presets.py || { echo "ERROR: test-preset version does not match $(PRODUCT_VERSION)." >&2; exit 1; }
 
 performance-test: benchmark
 
@@ -63,7 +69,7 @@ presets:
 	./scripts/generate-presets.py
 
 preset-test: presets
-	@test "$$(find presets/demonstrations presets/cinematic-lenses -name '*.ldbpreset' -type f | wc -l | tr -d ' ')" = 104 || { echo "ERROR: Expected 104 generated factory presets." >&2; exit 1; }
+	@test "$$(find presets/demonstrations presets/cinematic-lenses -name '*.ldbpreset' -type f | wc -l | tr -d ' ')" = 103 || { echo "ERROR: Expected 103 generated factory presets." >&2; exit 1; }
 	@! grep -REn '^(inputWorkingSpace|diagnosticView|depthSource)=' presets/demonstrations presets/cinematic-lenses || { echo "ERROR: A processing-only or removed control was serialized in a factory preset." >&2; exit 1; }
 
 # One command for a Resolve test build: validate the engine and visual outputs,
@@ -139,6 +145,55 @@ guide-examples-glare: $(METAL_LIB) $(GUIDE_EXAMPLES_BIN)
 	@mkdir -p "$(GUIDE_EXAMPLES_DIR)"
 	$(GUIDE_EXAMPLES_BIN) $(METAL_LIB) "$(CURDIR)" "$(GUIDE_EXAMPLES_DIR)" changed-glare
 	./scripts/build-user-guide.py
+
+# Refresh only the demonstration and cinematic examples revised after the
+# 1.65 optical-model review. All previously reviewed images remain untouched.
+guide-examples-presets-166: $(METAL_LIB) $(GUIDE_EXAMPLES_BIN) presets
+	@for reference in inputs/redistributable/ISO_12233-reschart.tif inputs/redistributable/OGC-TERA-CHART-1.png inputs/redistributable/iphone_milano_dwg_1.tif inputs/redistributable/iphone_milano2___dwg.tif inputs/redistributable/iphone_milano3_dwg.tif inputs/redistributable/Resolve-DWG-Intermediate-to-Rec709-Gamma24-Guide.cube; do test -f "$$reference" || { echo "ERROR: Required guide source is missing: $$reference" >&2; exit 1; }; done
+	@mkdir -p "$(GUIDE_EXAMPLES_DIR)"
+	$(GUIDE_EXAMPLES_BIN) $(METAL_LIB) "$(CURDIR)" "$(GUIDE_EXAMPLES_DIR)" changed-presets-166
+	rm -f "$(GUIDE_EXAMPLES_DIR)"/blend-iso-100.png "$(GUIDE_EXAMPLES_DIR)"/blend-iso-50.png
+	./scripts/build-user-guide.py
+
+# Second focused review: only presets adjusted after the first 1.66 render.
+guide-examples-presets-166b: $(METAL_LIB) $(GUIDE_EXAMPLES_BIN) presets
+	@for reference in inputs/redistributable/ISO_12233-reschart.tif inputs/redistributable/OGC-TERA-CHART-1.png inputs/redistributable/iphone_milano_dwg_1.tif inputs/redistributable/iphone_milano2___dwg.tif inputs/redistributable/iphone_milano3_dwg.tif inputs/redistributable/Resolve-DWG-Intermediate-to-Rec709-Gamma24-Guide.cube; do test -f "$$reference" || { echo "ERROR: Required guide source is missing: $$reference" >&2; exit 1; }; done
+	@mkdir -p "$(GUIDE_EXAMPLES_DIR)"
+	$(GUIDE_EXAMPLES_BIN) $(METAL_LIB) "$(CURDIR)" "$(GUIDE_EXAMPLES_DIR)" changed-presets-166b
+	./scripts/build-user-guide.py
+
+# 1.67 changes only Demo 25's rendered guide appearance. Preserve every
+# previously reviewed guide image byte-for-byte and replace these five files.
+guide-examples-presets-167: $(METAL_LIB) $(GUIDE_EXAMPLES_BIN) presets
+	@for reference in inputs/redistributable/ISO_12233-reschart.tif inputs/redistributable/OGC-TERA-CHART-1.png inputs/redistributable/iphone_milano_dwg_1.tif inputs/redistributable/iphone_milano2___dwg.tif inputs/redistributable/iphone_milano3_dwg.tif inputs/redistributable/Resolve-DWG-Intermediate-to-Rec709-Gamma24-Guide.cube; do test -f "$$reference" || { echo "ERROR: Required guide source is missing: $$reference" >&2; exit 1; }; done
+	@mkdir -p "$(GUIDE_EXAMPLES_DIR)"
+	$(GUIDE_EXAMPLES_BIN) $(METAL_LIB) "$(CURDIR)" "$(GUIDE_EXAMPLES_DIR)" changed-presets-167
+	./scripts/build-user-guide.py
+
+# Focused review material for the promoted field-blur and chromatic-ordering
+# model. This does not touch guide images, visual-pass archives, or presets.
+optical-model-validation: $(METAL_LIB) $(GUIDE_EXAMPLES_BIN)
+	@for reference in inputs/redistributable/ISO_12233-reschart.tif inputs/redistributable/iphone_milano_dwg_1.tif inputs/redistributable/Resolve-DWG-Intermediate-to-Rec709-Gamma24-Guide.cube; do test -f "$$reference" || { echo "ERROR: Required validation source is missing: $$reference" >&2; exit 1; }; done
+	rm -rf outputs/experiments/optical-model-candidate
+	mkdir -p outputs/experiments/optical-model-candidate
+	$(GUIDE_EXAMPLES_BIN) $(METAL_LIB) "$(CURDIR)" outputs/experiments/optical-model-candidate optical-model-validation
+	@printf '\nFocused renders: outputs/experiments/optical-model-candidate\n'
+
+# Save the absolute production timings beside the focused review renders.
+# This target does not regenerate any imagery.
+optical-model-benchmark: $(METAL_LIB) $(BENCHMARK_BIN)
+	@mkdir -p outputs/experiments/optical-model-candidate
+	$(BENCHMARK_BIN) $(METAL_LIB) | tee outputs/experiments/optical-model-candidate/benchmark.txt
+
+# Render the complete current demonstration and cinematic-preset library into
+# an isolated candidate folder. Existing guide images remain untouched until
+# the candidate has been reviewed and explicitly accepted.
+full-library-validation: $(METAL_LIB) $(GUIDE_EXAMPLES_BIN)
+	@for reference in inputs/redistributable/ISO_12233-reschart.tif inputs/redistributable/OGC-TERA-CHART-1.png inputs/redistributable/iphone_milano_dwg_1.tif inputs/redistributable/iphone_milano2___dwg.tif inputs/redistributable/iphone_milano3_dwg.tif inputs/redistributable/Resolve-DWG-Intermediate-to-Rec709-Gamma24-Guide.cube; do test -f "$$reference" || { echo "ERROR: Required validation source is missing: $$reference" >&2; exit 1; }; done
+	rm -rf outputs/experiments/full-library-candidate
+	mkdir -p outputs/experiments/full-library-candidate
+	$(GUIDE_EXAMPLES_BIN) $(METAL_LIB) "$(CURDIR)" outputs/experiments/full-library-candidate
+	@printf '\nFull-library candidate: outputs/experiments/full-library-candidate\n'
 
 user-guide:
 	./scripts/build-user-guide.py

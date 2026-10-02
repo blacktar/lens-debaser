@@ -3,15 +3,15 @@ LensDebaserPreset=2
 # Strength: Caricature
 # Tangentially rotating peripheral bokeh without image-structure swirl; point highlights reveal it best.
 apertureBokehSwirl=6
-apertureCatEye=0.72
-apertureRadius=16
-apertureResponse=0.82
+apertureCatEye=0.78
+apertureRadius=18
+apertureResponse=0.9
 astigmatism=0.36
 cornerSharpnessLoss=1.12
 fieldAspect=1.06
-fieldCurvature=1.4
+fieldCurvature=1.6
 longitudinalCA=0.4
 responseFieldFalloff=1.52
 responseFieldOnset=0.2
 sphericalHalo=0.28
-tangentialSmear=0.72
+tangentialSmear=0.85

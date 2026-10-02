@@ -1,9 +1,12 @@
 LensDebaserPreset=2
 # Family: Demo-Prism-Refraction
 # Strength: Educational
-# Straight lines and fine texture reveal a smooth one-sided prism displacement with controlled spectral separation.
+# Straight lines and fine texture reveal a smooth radial prism displacement shaped by the shared Field controls.
+fieldAspect=1.55
+fieldRotation=0
 prismAmount=0.72
-prismDirection=14
+prismDirection=0
 prismDispersion=0.58
-prismEdgeBias=0.5
-prismSoftness=0.38
+prismDistribution=3
+responseFieldFalloff=0.92
+responseFieldOnset=0.22

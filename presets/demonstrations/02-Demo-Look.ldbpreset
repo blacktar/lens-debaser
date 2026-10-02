@@ -2,8 +2,8 @@ LensDebaserPreset=2
 # Family: Demo-Look
 # Strength: Educational
 # A clearly visible coordinated look demonstrates the macro controls without overwhelming the underlying grade.
-lookAnamorphicBias=0.3
-lookCharacter=0.58
-lookExoticBias=0.24
-lookInfluence=0.76
-lookVintageBias=0.48
+lookAnamorphicBias=0.42
+lookCharacter=0.76
+lookExoticBias=0.34
+lookInfluence=1
+lookVintageBias=0.62

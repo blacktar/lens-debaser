@@ -1,0 +1,8 @@
+LensDebaserPreset=2
+# Family: ABI v18 Smoke
+# Strength: Prism Uniform
+# Uniform control case. The whole frame should move coherently without a spatial boundary or edge clamp streak.
+prismAmount=0.65
+prismDirection=12
+prismDispersion=0.45
+prismDistribution=1

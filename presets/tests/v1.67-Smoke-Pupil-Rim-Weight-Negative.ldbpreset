@@ -1,5 +1,5 @@
 LensDebaserPreset=2
-# Family: ABI v17 Smoke
+# Family: ABI v18 Smoke
 # Strength: Pupil Rim Weight Negative
 # Maximum negative Rim Weight. Energy should move smoothly toward the pupil centre without shrinking the footprint.
 apertureAspect=1

@@ -43,9 +43,30 @@ if ! nm -gU "$source_bundle/Contents/MacOS/LensDebaser.ofx" | grep -q '_OfxGetNu
 fi
 bundle_identifier="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$source_bundle/Contents/Info.plist")"
 bundle_version="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$source_bundle/Contents/Info.plist")"
+bundle_build="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$source_bundle/Contents/Info.plist")"
 if [[ "$bundle_identifier" != "com.ldb.LensDebaser" || -z "$bundle_version" ]]; then
   echo "ERROR: Lens Debaser bundle metadata is invalid." >&2
   exit 1
+fi
+
+# A changed candidate must never silently replace an installed build carrying
+# the same (or a newer) build number. This is the last guard before the system
+# install and therefore also protects manual `make install-user` runs.
+if [[ -f "$installed_bundle/Contents/Info.plist" ]]; then
+  installed_build="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$installed_bundle/Contents/Info.plist" 2>/dev/null || true)"
+  installed_version="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$installed_bundle/Contents/Info.plist" 2>/dev/null || true)"
+  if [[ "$bundle_build" =~ ^[0-9]+$ && "$installed_build" =~ ^[0-9]+$ ]]; then
+    if (( bundle_build < installed_build )); then
+      echo "ERROR: Candidate $bundle_version (build $bundle_build) is older than installed $installed_version (build $installed_build)." >&2
+      exit 1
+    fi
+    if (( bundle_build == installed_build )) &&
+       [[ "${LDB_ALLOW_REINSTALL:-0}" != "1" ]]; then
+      echo "ERROR: Candidate $bundle_version reuses installed build $installed_build." >&2
+      echo "Increment the version/build for changed code. For an intentional identical-build reinstall only, use LDB_ALLOW_REINSTALL=1 make install-user." >&2
+      exit 1
+    fi
+  fi
 fi
 
 echo "Installing into Resolve's system OFX directory (administrator password may be requested)…"

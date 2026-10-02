@@ -2,15 +2,15 @@ LensDebaserPreset=2
 # Family: Demo-Chromatic-Aberration
 # Strength: Educational
 # High-contrast outer edges show clear but controlled lateral separation; defocused detail shows longitudinal color.
-chromaticFieldFalloff=1.26
-chromaticFieldOnset=0.26
+chromaticFieldFalloff=1.2
+chromaticFieldOnset=0.22
 farFocusB=0.62
 farFocusG=1
 farFocusR=0.32
-lateralCABlue=-1.8
-lateralCARed=1.5
-longitudinalCA=0.55
-longitudinalCARadius=6
+lateralCABlue=-2.7
+lateralCARed=2.2
+longitudinalCA=0.82
+longitudinalCARadius=8
 nearFocusB=0.76
 nearFocusG=0.34
 nearFocusR=1

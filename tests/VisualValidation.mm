@@ -575,7 +575,7 @@ int main(int argc, char** argv) {
         // focused new outputs.
         const int passNumber=argc>=9?std::atoi(argv[7]):0;
         const bool baselineRebuild=passNumber<0;
-        const int reviewOutputFloor=passNumber>=94?455:(passNumber>=93?447:(passNumber>=92?439:(passNumber>=85?384:(passNumber>=84?379:(passNumber>=83?374:(passNumber>=82?368:(passNumber>=81?357:(passNumber>=80?350:(passNumber>=79?339:(passNumber>=77?325:(passNumber>=76?317:(passNumber>=68?310:(passNumber>=67?302:(passNumber>=66?293:(passNumber>=65?281:(passNumber>=64?273:(passNumber>=63?268:(passNumber>=62?263:(passNumber>=61?258:(passNumber>=60?252:0))))))))))))))))))));
+        const int reviewOutputFloor=passNumber>=99?491:(passNumber>=98?486:(passNumber>=97?479:(passNumber>=96?472:(passNumber>=94?455:(passNumber>=93?447:(passNumber>=92?439:(passNumber>=85?384:(passNumber>=84?379:(passNumber>=83?374:(passNumber>=82?368:(passNumber>=81?357:(passNumber>=80?350:(passNumber>=79?339:(passNumber>=77?325:(passNumber>=76?317:(passNumber>=68?310:(passNumber>=67?302:(passNumber>=66?293:(passNumber>=65?281:(passNumber>=64?273:(passNumber>=63?268:(passNumber>=62?263:(passNumber>=61?258:(passNumber>=60?252:0))))))))))))))))))))))));
         const std::unordered_set<std::string> baselineOutputs = {
             // Neutral inputs and the principal optical families.
             "00-input.tiff", "01-modern.tiff", "02-vintage.tiff", "03-anamorphic.tiff",
@@ -653,6 +653,45 @@ int main(int argc, char** argv) {
                    << "  Current analytic flare primitives: 252-257\n"
                    << "  Current Cooke focal profile calibration: 268-272\n"
                    << "  Retired and superseded development renders are intentionally omitted.\n";
+            else if(passNumber>=99) marker
+                   << "  491-bokeh-swirl-range-source.tiff\n"
+                   << "  492-bokeh-swirl-00.tiff\n"
+                   << "  493-bokeh-swirl-03.tiff\n"
+                   << "  494-bokeh-swirl-06.tiff\n"
+                   << "  495-bokeh-swirl-09.tiff\n"
+                   << "  496-bokeh-swirl-12.tiff\n";
+            else if(passNumber>=98) marker
+                   << "  486-bokeh-boundary-chart-source.tiff\n"
+                   << "  487-demo-bokeh-swirl-strengthened.tiff\n"
+                   << "  488-maximum-bokeh-boundary-stress.tiff\n"
+                   << "  489-bokeh-boundary-real-source.tiff\n"
+                   << "  490-demo-bokeh-swirl-real.tiff\n";
+            else if(passNumber>=97) marker
+                   << "  479-expanded-aperture-chart-source.tiff\n"
+                   << "  480-former-aperture-range-ceiling.tiff\n"
+                   << "  481-extended-aperture-range-ceiling.tiff\n"
+                   << "  482-demo-bokeh-swirl-revised.tiff\n"
+                   << "  483-demo-petzval-field-revised.tiff\n"
+                   << "  484-expanded-aperture-real-source.tiff\n"
+                   << "  485-expanded-aperture-real-result.tiff\n";
+            else if(passNumber>=96) marker
+                   << "  472-causal-optical-chart-source.tiff\n"
+                   << "  473-continuous-field-blur.tiff\n"
+                   << "  474-chromatic-after-field-blur.tiff\n"
+                   << "  475-shaped-aperture-after-field-blur.tiff\n"
+                   << "  476-combined-causal-optics.tiff\n"
+                   << "  477-causal-optical-real-source.tiff\n"
+                   << "  478-combined-causal-optics-real.tiff\n";
+            else if(passNumber>=95) marker
+                   << "  463-prism-distribution-chart-source.tiff\n"
+                   << "  464-prism-linear-edge.tiff\n"
+                   << "  465-prism-uniform.tiff\n"
+                   << "  466-prism-bilateral-field.tiff\n"
+                   << "  467-prism-radial-field.tiff\n"
+                   << "  468-prism-inverse-field.tiff\n"
+                   << "  469-peripheral-prism-defocus-chart.tiff\n"
+                   << "  470-peripheral-prism-defocus-real-source.tiff\n"
+                   << "  471-peripheral-prism-defocus-real.tiff\n";
             else if(passNumber>=94) marker
                    << "  455-glare-halo-chart-source.tiff\n"
                    << "  456-glare-halo-hdr-source.tiff\n"
@@ -1129,6 +1168,27 @@ int main(int argc, char** argv) {
         ellipticalBokehSwirl.fieldRotation=18.0f;
         save("91-aperture-bokeh-swirl-elliptical.tiff",
              displayPreview(render(engine,device,queue,apertureChart,width,height,ellipticalBokehSwirl)));
+        if(passNumber==99) {
+            save("491-bokeh-swirl-range-source.tiff",displayPreview(apertureChart));
+            const float swirlValues[]={0.0f,3.0f,6.0f,9.0f,12.0f};
+            const char* swirlNames[]={"492-bokeh-swirl-00.tiff",
+                                      "493-bokeh-swirl-03.tiff",
+                                      "494-bokeh-swirl-06.tiff",
+                                      "495-bokeh-swirl-09.tiff",
+                                      "496-bokeh-swirl-12.tiff"};
+            for(int i=0;i<5;++i) {
+                auto progressive=LDBNeutralOpticsParameters(width,height);
+                progressive.responseFieldOnset=.09f;
+                progressive.responseFieldFalloff=.92f;
+                progressive.apertureResponse=1.0f;
+                progressive.apertureRadius=21.0f;
+                progressive.apertureSoftness=.18f;
+                progressive.apertureCatEye=.76f;
+                progressive.apertureBokehSwirl=swirlValues[i];
+                save(swirlNames[i],displayPreview(render(
+                    engine,device,queue,apertureChart,width,height,progressive)));
+            }
+        }
         if(passNumber>=79) {
             save("339-bokeh-petzval-point-source.tiff",displayPreview(apertureChart));
             auto bokehConservative=LDBNeutralOpticsParameters(width,height);
@@ -1352,6 +1412,112 @@ int main(int argc, char** argv) {
             saveISO("43-iso12233-directional-focus.tiff", displayPreview(render(engine, device, queue, iso, isoWidth, isoHeight, isoDirectional)));
             auto isoCA = polarCA;
             saveISO("44-iso12233-ca-swirl.tiff", displayPreview(render(engine, device, queue, iso, isoWidth, isoHeight, isoCA)));
+            if(passNumber==96) {
+                saveISO("472-causal-optical-chart-source.tiff",displayPreview(iso));
+                auto fieldBlur=LDBNeutralOpticsParameters(isoWidth,isoHeight);
+                fieldBlur.responseFieldOnset=.05f;
+                fieldBlur.responseFieldFalloff=.95f;
+                fieldBlur.cornerSharpnessLoss=2.0f;
+                fieldBlur.fieldCurvature=1.65f;
+                fieldBlur.astigmatism=.72f;
+                fieldBlur.radialSmear=.82f;
+                fieldBlur.tangentialSmear=1.15f;
+                saveISO("473-continuous-field-blur.tiff",displayPreview(render(
+                    engine,device,queue,iso,isoWidth,isoHeight,fieldBlur)));
+                auto chromatic=fieldBlur;
+                chromatic.lateralCARed=1.45f;
+                chromatic.lateralCABlue=-1.90f;
+                chromatic.longitudinalCA=.78f;
+                saveISO("474-chromatic-after-field-blur.tiff",displayPreview(render(
+                    engine,device,queue,iso,isoWidth,isoHeight,chromatic)));
+                auto aperture=fieldBlur;
+                aperture.apertureResponse=.78f;
+                aperture.apertureRadius=17.0f;
+                aperture.apertureShape=1;
+                aperture.apertureBladeCount=7;
+                aperture.apertureBladeCurvature=.62f;
+                aperture.apertureSoftness=.18f;
+                aperture.apertureCatEye=.48f;
+                aperture.apertureBokehSwirl=3.2f;
+                saveISO("475-shaped-aperture-after-field-blur.tiff",displayPreview(render(
+                    engine,device,queue,iso,isoWidth,isoHeight,aperture)));
+                auto combined=aperture;
+                combined.lateralCARed=1.10f;
+                combined.lateralCABlue=-1.45f;
+                combined.longitudinalCA=.58f;
+                saveISO("476-combined-causal-optics.tiff",displayPreview(render(
+                    engine,device,queue,iso,isoWidth,isoHeight,combined)));
+            }
+            if(passNumber==97) {
+                saveISO("479-expanded-aperture-chart-source.tiff",displayPreview(iso));
+                auto formerCeiling=LDBNeutralOpticsParameters(isoWidth,isoHeight);
+                formerCeiling.responseFieldOnset=.10f;
+                formerCeiling.responseFieldFalloff=.72f;
+                formerCeiling.apertureResponse=1.0f;
+                formerCeiling.apertureRadius=24.0f;
+                formerCeiling.apertureSoftness=.12f;
+                formerCeiling.apertureCatEye=.82f;
+                formerCeiling.apertureBokehSwirl=6.0f;
+                saveISO("480-former-aperture-range-ceiling.tiff",displayPreview(render(
+                    engine,device,queue,iso,isoWidth,isoHeight,formerCeiling)));
+                auto extendedCeiling=formerCeiling;
+                extendedCeiling.apertureRadius=40.0f;
+                extendedCeiling.apertureBokehSwirl=12.0f;
+                saveISO("481-extended-aperture-range-ceiling.tiff",displayPreview(render(
+                    engine,device,queue,iso,isoWidth,isoHeight,extendedCeiling)));
+                auto bokehSwirl=LDBNeutralOpticsParameters(isoWidth,isoHeight);
+                bokehSwirl.responseFieldOnset=.11f;
+                bokehSwirl.responseFieldFalloff=1.06f;
+                bokehSwirl.apertureResponse=.90f;
+                bokehSwirl.apertureRadius=18.0f;
+                bokehSwirl.apertureSoftness=.20f;
+                bokehSwirl.apertureCatEye=.68f;
+                bokehSwirl.apertureBokehSwirl=5.0f;
+                saveISO("482-demo-bokeh-swirl-revised.tiff",displayPreview(render(
+                    engine,device,queue,iso,isoWidth,isoHeight,bokehSwirl)));
+                auto petzval=LDBNeutralOpticsParameters(isoWidth,isoHeight);
+                petzval.responseFieldOnset=.11f;
+                petzval.responseFieldFalloff=1.12f;
+                petzval.fieldCenter={.48f,.52f};
+                petzval.cornerSharpnessLoss=1.6f;
+                petzval.fieldCurvature=1.7f;
+                petzval.astigmatism=.78f;
+                petzval.tangentialSmear=.72f;
+                petzval.apertureResponse=.88f;
+                petzval.apertureRadius=18.0f;
+                petzval.apertureShape=1;
+                petzval.apertureBladeCount=8;
+                petzval.apertureBladeCurvature=.72f;
+                petzval.apertureSoftness=.20f;
+                petzval.apertureCatEye=.80f;
+                petzval.apertureAspect=1.16f;
+                petzval.apertureBokehSwirl=5.0f;
+                saveISO("483-demo-petzval-field-revised.tiff",displayPreview(render(
+                    engine,device,queue,iso,isoWidth,isoHeight,petzval)));
+            }
+            if(passNumber==98) {
+                saveISO("486-bokeh-boundary-chart-source.tiff",displayPreview(iso));
+                auto revised=LDBNeutralOpticsParameters(isoWidth,isoHeight);
+                revised.responseFieldOnset=.09f;
+                revised.responseFieldFalloff=.92f;
+                revised.apertureResponse=.96f;
+                revised.apertureRadius=21.0f;
+                revised.apertureSoftness=.18f;
+                revised.apertureCatEye=.76f;
+                revised.apertureBokehSwirl=8.0f;
+                saveISO("487-demo-bokeh-swirl-strengthened.tiff",displayPreview(render(
+                    engine,device,queue,iso,isoWidth,isoHeight,revised)));
+                auto stress=revised;
+                stress.responseFieldOnset=0.0f;
+                stress.responseFieldFalloff=.55f;
+                stress.apertureResponse=1.0f;
+                stress.apertureRadius=48.0f;
+                stress.apertureSoftness=.08f;
+                stress.apertureCatEye=1.0f;
+                stress.apertureBokehSwirl=12.0f;
+                saveISO("488-maximum-bokeh-boundary-stress.tiff",displayPreview(render(
+                    engine,device,queue,iso,isoWidth,isoHeight,stress)));
+            }
             if(passNumber>=79) {
                 saveISO("346-petzval-iso-source.tiff",displayPreview(iso));
                 auto petzvalField=LDBNeutralOpticsParameters(isoWidth,isoHeight);
@@ -1465,6 +1631,76 @@ int main(int argc, char** argv) {
             };
             auto neutralReal = LDBNeutralOpticsParameters(realWidth, realHeight);
             neutralReal.workingColorSpace = LDBWorkingColorSpaceDaVinciIntermediate;
+            if(passNumber==96) {
+                saveReal("477-causal-optical-real-source.tiff",real);
+                auto combined=neutralReal;
+                combined.responseFieldOnset=.10f;
+                combined.responseFieldFalloff=.95f;
+                combined.cornerSharpnessLoss=1.35f;
+                combined.fieldCurvature=1.05f;
+                combined.astigmatism=.36f;
+                combined.radialSmear=.28f;
+                combined.tangentialSmear=.46f;
+                combined.lateralCARed=.72f;
+                combined.lateralCABlue=-.94f;
+                combined.longitudinalCA=.38f;
+                combined.apertureResponse=.48f;
+                combined.apertureRadius=11.0f;
+                combined.apertureShape=1;
+                combined.apertureBladeCount=7;
+                combined.apertureBladeCurvature=.62f;
+                combined.apertureSoftness=.22f;
+                combined.apertureCatEye=.32f;
+                combined.apertureBokehSwirl=1.8f;
+                saveReal("478-combined-causal-optics-real.tiff",render(
+                    engine,device,queue,real,realWidth,realHeight,combined));
+            }
+            if(passNumber==97) {
+                saveReal("484-expanded-aperture-real-source.tiff",real);
+                auto extended=neutralReal;
+                extended.responseFieldOnset=.11f;
+                extended.responseFieldFalloff=1.06f;
+                extended.apertureResponse=.90f;
+                extended.apertureRadius=18.0f;
+                extended.apertureSoftness=.20f;
+                extended.apertureCatEye=.68f;
+                extended.apertureBokehSwirl=5.0f;
+                saveReal("485-expanded-aperture-real-result.tiff",render(
+                    engine,device,queue,real,realWidth,realHeight,extended));
+            }
+            if(passNumber==98) {
+                saveReal("489-bokeh-boundary-real-source.tiff",real);
+                auto revised=neutralReal;
+                revised.responseFieldOnset=.09f;
+                revised.responseFieldFalloff=.92f;
+                revised.apertureResponse=.96f;
+                revised.apertureRadius=21.0f;
+                revised.apertureSoftness=.18f;
+                revised.apertureCatEye=.76f;
+                revised.apertureBokehSwirl=8.0f;
+                saveReal("490-demo-bokeh-swirl-real.tiff",render(
+                    engine,device,queue,real,realWidth,realHeight,revised));
+            }
+            if(passNumber==95) {
+                saveReal("470-peripheral-prism-defocus-real-source.tiff",real);
+                auto reconstruction=neutralReal;
+                reconstruction.prismDistribution=LDBPrismRadialField;
+                reconstruction.prismAmount=.46f;
+                reconstruction.prismDispersion=.36f;
+                reconstruction.fieldAspect=1.72f;
+                reconstruction.responseFieldOnset=.30f;
+                reconstruction.responseFieldFalloff=.88f;
+                reconstruction.cornerSharpnessLoss=1.12f;
+                reconstruction.fieldCurvature=.48f;
+                reconstruction.astigmatism=.18f;
+                reconstruction.tangentialSmear=.18f;
+                reconstruction.lateralCARed=.55f;
+                reconstruction.lateralCABlue=-.72f;
+                reconstruction.microContrast=-.18f;
+                reconstruction.fineDetail=-.10f;
+                saveReal("471-peripheral-prism-defocus-real.tiff",render(
+                    engine,device,queue,real,realWidth,realHeight,reconstruction));
+            }
             if(passNumber>=89&&passNumber<=91) {
                 const bool revisedWear=passNumber>=90;
                 const bool refinedWear=passNumber==91;
@@ -1512,6 +1748,53 @@ int main(int argc, char** argv) {
                 saveReal("408-internal-strength-real-amount-6.tiff",render(
                     engine,device,queue,real,realWidth,realHeight,contamination));
             }
+            if(passNumber==95) {
+                save("463-prism-distribution-chart-source.tiff",displayPreview(input));
+                auto prism=LDBNeutralOpticsParameters(width,height);
+                prism.prismAmount=.72f;
+                prism.prismDirection=12.0f;
+                prism.prismDispersion=.48f;
+                prism.prismEdgeBias=.55f;
+                prism.prismSoftness=.38f;
+                save("464-prism-linear-edge.tiff",displayPreview(render(
+                    engine,device,queue,input,width,height,prism)));
+                prism.prismDistribution=LDBPrismUniform;
+                save("465-prism-uniform.tiff",displayPreview(render(
+                    engine,device,queue,input,width,height,prism)));
+                prism.prismDistribution=LDBPrismBilateral;
+                prism.fieldAspect=1.65f;
+                prism.fieldRotation=8.0f;
+                prism.responseFieldOnset=.22f;
+                prism.responseFieldFalloff=.78f;
+                save("466-prism-bilateral-field.tiff",displayPreview(render(
+                    engine,device,queue,input,width,height,prism)));
+                prism.prismDistribution=LDBPrismRadialField;
+                prism.prismDirection=0.0f;
+                save("467-prism-radial-field.tiff",displayPreview(render(
+                    engine,device,queue,input,width,height,prism)));
+                prism.prismDistribution=LDBPrismInverseField;
+                prism.prismDirection=12.0f;
+                save("468-prism-inverse-field.tiff",displayPreview(render(
+                    engine,device,queue,input,width,height,prism)));
+                auto reconstruction=LDBNeutralOpticsParameters(width,height);
+                reconstruction.prismDistribution=LDBPrismRadialField;
+                reconstruction.prismAmount=.46f;
+                reconstruction.prismDispersion=.36f;
+                reconstruction.fieldAspect=1.72f;
+                reconstruction.responseFieldOnset=.30f;
+                reconstruction.responseFieldFalloff=.88f;
+                reconstruction.cornerSharpnessLoss=1.12f;
+                reconstruction.fieldCurvature=.48f;
+                reconstruction.astigmatism=.18f;
+                reconstruction.tangentialSmear=.18f;
+                reconstruction.lateralCARed=.55f;
+                reconstruction.lateralCABlue=-.72f;
+                reconstruction.microContrast=-.18f;
+                reconstruction.fineDetail=-.10f;
+                save("469-peripheral-prism-defocus-chart.tiff",displayPreview(render(
+                    engine,device,queue,input,width,height,reconstruction)));
+            }
+
             if(passNumber==87) {
                 saveReal("399-internal-contamination-real-source.tiff",real);
                 auto contamination=neutralReal;

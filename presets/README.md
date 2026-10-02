@@ -6,7 +6,7 @@ same folder.
 
 ## demonstrations
 
-Thirty-one single, moderate educational presets. Dependencies are intentionally enabled where a control would be
+Thirty single, moderate educational presets. Dependencies are intentionally enabled where a control would be
 neutral on its own. `Demo-Depth-Input` requires a depth map on the dedicated
 Depth Map RGB connector and assumes `Near Black` interpretation.
 

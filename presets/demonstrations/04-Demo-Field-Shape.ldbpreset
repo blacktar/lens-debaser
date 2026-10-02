@@ -2,14 +2,14 @@ LensDebaserPreset=2
 # Family: Demo-Field-Shape
 # Strength: Educational
 # Clear focus and chromatic dependencies make Field Center, Aspect, Rotation, Onset and Falloff visible.
-astigmatism=0.32
-cornerSharpnessLoss=0.8
-fieldAspect=1.75
-fieldCenterX=0.44
-fieldCenterY=0.55
-fieldCurvature=0.6
-fieldRotation=24
-lateralCABlue=-0.68
-lateralCARed=0.55
-responseFieldFalloff=1.3
-responseFieldOnset=0.22
+astigmatism=0.52
+cornerSharpnessLoss=1.2
+fieldAspect=1.9
+fieldCenterX=0.42
+fieldCenterY=0.57
+fieldCurvature=0.92
+fieldRotation=28
+lateralCABlue=-1.25
+lateralCARed=1
+responseFieldFalloff=1.24
+responseFieldOnset=0.18

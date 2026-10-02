@@ -1,0 +1,12 @@
+LensDebaserPreset=2
+# Family: ABI v18 Smoke
+# Strength: Prism Inverse Field
+# The prism response should be strongest inside the shaped central field and fade smoothly toward the perimeter.
+fieldAspect=1.35
+fieldRotation=-8
+prismAmount=0.72
+prismDirection=12
+prismDispersion=0.48
+prismDistribution=4
+responseFieldFalloff=0.68
+responseFieldOnset=0.18
