@@ -19,6 +19,8 @@
 /outputs/
 /work/
 /docs/user-guide/guide-*-preview.webp
+# Local record of the last manually uploaded external-guide state.
+/docs/user-guide-published-manifest.json
 /docs/user-guide/
 *.tif
 *.tiff
