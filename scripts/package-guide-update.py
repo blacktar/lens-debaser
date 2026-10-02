@@ -9,6 +9,7 @@ import os
 import plistlib
 import shutil
 import stat
+import zipfile
 from pathlib import Path
 
 
@@ -93,7 +94,9 @@ def bundle() -> None:
     changed, deleted = changes()
     release_version = version()
     destination = OUTPUT_ROOT / f"Lens-Debaser-User-Guide-{release_version}"
-    staging = OUTPUT_ROOT / f".Lens-Debaser-User-Guide-{release_version}.staging"
+    # Do not use a dot-prefixed staging directory: macOS may propagate its
+    # hidden state to descendants even after the directory is renamed.
+    staging = OUTPUT_ROOT / f"Lens-Debaser-User-Guide-{release_version}-staging"
     if staging.exists():
         shutil.rmtree(staging)
     staging.mkdir(parents=True)
@@ -126,7 +129,19 @@ def bundle() -> None:
     for path in destination.rglob("*"):
         ensure_visible(path)
     ensure_visible(destination)
+    archive = OUTPUT_ROOT / f"Lens-Debaser-User-Guide-{release_version}-update.zip"
+    if archive.exists():
+        archive.unlink()
+    with zipfile.ZipFile(archive, "w", compression=zipfile.ZIP_DEFLATED,
+                         compresslevel=6) as output:
+        for path in sorted(destination.rglob("*")):
+            if path.is_file():
+                # Archive paths are relative to the hosted guide root. There is
+                # deliberately no version-named wrapper directory.
+                output.write(path, path.relative_to(destination).as_posix())
+    ensure_visible(archive)
     print(f"Created {destination}")
+    print(f"Created {archive} (extract directly into the hosted guide root)")
     print(f"Changed/new files: {len(changed)}; hosted deletions: {len(deleted)}")
 
 

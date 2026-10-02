@@ -88,7 +88,9 @@ packaged, committed, and pushed to GitHub. See the
 
 The externally hosted user guide follows the same incremental rule. For a
 signed-off build, `make guide-update` creates a versioned manual-upload folder
-containing only HTML and image files changed since the last confirmed upload.
+and matching ZIP containing only HTML and image files changed since the last
+confirmed upload. The ZIP has no wrapper directory and can be extracted directly
+into the hosted guide root.
 After those files are uploaded and checked on the public page,
 `make guide-publish-record` records the new baseline.
 

@@ -45,9 +45,11 @@ For every signed-off build that changes the guide or any displayed image:
    content has changed.
 3. Run `make guide-update-status` to review the exact hosted paths that changed,
    were added, or were removed since the last confirmed manual upload.
-4. Run `make guide-update`. The resulting versioned folder under
-   `releases/user-guide-updates/` contains only the changed/new files, preserving
+4. Run `make guide-update`. The resulting versioned folder and ZIP under
+   `releases/user-guide-updates/` contain only the changed/new files, preserving
    their paths below `docs/user-guide`, plus a list of hosted files to delete.
+   The ZIP has no version-named wrapper directory: extract it directly into the
+   hosted guide root.
 5. Upload and replace those files manually at the public guide host. Preserve the
    included directory structure, then check the live page, images, navigation,
    before/after controls, and download links.
