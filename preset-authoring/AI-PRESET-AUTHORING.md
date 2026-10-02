@@ -1,5 +1,11 @@
 # Create Lens Debaser presets with an AI assistant
 
+> **Highly experimental:** AI-assisted preset generation can produce invalid
+> files, misunderstand dependencies, choose visually poor combinations, or
+> behave unpredictably across different footage. Treat every generated preset
+> as an untrusted creative starting point. Validate it, inspect it at full
+> resolution and in motion, and retain known-good versions while testing.
+
 Lens Debaser presets are small, editable text files. You can describe an optical response in ordinary language and ask an AI assistant to create a finished, downloadable `.ldbpreset`, check it against the supplied schema, and revise it after you look at the result in Resolve. The AI client performs the file creation; you do not need a command line, programming knowledge or a text editor.
 
 This is creative optical design, not a request for a scientifically exact lens prescription. The useful target is a coherent, controllable image response that renders quickly and behaves well across faces, highlights, texture, motion and frame edges.
