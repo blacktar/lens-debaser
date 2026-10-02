@@ -15,9 +15,11 @@ TEST_BIN := $(BUILD)/ldb-optics-tests
 VISUAL_BIN := $(BUILD)/ldb-optics-visual-validation
 BENCHMARK_BIN := $(BUILD)/ldb-optics-benchmark
 APERTURE_CHART_BIN := $(BUILD)/ldb-aperture-chart
+SYNTHETIC_OPTICAL_CHART_BIN := $(BUILD)/ldb-synthetic-optical-chart
 GUIDE_EXAMPLES_BIN := $(BUILD)/ldb-guide-examples
 GUIDE_EXAMPLES_DIR := docs/user-guide/images/examples
 APERTURE_CHART := outputs/aperture-pupil-test-acescg-linear.tiff
+SYNTHETIC_OPTICAL_CHART := inputs/redistributable/LDB-Synthetic-Optical-Chart.png
 RESOLVE_OFX := /Library/Application Support/Blackmagic Design/DaVinci Resolve/Developer/OpenFX
 OFX_INCLUDE := $(RESOLVE_OFX)/OpenFX-1.4/include
 OFX_SUPPORT_INCLUDE := $(RESOLVE_OFX)/Support/include
@@ -42,7 +44,7 @@ VISUAL_PASS_ID := 99
 VISUAL_PASS_LABEL := Visual Pass $(VISUAL_PASS_ID) - Progressive Bokeh Swirl Response
 VALIDATION_OUTPUT := $(VALIDATION_ROOT)/passes/pass-$(VISUAL_PASS_ID)
 
-.PHONY: all ofx validate version-check performance-test deploy release aperture-chart guide-examples guide-examples-glare guide-examples-presets-166 guide-examples-presets-166b guide-examples-presets-167 optical-model-validation optical-model-benchmark full-library-validation user-guide guide-update guide-update-status guide-publish-record presets preset-test install install-user test visual-test visual-check visual-rebuild clean
+.PHONY: all ofx validate version-check performance-test deploy release aperture-chart synthetic-optical-chart guide-examples guide-examples-glare guide-examples-presets-166 guide-examples-presets-166b guide-examples-presets-167 optical-model-validation optical-model-benchmark full-library-validation user-guide guide-update guide-update-status guide-publish-record presets preset-test install install-user test visual-test visual-check visual-rebuild clean
 
 all: $(METAL_LIB) $(TEST_BIN) $(VISUAL_BIN) $(BENCHMARK_BIN)
 
@@ -131,8 +133,8 @@ $(VISUAL_BIN): tests/VisualValidation.mm src/engine/LDBOpticsEngine.mm include/L
 $(GUIDE_EXAMPLES_BIN): tests/GuideExamples.mm tests/VisualValidation.mm src/engine/LDBOpticsEngine.mm include/LDBOpticsEngine.h include/LDBOpticsParameters.h include/LDBColorReference.h | $(BUILD)
 	$(CXX) -std=c++20 -fobjc-arc -arch arm64 -Iinclude -Itests tests/GuideExamples.mm src/engine/LDBOpticsEngine.mm -o $@ -framework Foundation -framework Metal -framework CoreGraphics -framework ImageIO
 
-guide-examples: $(METAL_LIB) $(GUIDE_EXAMPLES_BIN) presets
-	@for reference in inputs/redistributable/ISO_12233-reschart.tif inputs/redistributable/OGC-TERA-CHART-1.png inputs/redistributable/iphone_milano_dwg_1.tif inputs/redistributable/iphone_milano2___dwg.tif inputs/redistributable/iphone_milano3_dwg.tif inputs/redistributable/Resolve-DWG-Intermediate-to-Rec709-Gamma24-Guide.cube; do test -f "$$reference" || { echo "ERROR: Required guide source is missing: $$reference" >&2; exit 1; }; done
+guide-examples: $(METAL_LIB) $(GUIDE_EXAMPLES_BIN) $(SYNTHETIC_OPTICAL_CHART) presets
+	@for reference in inputs/redistributable/ISO_12233-reschart.tif $(SYNTHETIC_OPTICAL_CHART) inputs/redistributable/iphone_milano_dwg_1.tif inputs/redistributable/iphone_milano2___dwg.tif inputs/redistributable/iphone_milano3_dwg.tif inputs/redistributable/Resolve-DWG-Intermediate-to-Rec709-Gamma24-Guide.cube; do test -f "$$reference" || { echo "ERROR: Required guide source is missing: $$reference" >&2; exit 1; }; done
 	rm -rf "$(GUIDE_EXAMPLES_DIR)"
 	mkdir -p "$(GUIDE_EXAMPLES_DIR)"
 	$(GUIDE_EXAMPLES_BIN) $(METAL_LIB) "$(CURDIR)" "$(GUIDE_EXAMPLES_DIR)"
@@ -140,32 +142,32 @@ guide-examples: $(METAL_LIB) $(GUIDE_EXAMPLES_BIN) presets
 
 # Refresh only examples whose rendered appearance depends on the independent
 # glare threshold/model. Existing reviewed examples remain byte-for-byte intact.
-guide-examples-glare: $(METAL_LIB) $(GUIDE_EXAMPLES_BIN)
-	@for reference in inputs/redistributable/ISO_12233-reschart.tif inputs/redistributable/OGC-TERA-CHART-1.png inputs/redistributable/iphone_milano_dwg_1.tif inputs/redistributable/iphone_milano2___dwg.tif inputs/redistributable/iphone_milano3_dwg.tif inputs/redistributable/Resolve-DWG-Intermediate-to-Rec709-Gamma24-Guide.cube; do test -f "$$reference" || { echo "ERROR: Required guide source is missing: $$reference" >&2; exit 1; }; done
+guide-examples-glare: $(METAL_LIB) $(GUIDE_EXAMPLES_BIN) $(SYNTHETIC_OPTICAL_CHART)
+	@for reference in inputs/redistributable/ISO_12233-reschart.tif $(SYNTHETIC_OPTICAL_CHART) inputs/redistributable/iphone_milano_dwg_1.tif inputs/redistributable/iphone_milano2___dwg.tif inputs/redistributable/iphone_milano3_dwg.tif inputs/redistributable/Resolve-DWG-Intermediate-to-Rec709-Gamma24-Guide.cube; do test -f "$$reference" || { echo "ERROR: Required guide source is missing: $$reference" >&2; exit 1; }; done
 	@mkdir -p "$(GUIDE_EXAMPLES_DIR)"
 	$(GUIDE_EXAMPLES_BIN) $(METAL_LIB) "$(CURDIR)" "$(GUIDE_EXAMPLES_DIR)" changed-glare
 	./scripts/build-user-guide.py
 
 # Refresh only the demonstration and cinematic examples revised after the
 # 1.65 optical-model review. All previously reviewed images remain untouched.
-guide-examples-presets-166: $(METAL_LIB) $(GUIDE_EXAMPLES_BIN) presets
-	@for reference in inputs/redistributable/ISO_12233-reschart.tif inputs/redistributable/OGC-TERA-CHART-1.png inputs/redistributable/iphone_milano_dwg_1.tif inputs/redistributable/iphone_milano2___dwg.tif inputs/redistributable/iphone_milano3_dwg.tif inputs/redistributable/Resolve-DWG-Intermediate-to-Rec709-Gamma24-Guide.cube; do test -f "$$reference" || { echo "ERROR: Required guide source is missing: $$reference" >&2; exit 1; }; done
+guide-examples-presets-166: $(METAL_LIB) $(GUIDE_EXAMPLES_BIN) $(SYNTHETIC_OPTICAL_CHART) presets
+	@for reference in inputs/redistributable/ISO_12233-reschart.tif $(SYNTHETIC_OPTICAL_CHART) inputs/redistributable/iphone_milano_dwg_1.tif inputs/redistributable/iphone_milano2___dwg.tif inputs/redistributable/iphone_milano3_dwg.tif inputs/redistributable/Resolve-DWG-Intermediate-to-Rec709-Gamma24-Guide.cube; do test -f "$$reference" || { echo "ERROR: Required guide source is missing: $$reference" >&2; exit 1; }; done
 	@mkdir -p "$(GUIDE_EXAMPLES_DIR)"
 	$(GUIDE_EXAMPLES_BIN) $(METAL_LIB) "$(CURDIR)" "$(GUIDE_EXAMPLES_DIR)" changed-presets-166
 	rm -f "$(GUIDE_EXAMPLES_DIR)"/blend-iso-100.png "$(GUIDE_EXAMPLES_DIR)"/blend-iso-50.png
 	./scripts/build-user-guide.py
 
 # Second focused review: only presets adjusted after the first 1.66 render.
-guide-examples-presets-166b: $(METAL_LIB) $(GUIDE_EXAMPLES_BIN) presets
-	@for reference in inputs/redistributable/ISO_12233-reschart.tif inputs/redistributable/OGC-TERA-CHART-1.png inputs/redistributable/iphone_milano_dwg_1.tif inputs/redistributable/iphone_milano2___dwg.tif inputs/redistributable/iphone_milano3_dwg.tif inputs/redistributable/Resolve-DWG-Intermediate-to-Rec709-Gamma24-Guide.cube; do test -f "$$reference" || { echo "ERROR: Required guide source is missing: $$reference" >&2; exit 1; }; done
+guide-examples-presets-166b: $(METAL_LIB) $(GUIDE_EXAMPLES_BIN) $(SYNTHETIC_OPTICAL_CHART) presets
+	@for reference in inputs/redistributable/ISO_12233-reschart.tif $(SYNTHETIC_OPTICAL_CHART) inputs/redistributable/iphone_milano_dwg_1.tif inputs/redistributable/iphone_milano2___dwg.tif inputs/redistributable/iphone_milano3_dwg.tif inputs/redistributable/Resolve-DWG-Intermediate-to-Rec709-Gamma24-Guide.cube; do test -f "$$reference" || { echo "ERROR: Required guide source is missing: $$reference" >&2; exit 1; }; done
 	@mkdir -p "$(GUIDE_EXAMPLES_DIR)"
 	$(GUIDE_EXAMPLES_BIN) $(METAL_LIB) "$(CURDIR)" "$(GUIDE_EXAMPLES_DIR)" changed-presets-166b
 	./scripts/build-user-guide.py
 
 # 1.67 changes only Demo 25's rendered guide appearance. Preserve every
 # previously reviewed guide image byte-for-byte and replace these five files.
-guide-examples-presets-167: $(METAL_LIB) $(GUIDE_EXAMPLES_BIN) presets
-	@for reference in inputs/redistributable/ISO_12233-reschart.tif inputs/redistributable/OGC-TERA-CHART-1.png inputs/redistributable/iphone_milano_dwg_1.tif inputs/redistributable/iphone_milano2___dwg.tif inputs/redistributable/iphone_milano3_dwg.tif inputs/redistributable/Resolve-DWG-Intermediate-to-Rec709-Gamma24-Guide.cube; do test -f "$$reference" || { echo "ERROR: Required guide source is missing: $$reference" >&2; exit 1; }; done
+guide-examples-presets-167: $(METAL_LIB) $(GUIDE_EXAMPLES_BIN) $(SYNTHETIC_OPTICAL_CHART) presets
+	@for reference in inputs/redistributable/ISO_12233-reschart.tif $(SYNTHETIC_OPTICAL_CHART) inputs/redistributable/iphone_milano_dwg_1.tif inputs/redistributable/iphone_milano2___dwg.tif inputs/redistributable/iphone_milano3_dwg.tif inputs/redistributable/Resolve-DWG-Intermediate-to-Rec709-Gamma24-Guide.cube; do test -f "$$reference" || { echo "ERROR: Required validation source is missing: $$reference" >&2; exit 1; }; done
 	@mkdir -p "$(GUIDE_EXAMPLES_DIR)"
 	$(GUIDE_EXAMPLES_BIN) $(METAL_LIB) "$(CURDIR)" "$(GUIDE_EXAMPLES_DIR)" changed-presets-167
 	./scripts/build-user-guide.py
@@ -188,8 +190,8 @@ optical-model-benchmark: $(METAL_LIB) $(BENCHMARK_BIN)
 # Render the complete current demonstration and cinematic-preset library into
 # an isolated candidate folder. Existing guide images remain untouched until
 # the candidate has been reviewed and explicitly accepted.
-full-library-validation: $(METAL_LIB) $(GUIDE_EXAMPLES_BIN)
-	@for reference in inputs/redistributable/ISO_12233-reschart.tif inputs/redistributable/OGC-TERA-CHART-1.png inputs/redistributable/iphone_milano_dwg_1.tif inputs/redistributable/iphone_milano2___dwg.tif inputs/redistributable/iphone_milano3_dwg.tif inputs/redistributable/Resolve-DWG-Intermediate-to-Rec709-Gamma24-Guide.cube; do test -f "$$reference" || { echo "ERROR: Required validation source is missing: $$reference" >&2; exit 1; }; done
+full-library-validation: $(METAL_LIB) $(GUIDE_EXAMPLES_BIN) $(SYNTHETIC_OPTICAL_CHART)
+	@for reference in inputs/redistributable/ISO_12233-reschart.tif $(SYNTHETIC_OPTICAL_CHART) inputs/redistributable/iphone_milano_dwg_1.tif inputs/redistributable/iphone_milano2___dwg.tif inputs/redistributable/iphone_milano3_dwg.tif inputs/redistributable/Resolve-DWG-Intermediate-to-Rec709-Gamma24-Guide.cube; do test -f "$$reference" || { echo "ERROR: Required validation source is missing: $$reference" >&2; exit 1; }; done
 	rm -rf outputs/experiments/full-library-candidate
 	mkdir -p outputs/experiments/full-library-candidate
 	$(GUIDE_EXAMPLES_BIN) $(METAL_LIB) "$(CURDIR)" outputs/experiments/full-library-candidate
@@ -216,11 +218,19 @@ $(BENCHMARK_BIN): tests/MetalBenchmark.mm src/engine/LDBOpticsEngine.mm include/
 $(APERTURE_CHART_BIN): tests/ApertureChartGenerator.cpp | $(BUILD)
 	$(CXX) -std=c++20 -arch arm64 $< -o $@
 
+$(SYNTHETIC_OPTICAL_CHART_BIN): tests/SyntheticOpticalChartGenerator.mm | $(BUILD)
+	$(CXX) -std=c++20 -fobjc-arc -arch arm64 $< -o $@ -framework Foundation -framework CoreGraphics -framework ImageIO
+
 aperture-chart: $(APERTURE_CHART)
+
+synthetic-optical-chart: $(SYNTHETIC_OPTICAL_CHART)
 
 $(APERTURE_CHART): $(APERTURE_CHART_BIN)
 	mkdir -p outputs
 	$(APERTURE_CHART_BIN) $(APERTURE_CHART)
+
+$(SYNTHETIC_OPTICAL_CHART): $(SYNTHETIC_OPTICAL_CHART_BIN)
+	$(SYNTHETIC_OPTICAL_CHART_BIN) $(SYNTHETIC_OPTICAL_CHART)
 
 test: all
 	$(TEST_BIN) $(METAL_LIB)

@@ -229,14 +229,14 @@ int main(int argc,char** argv) {
         constexpr uint32_t chartW=960,chartH=540;
         constexpr uint32_t milanoW=960,milanoH=455; // Preserve the 4224:2000 capture aspect.
         auto iso=loadRec709Gamma24Chart((root/"inputs/redistributable/ISO_12233-reschart.tif").c_str(),chartW,chartH);
-        auto ogc=loadRec709Gamma24Chart((root/"inputs/redistributable/OGC-TERA-CHART-1.png").c_str(),chartW,chartH);
+        auto optical=loadRec709Gamma24Chart((root/"inputs/redistributable/LDB-Synthetic-Optical-Chart.png").c_str(),chartW,chartH);
         uint32_t mw=0,mh=0; auto milano1Encoded=loadEncodedTIFF((root/"inputs/redistributable/iphone_milano_dwg_1.tif").c_str(),mw,mh);
         auto milano1=resizePixels(convertEncoding(milano1Encoded,LDBWorkingColorSpaceDaVinciIntermediate,false),mw,mh,milanoW,milanoH);
         auto milano2Encoded=loadEncodedTIFF((root/"inputs/redistributable/iphone_milano2___dwg.tif").c_str(),mw,mh);
         auto milano2=resizePixels(convertEncoding(milano2Encoded,LDBWorkingColorSpaceDaVinciIntermediate,false),mw,mh,milanoW,milanoH);
         auto milano3Encoded=loadEncodedTIFF((root/"inputs/redistributable/iphone_milano3_dwg.tif").c_str(),mw,mh);
         auto milano3=resizePixels(convertEncoding(milano3Encoded,LDBWorkingColorSpaceDaVinciIntermediate,false),mw,mh,milanoW,milanoH);
-        const GuideSource sources[]={{"iso",&iso,chartW,chartH},{"ogc",&ogc,chartW,chartH},
+        const GuideSource sources[]={{"iso",&iso,chartW,chartH},{"optical",&optical,chartW,chartH},
             {"milano1",&milano1,milanoW,milanoH},{"milano2",&milano2,milanoW,milanoH},
             {"milano3",&milano3,milanoW,milanoH}};
 

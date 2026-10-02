@@ -54,10 +54,6 @@ Academy Color Encoding System (ACES)
 ARRI Log C colour science and official validation LUTs
   https://www.arri.com/en/learn-help/learn-help-camera-system/image-science/log-c
 
-MYT Works camera-resolution test chart
-  https://www.mytworks.com/resources/camera-resolution-test-chart/
-
-
 Implemented optical-model design references
 -------------------------------------------
 

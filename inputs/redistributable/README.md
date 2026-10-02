@@ -18,12 +18,12 @@ license](../../LICENSE) as Lens Debaser.
 | `iphone_milano2___dwg.tif` | 4224 x 2000 | Color-graded iPhone 17 Pro, 1.55× anamorphic, ProRes RAW Open Gate validation image | `c5891cd11b7e9580f0c3e835bb7fb630924e6d13679961a93aaf22c877112f0a` |
 | `iphone_milano3_dwg.tif` | 4224 x 2000 | Color-graded iPhone 17 Pro, 1.55× anamorphic, ProRes RAW Open Gate validation image | `698625f0082ca1757ad3b3ec5009a25d455c491fc3f96a0293e094d7e3a02ce9` |
 | `ISO_12233-reschart.tif` | 6144 x 3836 | Resolution and detail-transfer validation | `791d9c26510557a4facdaa2fa857c7a6ffc761574b804cf373be98acdbc76305` |
-| `OGC-TERA-CHART-1.png` | 3689 x 2208 | Geometry, field and sharpness validation | `fda68ad2e333d608d3139a495da129304c9db3ca7408df39f27f7622a25a9671` |
+| `LDB-Synthetic-Optical-Chart.png` | 4096 x 2304 | Project-generated Siemens stars, line pairs, slanted edges, neutral patches and framing references | `b52eefa08403252c09c247e2ce12aaeec1590269f1b190ad773ee7a3a518b35b` |
 | `Resolve-DWG-Intermediate-to-Rec709-Gamma24-Guide.cube` | 65³ | Resolve-generated CST for Milano guide display images | `6708e96fc9863b0ea6bbbf0de5a98d73823a97a2bf51a705e84219bd97c71f0f` |
 
 These are source inputs, not generated visual-pass outputs. Tests should select
 the input suited to the behaviour under review: real footage for perceptual
-effects, the ISO chart for detail and aberration, and the OGC/TERA chart for
+effects, the ISO chart for detail and aberration, and the synthetic chart for
 geometry and field behaviour.
 
 ## Project-generated imagery
@@ -34,6 +34,12 @@ inclusion and redistribution. This approval applies to the generated image
 content, but does not require every historical render to be committed; retain
 only assets that have an ongoing validation, documentation or demonstration
 purpose.
+
+`LDB-Synthetic-Optical-Chart.png` is generated deterministically from
+`tests/SyntheticOpticalChartGenerator.mm` with `make synthetic-optical-chart`.
+It is an original project asset rather than a reconstruction of a photographed
+commercial chart. Its clean and processed renders are the accepted optical-chart
+reference for documentation and future validation.
 
 This approval does not automatically cover downloaded third-party material or
 an output that contains, reproduces or is derived from third-party source

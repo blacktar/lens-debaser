@@ -5,8 +5,10 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import plistlib
 import shutil
+import stat
 from pathlib import Path
 
 
@@ -15,6 +17,15 @@ GUIDE_ROOT = ROOT / "docs" / "user-guide"
 STATE_FILE = ROOT / "docs" / "user-guide-published-manifest.json"
 OUTPUT_ROOT = ROOT / "releases" / "user-guide-updates"
 PUBLISHABLE_SUFFIXES = {".html", ".png", ".webp", ".svg", ".jpg", ".jpeg"}
+
+
+def ensure_visible(path: Path) -> None:
+    """Never allow generated upload artifacts to carry macOS hidden flags."""
+    if hasattr(os, "chflags"):
+        hidden_flags = getattr(stat, "UF_HIDDEN", 0) | getattr(stat, "SF_HIDDEN", 0)
+        current_flags = path.stat().st_flags
+        if current_flags & hidden_flags:
+            os.chflags(path, current_flags & ~hidden_flags)
 
 
 def file_state(path: Path) -> dict[str, int]:
@@ -86,11 +97,15 @@ def bundle() -> None:
     if staging.exists():
         shutil.rmtree(staging)
     staging.mkdir(parents=True)
+    ensure_visible(staging)
     for relative in changed:
         source = GUIDE_ROOT / relative
         target = staging / relative
         target.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copy2(source, target)
+        ensure_visible(target.parent)
+        # copyfile deliberately avoids propagating macOS Finder/BSD metadata.
+        shutil.copyfile(source, target)
+        ensure_visible(target)
     (staging / "deleted-files.txt").write_text(
         ("\n".join(deleted) + "\n") if deleted else "No hosted files to delete.\n",
         encoding="utf-8",
@@ -108,6 +123,9 @@ def bundle() -> None:
     if destination.exists():
         shutil.rmtree(destination)
     staging.rename(destination)
+    for path in destination.rglob("*"):
+        ensure_visible(path)
+    ensure_visible(destination)
     print(f"Created {destination}")
     print(f"Changed/new files: {len(changed)}; hosted deletions: {len(deleted)}")
 
