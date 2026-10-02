@@ -15,7 +15,7 @@ with (ROOT / "resources" / "Info.plist").open("rb") as stream:
     VERSION = plistlib.load(stream)["CFBundleShortVersionString"]
 RELEASE_DATE = "2 October 2026"
 RELEASE_DATE_ISO = "2026-10-02"
-RELEASE_SUMMARY = "New in this release: vibe-code your own optical looks with an AI assistant using the included Preset Authoring Kit, alongside flexible prism distribution, smoother causally ordered optics, expanded aperture and bokeh range, and clearer preset editing."
+RELEASE_SUMMARY = "New in this release: vibe-code your own optical looks with an AI assistant using the <a href=\"#ai-presets\">included Preset Authoring Kit</a>, alongside flexible prism distribution, smoother causally ordered optics, expanded aperture and bokeh range, and clearer preset editing."
 
 groups = [
  ("presets","Setup","Presets",[("Preset","Golden Portrait Prime — Medium","select"),("Load","Load","button"),("Save","Save","button")]),
