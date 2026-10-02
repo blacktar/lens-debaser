@@ -44,7 +44,7 @@ VISUAL_PASS_ID := 99
 VISUAL_PASS_LABEL := Visual Pass $(VISUAL_PASS_ID) - Progressive Bokeh Swirl Response
 VALIDATION_OUTPUT := $(VALIDATION_ROOT)/passes/pass-$(VISUAL_PASS_ID)
 
-.PHONY: all ofx validate version-check performance-test deploy release aperture-chart synthetic-optical-chart guide-examples guide-examples-glare guide-examples-presets-166 guide-examples-presets-166b guide-examples-presets-167 optical-model-validation optical-model-benchmark full-library-validation user-guide guide-update guide-update-status guide-publish-record presets preset-test install install-user test visual-test visual-check visual-rebuild clean
+.PHONY: all ofx validate version-check performance-test deploy release aperture-chart synthetic-optical-chart guide-examples guide-examples-glare guide-examples-presets-166 guide-examples-presets-166b guide-examples-presets-167 optical-model-validation optical-model-benchmark full-library-validation user-guide guide-update guide-update-status guide-publish-record presets preset-test preset-schema preset-authoring-kit validate-user-preset install install-user test visual-test visual-check visual-rebuild clean
 
 all: $(METAL_LIB) $(TEST_BIN) $(VISUAL_BIN) $(BENCHMARK_BIN)
 
@@ -52,7 +52,7 @@ ofx: $(OFX_BINARY)
 
 install: install-user
 
-release: validate ofx
+release: validate preset-authoring-kit ofx
 	./scripts/package-release.sh
 
 # Deployment validation is a correctness and visual-output gate. Keep the
@@ -73,6 +73,16 @@ presets:
 preset-test: presets
 	@test "$$(find presets/demonstrations presets/cinematic-lenses -name '*.ldbpreset' -type f | wc -l | tr -d ' ')" = 103 || { echo "ERROR: Expected 103 generated factory presets." >&2; exit 1; }
 	@! grep -REn '^(inputWorkingSpace|diagnosticView|depthSource)=' presets/demonstrations presets/cinematic-lenses || { echo "ERROR: A processing-only or removed control was serialized in a factory preset." >&2; exit 1; }
+
+preset-schema:
+	./scripts/build-preset-schema.py
+
+preset-authoring-kit: preset-schema
+	./scripts/validate-preset.py preset-authoring/Clean-Slate-Template.ldbpreset preset-authoring/examples/*.ldbpreset
+
+validate-user-preset: preset-schema
+	@test -n "$(PRESET)" || { echo "ERROR: Supply PRESET=/absolute/path/My-Lens.ldbpreset" >&2; exit 1; }
+	./scripts/validate-preset.py "$(PRESET)"
 
 # One command for a Resolve test build: validate the engine and visual outputs,
 # then install only if every preceding step succeeds.

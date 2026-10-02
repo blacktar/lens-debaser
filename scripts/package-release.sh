@@ -15,11 +15,15 @@ cleanup() {
 trap cleanup EXIT
 
 make -C "$project_dir" ofx presets
-mkdir -p "$stage_dir/Presets" "$release_root"
+mkdir -p "$stage_dir/Presets" "$stage_dir/Preset Authoring Kit/examples" "$release_root"
 ditto "$project_dir/build/LensDebaser.ofx.bundle" "$stage_dir/LensDebaser.ofx.bundle"
 cp -R "$project_dir/presets/demonstrations" "$stage_dir/Presets/Demonstrations"
 cp -R "$project_dir/presets/cinematic-lenses" "$stage_dir/Presets/Cinematic Lenses"
 cp "$project_dir/presets/README.md" "$stage_dir/Presets/README.md"
+cp "$project_dir/preset-authoring/AI-PRESET-AUTHORING.md" "$stage_dir/Preset Authoring Kit/README.md"
+cp "$project_dir/preset-authoring/Lens-Debaser-Preset-Schema.json" "$stage_dir/Preset Authoring Kit/Lens-Debaser-Preset-Schema.json"
+cp "$project_dir/preset-authoring/Clean-Slate-Template.ldbpreset" "$stage_dir/Preset Authoring Kit/Clean-Slate-Template.ldbpreset"
+cp "$project_dir/preset-authoring/examples/"*.ldbpreset "$stage_dir/Preset Authoring Kit/examples/"
 cp "$project_dir/scripts/install-release.sh" "$stage_dir/Install Lens Debaser.command"
 chmod +x "$stage_dir/Install Lens Debaser.command"
 

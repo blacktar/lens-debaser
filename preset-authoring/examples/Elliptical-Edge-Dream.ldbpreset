@@ -1,0 +1,18 @@
+LensDebaserPreset=2
+# A compound example showing explicit Aperture Response and field routing.
+apertureResponse=0.58
+apertureRadius=12
+apertureShape=2
+apertureAspect=1.62
+apertureSoftness=0.34
+apertureCatEye=0.28
+fieldAspect=1.34
+fieldRotation=8
+swirl=0.26
+responseFieldOnset=0.3
+responseFieldFalloff=0.68
+cornerSharpnessLoss=0.44
+tangentialSmear=0.18
+microContrast=-0.16
+fineDetail=-0.1
+effectBlend=0.9

@@ -7,6 +7,7 @@ import argparse
 import json
 import os
 import plistlib
+import re
 import shutil
 import stat
 import zipfile
@@ -38,7 +39,11 @@ def file_state(path: Path) -> dict[str, int]:
 def current_manifest() -> dict[str, dict[str, int]]:
     files: dict[str, dict[str, int]] = {}
     for path in sorted(GUIDE_ROOT.rglob("*")):
-        if path.is_file() and path.suffix.lower() in PUBLISHABLE_SUFFIXES:
+        # Finder may create conflict copies such as "image 2.png". They are
+        # never referenced by the guide and must not enter an upload delta.
+        finder_copy = re.search(r" \d+$", path.stem) is not None
+        if (path.is_file() and path.suffix.lower() in PUBLISHABLE_SUFFIXES
+                and not finder_copy):
             files[path.relative_to(GUIDE_ROOT).as_posix()] = file_state(path)
     return files
 

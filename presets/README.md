@@ -4,6 +4,9 @@ All files are editable plain-text `.ldbpreset` files. Loading one preset in a
 folder populates Lens Debaser's Preset menu with every valid preset in that
 same folder.
 
+To design and validate original presets with an AI assistant, use the
+repository's [Preset Authoring Kit](../preset-authoring/AI-PRESET-AUTHORING.md).
+
 ## demonstrations
 
 Thirty single, moderate educational presets. Dependencies are intentionally enabled where a control would be

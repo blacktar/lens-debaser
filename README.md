@@ -36,6 +36,18 @@ Glass family for the coherent prism controls. Installation copies
 them outside the OFX bundle to
 `~/Library/Application Support/Lens Debaser/Presets`.
 
+## AI-assisted preset authoring
+
+The [Preset Authoring Kit](preset-authoring/AI-PRESET-AUTHORING.md) lets users
+describe a custom optical response to an AI assistant without asking it to
+guess Lens Debaser's controls. It includes a machine-readable schema generated
+from the current OFX implementation, a clean template and worked examples.
+The AI client creates and checks the downloadable `.ldbpreset`; the user does
+not need to assemble files in a text editor or use a command line.
+
+Structural validation does not replace visual evaluation on suitable charts,
+real images and moving footage.
+
 ## Platform and dependencies
 
 - Apple Silicon Mac;
@@ -105,9 +117,10 @@ make release
 
 The command validates the engine, builds the Metal/OpenFX bundle and writes a
 ZIP archive plus SHA-256 checksum into `releases/`. Each archive contains the
-compiled OFX plug-in, compiled Metal library, factory presets, release notes,
-third-party notices and a double-clickable installer. The user guide and its
-example images remain online rather than being duplicated in the archive.
+compiled OFX plug-in, compiled Metal library, factory presets, the AI Preset
+Authoring Kit, release notes, third-party notices and a double-clickable
+installer. The user guide and its example images remain online rather than
+being duplicated in the archive.
 Versioned release archives are published as GitHub release assets so users do
 not need Xcode or the Resolve OpenFX SDK. Download the current build from
 [GitHub Releases](https://github.com/blacktar/lens-debaser/releases).

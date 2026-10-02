@@ -1,0 +1,17 @@
+LensDebaserPreset=2
+# A restrained, relatively light compound response for faces and daylight.
+microContrast=-0.12
+fineDetail=-0.08
+transmissionDensity=0.06
+transmissionColorAmount=0.16
+transmissionR=1.08
+transmissionG=1.01
+transmissionB=0.92
+bloomEnergy=0.12
+bloomThreshold=0.78
+bloomRadius=0.24
+glareEnergy=0.05
+glareThreshold=0.9
+glareRadius=0.18
+responseHighlightKnee=0.3
+effectBlend=0.86
