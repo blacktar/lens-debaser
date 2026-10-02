@@ -44,7 +44,7 @@ VISUAL_PASS_ID := 99
 VISUAL_PASS_LABEL := Visual Pass $(VISUAL_PASS_ID) - Progressive Bokeh Swirl Response
 VALIDATION_OUTPUT := $(VALIDATION_ROOT)/passes/pass-$(VISUAL_PASS_ID)
 
-.PHONY: all ofx validate version-check performance-test deploy release aperture-chart synthetic-optical-chart guide-examples guide-examples-glare guide-examples-presets-166 guide-examples-presets-166b guide-examples-presets-167 optical-model-validation optical-model-benchmark full-library-validation user-guide guide-update guide-update-status guide-publish-record presets preset-test preset-schema preset-authoring-kit validate-user-preset install install-user test visual-test visual-check visual-rebuild clean
+.PHONY: all ofx validate version-check performance-test deploy release aperture-chart synthetic-optical-chart guide-examples guide-examples-glare guide-examples-presets-166 guide-examples-presets-166b guide-examples-presets-167 guide-examples-preset-26 optical-model-validation optical-model-benchmark full-library-validation user-guide guide-update guide-update-status guide-publish-record presets preset-test preset-schema preset-authoring-kit validate-user-preset install install-user test visual-test visual-check visual-rebuild clean
 
 all: $(METAL_LIB) $(TEST_BIN) $(VISUAL_BIN) $(BENCHMARK_BIN)
 
@@ -71,7 +71,7 @@ presets:
 	./scripts/generate-presets.py
 
 preset-test: presets
-	@test "$$(find presets/demonstrations presets/cinematic-lenses -name '*.ldbpreset' -type f | wc -l | tr -d ' ')" = 103 || { echo "ERROR: Expected 103 generated factory presets." >&2; exit 1; }
+	@test "$$(find presets/demonstrations presets/cinematic-lenses -name '*.ldbpreset' -type f | wc -l | tr -d ' ')" = 104 || { echo "ERROR: Expected 104 generated factory presets." >&2; exit 1; }
 	@! grep -REn '^(inputWorkingSpace|diagnosticView|depthSource)=' presets/demonstrations presets/cinematic-lenses || { echo "ERROR: A processing-only or removed control was serialized in a factory preset." >&2; exit 1; }
 
 preset-schema:
@@ -180,6 +180,14 @@ guide-examples-presets-167: $(METAL_LIB) $(GUIDE_EXAMPLES_BIN) $(SYNTHETIC_OPTIC
 	@for reference in inputs/redistributable/ISO_12233-reschart.tif $(SYNTHETIC_OPTICAL_CHART) inputs/redistributable/iphone_milano_dwg_1.tif inputs/redistributable/iphone_milano2___dwg.tif inputs/redistributable/iphone_milano3_dwg.tif inputs/redistributable/Resolve-DWG-Intermediate-to-Rec709-Gamma24-Guide.cube; do test -f "$$reference" || { echo "ERROR: Required validation source is missing: $$reference" >&2; exit 1; }; done
 	@mkdir -p "$(GUIDE_EXAMPLES_DIR)"
 	$(GUIDE_EXAMPLES_BIN) $(METAL_LIB) "$(CURDIR)" "$(GUIDE_EXAMPLES_DIR)" changed-presets-167
+	./scripts/build-user-guide.py
+
+# Render only the five atlas images for the reviewed Internal Field Edge FX
+# signature preset. Existing reviewed examples remain byte-for-byte intact.
+guide-examples-preset-26: $(METAL_LIB) $(GUIDE_EXAMPLES_BIN) $(SYNTHETIC_OPTICAL_CHART) presets
+	@for reference in inputs/redistributable/ISO_12233-reschart.tif $(SYNTHETIC_OPTICAL_CHART) inputs/redistributable/iphone_milano_dwg_1.tif inputs/redistributable/iphone_milano2___dwg.tif inputs/redistributable/iphone_milano3_dwg.tif inputs/redistributable/Resolve-DWG-Intermediate-to-Rec709-Gamma24-Guide.cube; do test -f "$$reference" || { echo "ERROR: Required validation source is missing: $$reference" >&2; exit 1; }; done
+	@mkdir -p "$(GUIDE_EXAMPLES_DIR)"
+	$(GUIDE_EXAMPLES_BIN) $(METAL_LIB) "$(CURDIR)" "$(GUIDE_EXAMPLES_DIR)" changed-preset-26
 	./scripts/build-user-guide.py
 
 # Focused review material for the promoted field-blur and chromatic-ordering

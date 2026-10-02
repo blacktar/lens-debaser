@@ -48,6 +48,10 @@ not need to assemble files in a text editor or use a command line.
 Structural validation does not replace visual evaluation on suitable charts,
 real images and moving footage.
 
+Use the Preset Authoring Kit shipped with the Lens Debaser version being
+targeted. Kits are version-specific because controls, ranges, choices and
+dependencies may change between releases.
+
 ## Platform and dependencies
 
 - Apple Silicon Mac;
@@ -121,6 +125,13 @@ compiled OFX plug-in, compiled Metal library, factory presets, the AI Preset
 Authoring Kit, release notes, third-party notices and a double-clickable
 installer. The user guide and its example images remain online rather than
 being duplicated in the archive.
+
+Every release must regenerate the Preset Authoring Kit schema from the current
+OFX controls and validate its clean template and all included examples before
+packaging. Any added, removed, renamed, reranged or dependency-changed control
+must also be reflected in the kit's user instructions and examples. The
+`make release` dependency chain enforces schema regeneration and structural
+validation; visual usefulness still requires review in Resolve.
 Versioned release archives are published as GitHub release assets so users do
 not need Xcode or the Resolve OpenFX SDK. Download the current build from
 [GitHub Releases](https://github.com/blacktar/lens-debaser/releases).

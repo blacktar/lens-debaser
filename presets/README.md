@@ -4,9 +4,6 @@ All files are editable plain-text `.ldbpreset` files. Loading one preset in a
 folder populates Lens Debaser's Preset menu with every valid preset in that
 same folder.
 
-To design and validate original presets with an AI assistant, use the
-repository's [Preset Authoring Kit](../preset-authoring/AI-PRESET-AUTHORING.md).
-
 ## demonstrations
 
 Thirty single, moderate educational presets. Dependencies are intentionally enabled where a control would be
@@ -15,10 +12,11 @@ Depth Map RGB connector and assumes `Near Black` interpretation.
 
 ## cinematic-lenses
 
-Twenty-five optical-character families, normally supplied at three strengths,
+Twenty-six optical-character families, normally supplied at three strengths,
 including reference-inspired Hawk V-Lite Vintage '74 and Cooke Anamorphic /i
 Special Flare families, Decentered Dream Glass and Edge Prism Glass, plus one
-independently authored Bodycam Edge Stress signature preset.
+independently authored Bodycam Edge Stress and Internal Field Edge FX signature
+presets.
 They are visual, behavior-inspired approximations rather than scientific lens
 profiles or claims of exact matching. Caricature variants are diagnostic and
 creative extremes; Medium is the best starting point; Subtle is intended for

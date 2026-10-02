@@ -577,6 +577,26 @@ def generate_lenses():
         "damageSeed": 28052023,
     }, "Heavy but gradual bodycam edge stress: protected centre, local glass deformation, colored edge separation and mechanical image-circle pressure.")
 
+    # Promoted after Resolve review of the internal-field reconstruction. This
+    # is a single compound signature, not an unreviewed strength triplet.
+    write(d / "26-Internal-Field-Edge-FX.ldbpreset", "Internal Field Edge FX",
+          "Signature", {
+        "fieldAspect": 1.58, "fieldRotation": 0,
+        "fieldCenterX": .50, "fieldCenterY": .50,
+        "responseFieldOnset": .24, "responseFieldFalloff": .82,
+        "cornerSharpnessLoss": 1.42, "fieldCurvature": .72,
+        "astigmatism": .20, "tangentialSmear": .28,
+        "microContrast": -.18, "fineDetail": -.10,
+        "apertureResponse": 1.0, "apertureRadius": 27,
+        "apertureShape": 0, "apertureSoftness": .38,
+        "prismDistribution": 3, "prismAmount": 0,
+        "prismDirection": 0, "prismDispersion": 0,
+        "lateralCARed": .82, "lateralCABlue": -1.04,
+        "longitudinalCA": .14, "longitudinalCARadius": 5.5,
+        "nearFocusR": .72, "nearFocusG": .34, "nearFocusB": 1.0,
+        "farFocusR": .34, "farFocusG": 1.0, "farFocusB": .48,
+    }, "Protected elliptical centre with smooth peripheral lens blur and restrained purple/green edge separation, built entirely from Lens Debaser's internal field.")
+
 def generate_reference_calibrations():
     """Developer calibration fixtures; not user-facing strength presets."""
     # These anchors belong to the historical 1.41 flare model and must not be
@@ -671,6 +691,33 @@ def generate_abi16_smoke_tests():
          "The prism response should be strongest inside the shaped central field and fade smoothly toward the perimeter."),
         ("Peripheral-Prism-Defocus", {"prismDistribution":3,"prismAmount":.46,"prismDirection":0,"prismDispersion":.36,"fieldAspect":1.72,"fieldRotation":0,"responseFieldOnset":.30,"responseFieldFalloff":.88,"cornerSharpnessLoss":1.12,"fieldCurvature":.48,"astigmatism":.18,"tangentialSmear":.18,"lateralCARed":.55,"lateralCABlue":-.72,"microContrast":-.18,"fineDetail":-.10},
          "Resolve-reference reconstruction: a wide central subject island with smooth peripheral defocus, radial prism displacement and controlled red/cyan edge separation."),
+        ("Resolve-Edge-FX-Internal-Field", {
+            "fieldAspect":1.58,"fieldRotation":0,"fieldCenterX":.50,"fieldCenterY":.50,
+            "responseFieldOnset":.24,"responseFieldFalloff":.82,
+            "cornerSharpnessLoss":1.42,"fieldCurvature":.72,"astigmatism":.20,
+            "tangentialSmear":.28,"microContrast":-.18,"fineDetail":-.10,
+            "apertureResponse":1.0,"apertureRadius":27,"apertureShape":0,
+            "apertureSoftness":.38,
+            "prismDistribution":3,"prismAmount":0,"prismDirection":0,
+            "prismDispersion":0,"lateralCARed":.82,"lateralCABlue":-1.04,
+            "longitudinalCA":.14,"longitudinalCARadius":5.5,
+            "nearFocusR":.72,"nearFocusG":.34,"nearFocusB":1.0,
+            "farFocusR":.34,"farFocusG":1.0,"farFocusB":.48},
+         "Resolve-reference reconstruction using only Lens Debaser's internal elliptical Field: protected centre, smooth peripheral lens blur, radial prism displacement and restrained custom purple/green focus color."),
+        ("Resolve-Edge-FX-Depth-Input", {
+            "depthMode":2,"depthNear":0,"depthFar":1,"depthFocus":1,
+            "responseDefocusOnset":.04,"responseDefocusFalloff":.56,
+            "depthEdgeSoftness":.62,"responseScatterEdgeProtection":1,
+            "apertureResponse":.68,"apertureRadius":12,"apertureShape":0,
+            "apertureSoftness":.38,
+            "fieldAspect":1.58,"fieldRotation":0,"fieldCenterX":.50,"fieldCenterY":.50,
+            "responseFieldOnset":.24,"responseFieldFalloff":.82,
+            "prismDistribution":3,"prismAmount":.09,"prismDirection":0,
+            "prismDispersion":1.82,"lateralCARed":.62,"lateralCABlue":-.78,
+            "longitudinalCA":.20,"longitudinalCARadius":5.5,
+            "nearFocusR":.72,"nearFocusG":.34,"nearFocusB":1.0,
+            "farFocusR":.34,"farFocusG":1.0,"farFocusB":.48},
+         "Resolve-reference reconstruction using Second RGB as a feathered mask: white central ellipse stays focused, black periphery defocuses; radial prism and custom purple/green focus colors remain internal."),
     )
     for name, values, note in fixtures:
         write(d / f"{CURRENT_PRESET_TAG}-Smoke-{name}.ldbpreset", "ABI v18 Smoke",
@@ -739,10 +786,11 @@ Depth Map RGB connector and assumes `Near Black` interpretation.
 
 ## cinematic-lenses
 
-Twenty-five optical-character families, normally supplied at three strengths,
+Twenty-six optical-character families, normally supplied at three strengths,
 including reference-inspired Hawk V-Lite Vintage '74 and Cooke Anamorphic /i
 Special Flare families, Decentered Dream Glass and Edge Prism Glass, plus one
-independently authored Bodycam Edge Stress signature preset.
+independently authored Bodycam Edge Stress and Internal Field Edge FX signature
+presets.
 They are visual, behavior-inspired approximations rather than scientific lens
 profiles or claims of exact matching. Caricature variants are diagnostic and
 creative extremes; Medium is the best starting point; Subtle is intended for
@@ -760,7 +808,7 @@ def validate_library():
     demos = sorted((OUT / "demonstrations").glob("*.ldbpreset"))
     lenses = sorted((OUT / "cinematic-lenses").glob("*.ldbpreset"))
     assert len(demos) == 30, f"expected 30 demonstration presets, found {len(demos)}"
-    assert len(lenses) == 73, f"expected 73 cinematic presets, found {len(lenses)}"
+    assert len(lenses) == 74, f"expected 74 cinematic presets, found {len(lenses)}"
     prism_lenses = [path for path in lenses if path.name.startswith("25-Edge-Prism-Glass-")]
     assert len(prism_lenses) == 3, "expected three Edge Prism Glass strength presets"
     for path in prism_lenses:
@@ -787,7 +835,7 @@ def validate_library():
             assert float(values["responseFieldFalloff"]) >= .40, f"unsafe abrupt focus falloff in {path.name}"
         assert float(values.get("apertureBokehSwirl", 0.0)) <= 12.0
     smoke = sorted((OUT / "tests").glob(f"{CURRENT_PRESET_TAG}-Smoke-*.ldbpreset"))
-    assert len(smoke) == 26, f"expected 26 current-build smoke presets, found {len(smoke)}"
+    assert len(smoke) == 28, f"expected 28 current-build smoke presets, found {len(smoke)}"
     smoke_names = [path.stem for path in smoke]
     assert len(smoke_names) == len(set(smoke_names)), "duplicate smoke preset filenames"
 
@@ -832,4 +880,4 @@ prune_stale_factory_presets()
 readme()
 purge_numbered_conflict_copies()
 validate_library()
-print("Generated 103 Lens Debaser factory presets.")
+print("Generated 104 Lens Debaser factory presets.")

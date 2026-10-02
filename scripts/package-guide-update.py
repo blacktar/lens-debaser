@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import os
 import plistlib
@@ -34,6 +35,15 @@ def file_state(path: Path) -> dict[str, int]:
     """Return cheap local change metadata without reading file contents."""
     state = path.stat()
     return {"size": state.st_size, "mtime_ns": state.st_mtime_ns}
+
+
+def file_digest(path: Path) -> str:
+    """Hash a publishable file only when comparing with a legacy hash baseline."""
+    digest = hashlib.sha256()
+    with path.open("rb") as source:
+        for block in iter(lambda: source.read(1024 * 1024), b""):
+            digest.update(block)
+    return digest.hexdigest()
 
 
 def current_manifest() -> dict[str, dict[str, int]]:
@@ -76,10 +86,6 @@ def write_state(files: dict[str, dict[str, int]]) -> None:
 def changes() -> tuple[list[str], list[str]]:
     published = read_published_manifest()
     current = current_manifest()
-    # Format 1 stored content hashes. Migrate without rereading image data by
-    # treating files modified after that manifest was recorded as changed.
-    # The next explicit publish record writes the inexpensive format-2 state.
-    legacy_cutoff_ns = STATE_FILE.stat().st_mtime_ns
     changed = []
     for name, value in current.items():
         previous = published.get(name)
@@ -88,7 +94,7 @@ def changes() -> tuple[list[str], list[str]]:
         elif isinstance(previous, dict):
             if previous != value:
                 changed.append(name)
-        elif value["mtime_ns"] > legacy_cutoff_ns:
+        elif file_digest(GUIDE_ROOT / name) != previous:
             changed.append(name)
     changed.sort()
     deleted = sorted(set(published) - set(current))

@@ -6,6 +6,13 @@ This is creative optical design, not a request for a scientifically exact lens p
 
 ## Give the AI the right context
 
+Use the Preset Authoring Kit that matches the Lens Debaser version for which
+you are creating the preset. Do not assume that the newest kit is compatible
+with an older installed plug-in, or that an older kit describes a newer one.
+Controls, ranges, menu choices and dependencies may change between releases.
+The kit included inside each release archive is the authoritative package for
+that version.
+
 Provide these files in the same conversation:
 
 1. `Lens-Debaser-Preset-Schema.json` — current controls, ranges, choices, defaults, dependencies and performance guidance.

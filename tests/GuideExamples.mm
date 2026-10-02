@@ -208,12 +208,13 @@ static std::string guideFileSlug(std::string value) {
 }
 
 int main(int argc,char** argv) {
-    if(argc<4||argc>5){std::fprintf(stderr,"usage: %s metallib repo-root output-dir [changed-glare|changed-presets-166|changed-presets-166b|changed-presets-167|optical-model-validation]\n",argv[0]);return 2;}
+    if(argc<4||argc>5){std::fprintf(stderr,"usage: %s metallib repo-root output-dir [changed-glare|changed-presets-166|changed-presets-166b|changed-presets-167|changed-preset-26|optical-model-validation]\n",argv[0]);return 2;}
     @autoreleasepool {
         const bool changedGlareOnly=argc==5&&std::string(argv[4])=="changed-glare";
         const bool changedPresets166=argc==5&&std::string(argv[4])=="changed-presets-166";
         const bool changedPresets166b=argc==5&&std::string(argv[4])=="changed-presets-166b";
         const bool changedPresets167=argc==5&&std::string(argv[4])=="changed-presets-167";
+        const bool changedPreset26=argc==5&&std::string(argv[4])=="changed-preset-26";
         const bool opticalModelValidation=
             argc==5&&std::string(argv[4])=="optical-model-validation";
         id<MTLDevice> device=MTLCreateSystemDefaultDevice(); if(!device){std::fprintf(stderr,"No Metal device\n");return 3;}
@@ -345,12 +346,13 @@ int main(int argc,char** argv) {
             {"highlight-response",15},{"off-axis",16},{"variation",17},{"front-wear",20},
             {"internal-contamination",24},{"depth",18},{"bokeh-swirl",25},{"petzval-field",26}};
         std::unordered_set<std::string> written;
-        if(!changedGlareOnly&&!changedPresets166&&!changedPresets166b&&!changedPresets167) for(const auto& source:sources){std::string beforeName=std::string(source.key)+"-before.png";
+        if(!changedGlareOnly&&!changedPresets166&&!changedPresets166b&&!changedPresets167&&!changedPreset26) for(const auto& source:sources){std::string beforeName=std::string(source.key)+"-before.png";
             bool milano=std::string(source.key).rfind("milano",0)==0;
             auto before=milano?guideMilanoDisplayFromAP1(*source.pixels,milanoDisplayLUT):
                 guideRec709Gamma24FromAP1(*source.pixels);
             if(!writePNG((out/beforeName).string(),before,source.width,source.height))return 5;written.insert(beforeName);}
         for(const auto& group:groups){
+            if(changedPreset26)continue;
             if(changedGlareOnly&&std::string(group.slug)!="glare-halo"&&
                std::string(group.slug)!="highlight-response")continue;
             if(changedPresets166) {
@@ -384,7 +386,8 @@ int main(int argc,char** argv) {
         for(const auto& entry:fs::directory_iterator(root/"presets/cinematic-lenses")) {
             if(entry.path().extension()==".ldbpreset"&&
                (entry.path().stem().string().find("-2-Medium")!=std::string::npos||
-                entry.path().stem().string()=="21-Bodycam-Edge-Stress"))
+                entry.path().stem().string()=="21-Bodycam-Edge-Stress"||
+                entry.path().stem().string()=="26-Internal-Field-Edge-FX"))
                 mediumPresets.push_back(entry.path());
         }
         std::sort(mediumPresets.begin(),mediumPresets.end());
@@ -399,6 +402,8 @@ int main(int argc,char** argv) {
                    (filename.rfind("05-",0)!=0&&filename.rfind("06-",0)!=0&&
                     filename.rfind("18-",0)!=0&&filename.rfind("19-",0)!=0))continue;
             }
+            if(changedPreset26&&presetPath.filename().string().rfind("26-",0)!=0)
+                continue;
             std::string presetSlug=guideFileSlug(presetPath.stem().string());
             for(const auto& source:sources) {
                 auto p=loadPreset(presetPath,source.width,source.height);
@@ -411,8 +416,8 @@ int main(int argc,char** argv) {
                 std::printf("Wrote preset %s / %s\n",presetPath.stem().c_str(),source.key);
             }
         }
-        if(!changedGlareOnly&&!changedPresets166&&!changedPresets166b&&!changedPresets167&&mediumPresets.size()!=25) {
-            std::fprintf(stderr,"Expected 24 Medium cinematic presets plus Bodycam Edge Stress, found %zu\n",mediumPresets.size());
+        if(!changedGlareOnly&&!changedPresets166&&!changedPresets166b&&!changedPresets167&&!changedPreset26&&mediumPresets.size()!=26) {
+            std::fprintf(stderr,"Expected 24 Medium cinematic presets plus two signature presets, found %zu\n",mediumPresets.size());
             return 8;
         }
     }

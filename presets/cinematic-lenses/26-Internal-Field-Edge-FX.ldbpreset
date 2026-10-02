@@ -1,0 +1,34 @@
+LensDebaserPreset=2
+# Family: Internal Field Edge FX
+# Strength: Signature
+# Protected elliptical centre with smooth peripheral lens blur and restrained purple/green edge separation, built entirely from Lens Debaser's internal field.
+apertureRadius=27
+apertureResponse=1
+apertureShape=0
+apertureSoftness=0.38
+astigmatism=0.2
+cornerSharpnessLoss=1.42
+farFocusB=0.48
+farFocusG=1
+farFocusR=0.34
+fieldAspect=1.58
+fieldCenterX=0.5
+fieldCenterY=0.5
+fieldCurvature=0.72
+fieldRotation=0
+fineDetail=-0.1
+lateralCABlue=-1.04
+lateralCARed=0.82
+longitudinalCA=0.14
+longitudinalCARadius=5.5
+microContrast=-0.18
+nearFocusB=1
+nearFocusG=0.34
+nearFocusR=0.72
+prismAmount=0
+prismDirection=0
+prismDispersion=0
+prismDistribution=3
+responseFieldFalloff=0.82
+responseFieldOnset=0.24
+tangentialSmear=0.28
