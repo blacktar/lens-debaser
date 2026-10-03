@@ -123,7 +123,8 @@ static void assignValue(LDBOpticsParameters& p,const std::string& key,float v) {
     SET(transmissionColorAmount) SET(glareColorAmount) SET(apertureResponse) SET(apertureRadius)
     SET(apertureBladeCurvature) SET(apertureRotation) SET(apertureSoftness) SET(apertureCatEye)
     SET(apertureAspect) SET(apertureBokehSwirl) SET(aperturePupilShift) SET(aperturePupilClip)
-    SET(apertureRimWeight) SET(fieldAspect) SET(fieldRotation) SET(transmissionDensity)
+    SET(apertureRimWeight) SET(opticalDriftAmount) SET(opticalDriftAngle)
+    SET(fieldAspect) SET(fieldRotation) SET(transmissionDensity)
     SET(transmissionContrast) SET(transmissionHighlightSoftness) SET(anamorphicDistortion)
     SET(anamorphicAberration) SET(anamorphicFlareAmount) SET(anamorphicFlareRadius)
     SET(anamorphicFlareThreshold) SET(anamorphicFlareCoreAmount) SET(anamorphicFlareAsymmetry)
@@ -148,7 +149,7 @@ static void assignValue(LDBOpticsParameters& p,const std::string& key,float v) {
     if(key=="opticalCenterX")p.opticalCenter.x=v; else if(key=="opticalCenterY")p.opticalCenter.y=v;
     else if(key=="fieldCenterX")p.fieldCenter.x=v; else if(key=="fieldCenterY")p.fieldCenter.y=v;
     else if(key=="apertureShape")p.apertureShape=uint32_t(v); else if(key=="apertureBladeCount")p.apertureBladeCount=uint32_t(v);
-    else if(key=="depthMode")p.depthMode=uint32_t(v); else if(key=="prismDistribution")p.prismDistribution=uint32_t(v); else if(key=="variationSeed")p.variationSeed=uint32_t(v);
+    else if(key=="depthMode")p.depthMode=uint32_t(v); else if(key=="prismDistribution")p.prismDistribution=uint32_t(v); else if(key=="opticalDriftMode")p.opticalDriftMode=uint32_t(v); else if(key=="variationSeed")p.variationSeed=uint32_t(v);
     else if(key=="damageSeed")p.damageSeed=uint32_t(v); else if(key=="refractiveSeed")p.refractiveSeed=uint32_t(v);
     else if(key=="internalDirtSeed")p.internalDirtSeed=uint32_t(v);
     else if(key=="transmissionR")p.transmissionColor.x=v; else if(key=="transmissionG")p.transmissionColor.y=v; else if(key=="transmissionB")p.transmissionColor.z=v;
@@ -208,7 +209,7 @@ static std::string guideFileSlug(std::string value) {
 }
 
 int main(int argc,char** argv) {
-    if(argc<4||argc>5){std::fprintf(stderr,"usage: %s metallib repo-root output-dir [changed-glare|changed-presets-166|changed-presets-166b|changed-presets-167|changed-preset-26|optical-model-validation|field-psf-validation|field-psf-library-validation|all-preset-library-validation|light-transport-validation]\n",argv[0]);return 2;}
+    if(argc<4||argc>5){std::fprintf(stderr,"usage: %s metallib repo-root output-dir [changed-glare|changed-presets-166|changed-presets-166b|changed-presets-167|changed-preset-26|optical-model-validation|field-psf-validation|field-psf-library-validation|all-preset-library-validation|light-transport-validation|optical-drift-comparison|optical-drift-preset-validation|optical-drift-demo-validation]\n",argv[0]);return 2;}
     @autoreleasepool {
         const bool changedGlareOnly=argc==5&&std::string(argv[4])=="changed-glare";
         const bool changedPresets166=argc==5&&std::string(argv[4])=="changed-presets-166";
@@ -225,6 +226,12 @@ int main(int argc,char** argv) {
             argc==5&&std::string(argv[4])=="all-preset-library-validation";
         const bool lightTransportValidation=
             argc==5&&std::string(argv[4])=="light-transport-validation";
+        const bool opticalDriftComparison=
+            argc==5&&std::string(argv[4])=="optical-drift-comparison";
+        const bool opticalDriftPresetValidation=
+            argc==5&&std::string(argv[4])=="optical-drift-preset-validation";
+        const bool opticalDriftDemoValidation=
+            argc==5&&std::string(argv[4])=="optical-drift-demo-validation";
         id<MTLDevice> device=MTLCreateSystemDefaultDevice(); if(!device){std::fprintf(stderr,"No Metal device\n");return 3;}
         NSURL* libraryURL=[NSURL fileURLWithPath:[NSString stringWithUTF8String:argv[1]]];
         LDBOpticsEngine engine(device,libraryURL); id<MTLCommandQueue> queue=[device newCommandQueue];
@@ -240,6 +247,7 @@ int main(int argc,char** argv) {
         auto iso=loadRec709Gamma24Chart((root/"inputs/redistributable/ISO_12233-reschart.tif").c_str(),chartW,chartH);
         auto optical=loadRec709Gamma24Chart((root/"inputs/redistributable/LDB-Synthetic-Optical-Chart.png").c_str(),chartW,chartH);
         uint32_t mw=0,mh=0; auto milano1Encoded=loadEncodedTIFF((root/"inputs/redistributable/iphone_milano_dwg_1.tif").c_str(),mw,mh);
+        const uint32_t milano1FullW=mw,milano1FullH=mh;
         auto milano1=resizePixels(convertEncoding(milano1Encoded,LDBWorkingColorSpaceDaVinciIntermediate,false),mw,mh,milanoW,milanoH);
         auto milano2Encoded=loadEncodedTIFF((root/"inputs/redistributable/iphone_milano2___dwg.tif").c_str(),mw,mh);
         auto milano2=resizePixels(convertEncoding(milano2Encoded,LDBWorkingColorSpaceDaVinciIntermediate,false),mw,mh,milanoW,milanoH);
@@ -248,6 +256,86 @@ int main(int argc,char** argv) {
         const GuideSource sources[]={{"iso",&iso,chartW,chartH},{"optical",&optical,chartW,chartH},
             {"milano1",&milano1,milanoW,milanoH},{"milano2",&milano2,milanoW,milanoH},
             {"milano3",&milano3,milanoW,milanoH}};
+
+        if(opticalDriftComparison) {
+            auto milano1Full=convertEncoding(milano1Encoded,
+                LDBWorkingColorSpaceDaVinciIntermediate,false);
+            auto drift=LDBNeutralOpticsParameters(milano1FullW,milano1FullH);
+            drift.responseFieldOnset=.08f;
+            drift.responseFieldFalloff=1.10f;
+            drift.apertureResponse=1.0f;
+            drift.apertureRadius=42.0f;
+            drift.apertureSoftness=.24f;
+            drift.apertureCatEye=.38f;
+            auto saveDrift=[&](const char* name,const LDBOpticsParameters& parameters) {
+                auto result=render(engine,device,queue,milano1Full,
+                                   milano1FullW,milano1FullH,parameters);
+                auto display=guideMilanoDisplayFromAP1(result,milanoDisplayLUT);
+                if(!writePNG((out/name).string(),display,
+                             milano1FullW,milano1FullH))std::exit(10);
+                std::printf("Wrote optical-drift comparison / %s\n",name);
+            };
+            saveDrift("504-optical-drift-real-neutral.png",drift);
+            drift.opticalDriftAmount=.80f;
+            drift.opticalDriftMode=LDBOpticalDriftRadial;
+            saveDrift("505-optical-drift-real-radial-out.png",drift);
+            drift.opticalDriftAmount=-.80f;
+            saveDrift("506-optical-drift-real-radial-in.png",drift);
+            drift.opticalDriftAmount=.80f;
+            drift.opticalDriftMode=LDBOpticalDriftTangential;
+            saveDrift("507-optical-drift-real-tangential.png",drift);
+            drift.opticalDriftMode=LDBOpticalDriftDirected;
+            drift.opticalDriftAngle=32.0f;
+            saveDrift("508-optical-drift-real-directed.png",drift);
+            return 0;
+        }
+
+        if(opticalDriftPresetValidation||opticalDriftDemoValidation) {
+            struct Candidate { const char* slug; fs::path path; } candidates[]={
+                {"demo-32-optical-drift",root/"presets/demonstrations/32-Demo-Optical-Drift.ldbpreset"},
+                {"cinematic-27-decentered-drift-prime",root/"presets/cinematic-lenses/27-Decentered-Drift-Prime.ldbpreset"},
+                {"cinematic-28-spectral-radial-drift",root/"presets/cinematic-lenses/28-Spectral-Radial-Drift.ldbpreset"},
+            };
+            for(const auto& source:sources) {
+                const bool milano=std::string(source.key).rfind("milano",0)==0;
+                if(!opticalDriftDemoValidation) {
+                    auto before=milano?guideMilanoDisplayFromAP1(*source.pixels,milanoDisplayLUT):
+                        guideRec709Gamma24FromAP1(*source.pixels);
+                    std::string beforeName=std::string("before-")+source.key+".png";
+                    if(!writePNG((out/beforeName).string(),before,source.width,source.height))return 10;
+                }
+                for(const auto& candidate:candidates) {
+                    if(opticalDriftDemoValidation&&
+                       std::string(candidate.slug)!="demo-32-optical-drift")continue;
+                    if(!fs::is_regular_file(candidate.path)) {
+                        std::fprintf(stderr,"Missing Optical Drift preset: %s\n",candidate.path.c_str());
+                        return 9;
+                    }
+                    auto p=loadPreset(candidate.path,source.width,source.height);
+                    if(std::string(candidate.slug)=="demo-32-optical-drift") {
+                        auto noDrift=p;
+                        noDrift.opticalDriftAmount=0.0f;
+                        auto neutralResult=render(engine,device,queue,*source.pixels,
+                                                  source.width,source.height,noDrift);
+                        auto neutralDisplay=milano?
+                            guideMilanoDisplayFromAP1(neutralResult,milanoDisplayLUT):
+                            guideRec709Gamma24FromAP1(neutralResult);
+                        std::string neutralName=std::string(candidate.slug)+
+                            "-drift-off-"+source.key+".png";
+                        if(!writePNG((out/neutralName).string(),neutralDisplay,
+                                     source.width,source.height))return 10;
+                    }
+                    auto result=render(engine,device,queue,*source.pixels,
+                                       source.width,source.height,p);
+                    auto display=milano?guideMilanoDisplayFromAP1(result,milanoDisplayLUT):
+                        guideRec709Gamma24FromAP1(result);
+                    std::string name=std::string(candidate.slug)+"-"+source.key+".png";
+                    if(!writePNG((out/name).string(),display,source.width,source.height))return 10;
+                    std::printf("Wrote Optical Drift preset %s / %s\n",candidate.slug,source.key);
+                }
+            }
+            return 0;
+        }
 
         if(lightTransportValidation) {
             constexpr uint32_t fixtureW=960,fixtureH=540;

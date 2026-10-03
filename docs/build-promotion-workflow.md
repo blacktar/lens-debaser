@@ -66,6 +66,14 @@ not be promoted, released, or pushed as the current public build.
 
 ### Next guide clarification
 
+- In the AI-assisted preset section, suggest optionally uploading one or more
+  reference images to the AI client when the user wants to approximate a
+  particular optical treatment. Explain that the image helps the assistant
+  identify visible traits and propose a Lens Debaser preset, but cannot reveal
+  the original lens, node tree, motion behavior or hidden settings with
+  certainty. Encourage users to include both the desired reference and a
+  representative frame from their own footage when possible, then evaluate the
+  generated preset in Resolve and request focused revisions.
 - Explain **Capture** and **Aperture & Bokeh** together so their different roles
   are immediately clear. Capture is a high-level coordination layer: focal
   length, f-stop, focus distance and capture format scale compatible field,

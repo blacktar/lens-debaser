@@ -33,7 +33,7 @@ def group_for(control_id: str) -> str:
         return "Anamorphic"
     if control_id in {"depthNear", "depthFar", "depthFocus", "responseDefocusOnset", "responseDefocusFalloff", "responseScatterEdgeProtection", "depthEdgeSoftness"}:
         return "Depth Input"
-    if control_id.startswith("aperture"):
+    if control_id.startswith("aperture") or control_id.startswith("opticalDrift"):
         return "Aperture & Bokeh"
     if control_id.startswith("imageCircle"):
         return "Image Circle"
@@ -99,6 +99,7 @@ def add_special_controls(controls: dict[str, dict]) -> None:
         "depthMode": ("Depth Interpretation", "Depth Input", ["Depth-Free", "Near White", "Near Black", "Linear Camera Z", "Inverse Z / Disparity", "Logarithmic Z"], 0),
         "captureGate": ("Gate / Capture Format", "Capture", ["Full Frame Open Gate 36 x 24", "Super 35 24.89 x 18.66", "APS-C 23.6 x 15.7", "Micro Four Thirds 17.3 x 13", "65mm 54.12 x 25.58", "Super 16mm 12.52 x 7.41", "16mm 10.26 x 7.49", "8mm 4.8 x 3.5", "Super 8mm 5.79 x 4.01", "Smartphone (Approx.) 9.8 x 7.3", "Full Frame + 1.33x Anamorphic", "Full Frame + 1.55x Anamorphic", "Full Frame + 2x Anamorphic"], 0),
         "prismDistribution": ("Prism Distribution", "Prism Refraction", ["Linear Edge", "Uniform", "Bilateral / Axis", "Radial Field", "Inverse Field"], 0),
+        "opticalDriftMode": ("Drift Direction", "Aperture & Bokeh", ["Radial", "Tangential", "Directed"], 0),
     }
     for key, (label, group, values, default) in choices.items():
         if key == "apertureBladeCount":
@@ -148,7 +149,7 @@ def main() -> None:
         },
         "controls": dict(sorted(controls.items())),
         "dependencies": [
-            {"controls": ["apertureRadius", "apertureShape", "apertureBladeCount", "apertureBladeCurvature", "apertureRotation", "apertureSoftness", "apertureCatEye", "apertureAspect", "apertureBokehSwirl", "aperturePupilShift", "aperturePupilClip", "apertureRimWeight"], "requires": {"apertureResponse": "> 0"}, "note": "Aperture shape controls are opt-in and have no image effect until Aperture Response is active. This is one of the more expensive responses."},
+            {"controls": ["apertureRadius", "apertureShape", "apertureBladeCount", "apertureBladeCurvature", "apertureRotation", "apertureSoftness", "apertureCatEye", "apertureAspect", "apertureBokehSwirl", "aperturePupilShift", "aperturePupilClip", "apertureRimWeight", "opticalDriftAmount", "opticalDriftMode", "opticalDriftAngle"], "requires": {"apertureResponse": "> 0"}, "note": "Aperture shape and Optical Drift controls are opt-in and have no image effect until Aperture Response is active. Optical Drift moves only the energy centre of growing defocus. This is one of the more expensive responses."},
             {"controls": ["longitudinalCARadius", "nearFocusR", "nearFocusG", "nearFocusB", "farFocusR", "farFocusG", "farFocusB"], "requires": {"longitudinalCA": "> 0"}, "note": "Axial color settings shape active longitudinal chromatic aberration."},
             {"controls": ["bloomThreshold", "bloomRadius", "bloomStretch"], "requires": {"bloomEnergy": "> 0"}, "note": "Bloom shaping needs Bloom Energy."},
             {"controls": ["glareThreshold", "glareRadius", "glareColorAmount", "glareR", "glareG", "glareB"], "requires": {"glareEnergy": "> 0"}, "note": "Glare shaping needs Glare Amount."},

@@ -5,7 +5,7 @@ DaVinci Resolve. It models perceptually useful aspects of modern, vintage,
 anamorphic and exotic optics, prioritising pleasing visual approximations and
 interactive performance over scientific lens simulation.
 
-Current development version: **1.68**.
+Current development version: **1.69**.
 
 Read the online [Lens Debaser user guide](https://vidarandersen.com/dmz/lens-debaser-ofx/) for the complete workflow, control reference, depth setup, and preset catalogue.
 
@@ -16,7 +16,8 @@ Read the online [Lens Debaser user guide](https://vidarandersen.com/dmz/lens-deb
 - coherent directional prism refraction with edge placement, softness and
   wavelength dispersion;
 - MTF-inspired detail and microcontrast transfer;
-- circular, polygonal, anamorphic and cat-eye aperture response;
+- circular, polygonal, anamorphic and cat-eye aperture response, including
+  radial, tangential and directed Optical Drift of the defocus footprint;
 - natural, optical and mechanical vignette behaviour;
 - bloom, glare, spherical halo and transmission character;
 - coherent-source anamorphic flare with full-resolution analytic diffraction
@@ -27,12 +28,12 @@ Read the online [Lens Debaser user guide](https://vidarandersen.com/dmz/lens-deb
   LogC4 working-space handling;
 - editable external `.ldbpreset` preset files.
 
-The generated external preset library contains 104 files in
+The generated external preset library contains 107 files in
 `presets/demonstrations` and `presets/cinematic-lenses`: thirty-one single,
 moderate educational demonstrations, twenty-four cinematic-lens families with
-three independently authored variants each, and the Bodycam Edge Stress
-signature preset. The cinematic library includes the three-tier Edge Prism
-Glass family for the coherent prism controls. Installation copies
+three independently authored variants each, and four single signature presets.
+The library includes a focused Optical Drift demonstration plus Decentered
+Drift Prime and Spectral Radial Drift compound looks. Installation copies
 them outside the OFX bundle to
 `~/Library/Application Support/Lens Debaser/Presets`.
 

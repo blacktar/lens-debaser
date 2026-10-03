@@ -8,7 +8,7 @@ from lens_profiles import cooke_focal_calibrations, reference_lens_families
 
 ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / "presets"
-CURRENT_PRESET_TAG = "v1.68"
+CURRENT_PRESET_TAG = "v1.69"
 TIERS = (("1-Subtle", 0.35), ("2-Medium", 0.65), ("3-Caricature", 1.0))
 GENERATED_PRESETS = set()
 
@@ -21,7 +21,8 @@ NEUTRAL = {
     "apertureSoftness": 0.5, "apertureAspect": 1.0,
     "apertureBokehSwirl": 0.0,
     "aperturePupilShift": 0.0, "aperturePupilClip": 0.0,
-    "apertureRimWeight": 0.0,
+    "apertureRimWeight": 0.0, "opticalDriftAmount": 0.0,
+    "opticalDriftAngle": 0.0,
     "fieldAspect": 1.0, "detailScale": 1.0,
     "comaThreshold": 0.6, "bloomThreshold": 1.0, "glareThreshold": 0.45,
     "bloomRadius": 12.0, "bloomHorizontalStretch": 1.0,
@@ -52,11 +53,12 @@ NEUTRAL = {
     "anamorphicFlareB": 1.0,
     "anamorphicFlareGhostR": 0.55, "anamorphicFlareGhostG": 0.25,
     "anamorphicFlareGhostB": 1.0,
-    "prismDistribution": 0, "prismEdgeBias": 0.65, "prismSoftness": 0.3,
+    "prismDistribution": 0, "opticalDriftMode": 0,
+    "prismEdgeBias": 0.65, "prismSoftness": 0.3,
 }
 
 FIXED = {"apertureShape", "apertureBladeCount", "depthMode", "captureGate",
-         "prismDistribution",
+         "prismDistribution", "opticalDriftMode",
          "variationSeed"}
 
 def triplet(folder, order, family, target, note=""):
@@ -188,6 +190,7 @@ def generate_demonstrations():
       (29,"Demo-Pupil-Decenter-Clipping",{"responseFieldOnset":.14,"responseFieldFalloff":1.08,"apertureResponse":.54,"apertureRadius":12,"apertureShape":0,"apertureSoftness":.25,"aperturePupilShift":.38,"aperturePupilClip":.32},"Outer pupils visibly shift and close while retaining a smooth filled footprint."),
       (30,"Demo-Bubble-Rim-Bokeh",{"responseFieldOnset":.13,"responseFieldFalloff":1.10,"apertureResponse":.76,"apertureRadius":15,"apertureShape":0,"apertureSoftness":.16,"apertureCatEye":.28,"apertureBokehSwirl":1.1,"apertureRimWeight":.38},"Point highlights form a clear bubble rim around a filled pupil without overpowering the scene."),
       (31,"Demo-Prism-Refraction",{"prismDistribution":3,"prismAmount":.72,"prismDirection":0,"prismDispersion":.58,"fieldAspect":1.55,"fieldRotation":0,"responseFieldOnset":.22,"responseFieldFalloff":.92},"Straight lines and fine texture reveal a smooth radial prism displacement shaped by the shared Field controls."),
+      (32,"Demo-Optical-Drift",{"responseFieldOnset":.14,"responseFieldFalloff":1.18,"apertureResponse":.52,"apertureRadius":11.5,"apertureShape":0,"apertureSoftness":.30,"apertureCatEye":.28,"opticalDriftAmount":.64,"opticalDriftMode":0},"Peripheral defocus leans smoothly away from Field Center while the protected centre remains stable; increase Amount or reverse its sign to explore stronger and inward responses."),
     ]
     for order,name,values,note in demos:
         write(d / f"{order:02d}-{name}.ldbpreset", name, "Educational", values, note)
@@ -597,6 +600,43 @@ def generate_lenses():
         "farFocusR": .34, "farFocusG": 1.0, "farFocusB": .48,
     }, "Protected elliptical centre with smooth peripheral lens blur and restrained purple/green edge separation, built entirely from Lens Debaser's internal field.")
 
+    # Optical Drift compound candidates are promoted only after the isolated
+    # control passed real-footage review. They remain individually authored
+    # signatures rather than global strength variants.
+    write(d / "27-Decentered-Drift-Prime.ldbpreset", "Decentered Drift Prime",
+          "Signature", {
+        "fieldCenterX": .47, "fieldCenterY": .51,
+        "responseFieldOnset": .20, "responseFieldFalloff": 1.26,
+        "cornerSharpnessLoss": .30, "fieldCurvature": .22,
+        "radialSmear": .14, "tangentialSmear": .07,
+        "apertureResponse": .50, "apertureRadius": 9.5,
+        "apertureShape": 0, "apertureSoftness": .34,
+        "apertureCatEye": .24,
+        "opticalDriftAmount": .24, "opticalDriftMode": 2,
+        "opticalDriftAngle": -12,
+        "lateralCARed": .24, "lateralCABlue": -.30,
+        "chromaticFieldOnset": .24, "chromaticFieldFalloff": 1.18,
+        "transmissionColorAmount": .08,
+        "transmissionR": 1.0, "transmissionG": .97, "transmissionB": .92,
+    }, "Restrained decentered prime character: gently directed defocus drift, progressive edge softness and restrained warm/cool chromatic separation.")
+
+    write(d / "28-Spectral-Radial-Drift.ldbpreset", "Spectral Radial Drift",
+          "Signature", {
+        "responseFieldOnset": .12, "responseFieldFalloff": 1.18,
+        "cornerSharpnessLoss": .52, "fieldCurvature": .42,
+        "radialSmear": .32, "tangentialSmear": .12,
+        "apertureResponse": .72, "apertureRadius": 15,
+        "apertureShape": 0, "apertureSoftness": .26,
+        "apertureCatEye": .42,
+        "opticalDriftAmount": .58, "opticalDriftMode": 0,
+        "lateralCARed": .68, "lateralCABlue": -.88,
+        "chromaticFieldOnset": .16, "chromaticFieldFalloff": 1.10,
+        "longitudinalCA": .12, "longitudinalCARadius": 4.5,
+        "nearFocusR": 1.0, "nearFocusG": .62, "nearFocusB": .28,
+        "farFocusR": .22, "farFocusG": .72, "farFocusB": 1.0,
+        "microContrast": -.12, "fineDetail": -.06,
+    }, "Stronger outward optical drift with coherent radial softness and cyan/orange edge separation; intended as an expressive demonstration rather than a default finishing strength.")
+
 def generate_reference_calibrations():
     """Developer calibration fixtures; not user-facing strength presets."""
     # These anchors belong to the historical 1.41 flare model and must not be
@@ -807,8 +847,8 @@ entering Lens Debaser.
 def validate_library():
     demos = sorted((OUT / "demonstrations").glob("*.ldbpreset"))
     lenses = sorted((OUT / "cinematic-lenses").glob("*.ldbpreset"))
-    assert len(demos) == 30, f"expected 30 demonstration presets, found {len(demos)}"
-    assert len(lenses) == 74, f"expected 74 cinematic presets, found {len(lenses)}"
+    assert len(demos) == 31, f"expected 31 demonstration presets, found {len(demos)}"
+    assert len(lenses) == 76, f"expected 76 cinematic presets, found {len(lenses)}"
     prism_lenses = [path for path in lenses if path.name.startswith("25-Edge-Prism-Glass-")]
     assert len(prism_lenses) == 3, "expected three Edge Prism Glass strength presets"
     for path in prism_lenses:
@@ -880,4 +920,4 @@ prune_stale_factory_presets()
 readme()
 purge_numbered_conflict_copies()
 validate_library()
-print("Generated 104 Lens Debaser factory presets.")
+print(f"Generated {len(list((OUT / 'demonstrations').glob('*.ldbpreset'))) + len(list((OUT / 'cinematic-lenses').glob('*.ldbpreset')))} Lens Debaser factory presets.")

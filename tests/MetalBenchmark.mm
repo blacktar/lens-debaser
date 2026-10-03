@@ -91,6 +91,9 @@ int main(int argc, char** argv) {
         bokehSwirl.apertureRadius=40.0f;bokehSwirl.apertureBokehSwirl=10.0f;
         bokehSwirl.apertureCatEye=.80f;
         bokehSwirl.responseFieldOnset=.22f;bokehSwirl.responseFieldFalloff=.82f;
+        auto opticalDrift=bokehSwirl;
+        opticalDrift.opticalDriftAmount=.75f;
+        opticalDrift.opticalDriftMode=LDBOpticalDriftTangential;
         auto petzval=bokehSwirl;
         petzval.apertureShape=1;petzval.apertureBladeCount=8;
         petzval.apertureBladeCurvature=.72f;petzval.apertureAspect=1.10f;
@@ -216,6 +219,7 @@ int main(int argc, char** argv) {
         benchmark("coma+halo", engine, device, queue, source, destination, width, height, aberration, frames);
         benchmark("aperture", engine, device, queue, source, destination, width, height, aperture, frames);
         benchmark("bokeh-swirl", engine, device, queue, source, destination, width, height, bokehSwirl, frames);
+        benchmark("optical-drift", engine, device, queue, source, destination, width, height, opticalDrift, frames);
         benchmark("petzval", engine, device, queue, source, destination, width, height, petzval, frames);
         benchmark("aperture-z", engine, device, queue, source, destination, width, height, depthAperture, frames);
         benchmark("bloom-z", engine, device, queue, source, destination, width, height, depthBloom, frames);

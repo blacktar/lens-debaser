@@ -1,0 +1,28 @@
+LensDebaserPreset=2
+# Family: Decentered Drift Prime
+# Strength: Signature
+# Restrained decentered prime character: gently directed defocus drift, progressive edge softness and restrained warm/cool chromatic separation.
+apertureCatEye=0.24
+apertureRadius=9.5
+apertureResponse=0.5
+apertureShape=0
+apertureSoftness=0.34
+chromaticFieldFalloff=1.18
+chromaticFieldOnset=0.24
+cornerSharpnessLoss=0.3
+fieldCenterX=0.47
+fieldCenterY=0.51
+fieldCurvature=0.22
+lateralCABlue=-0.3
+lateralCARed=0.24
+opticalDriftAmount=0.24
+opticalDriftAngle=-12
+opticalDriftMode=2
+radialSmear=0.14
+responseFieldFalloff=1.26
+responseFieldOnset=0.2
+tangentialSmear=0.07
+transmissionB=0.92
+transmissionColorAmount=0.08
+transmissionG=0.97
+transmissionR=1

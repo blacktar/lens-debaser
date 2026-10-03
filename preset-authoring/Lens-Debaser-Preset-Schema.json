@@ -1,7 +1,7 @@
 {
   "title": "Lens Debaser AI Preset Authoring Schema",
   "schema_version": 1,
-  "target_plugin_version": "1.68",
+  "target_plugin_version": "1.69",
   "preset_format": 2,
   "header": "LensDebaserPreset=2",
   "syntax": {
@@ -1178,6 +1178,39 @@
       "maximum": 1,
       "step": 0.001
     },
+    "opticalDriftAmount": {
+      "label": "Optical Drift",
+      "group": "Aperture & Bokeh",
+      "type": "number",
+      "default": 0.0,
+      "minimum": -1.0,
+      "maximum": 1.0,
+      "step": 0.001,
+      "description": "Moves the energy centre of growing defocus without shifting the sharp image; sign reverses the selected direction."
+    },
+    "opticalDriftAngle": {
+      "label": "Drift Angle",
+      "group": "Aperture & Bokeh",
+      "type": "number",
+      "default": 0.0,
+      "minimum": -180.0,
+      "maximum": 180.0,
+      "step": 0.1,
+      "description": "Lens-space direction in degrees when Drift Direction is Directed."
+    },
+    "opticalDriftMode": {
+      "label": "Drift Direction",
+      "group": "Aperture & Bokeh",
+      "type": "choice",
+      "default": 0,
+      "minimum": 0,
+      "maximum": 2,
+      "choices": {
+        "0": "Radial",
+        "1": "Tangential",
+        "2": "Directed"
+      }
+    },
     "peripheralStretch": {
       "label": "Peripheral Stretch",
       "group": "Geometry",
@@ -1645,12 +1678,15 @@
         "apertureBokehSwirl",
         "aperturePupilShift",
         "aperturePupilClip",
-        "apertureRimWeight"
+        "apertureRimWeight",
+        "opticalDriftAmount",
+        "opticalDriftMode",
+        "opticalDriftAngle"
       ],
       "requires": {
         "apertureResponse": "> 0"
       },
-      "note": "Aperture shape controls are opt-in and have no image effect until Aperture Response is active. This is one of the more expensive responses."
+      "note": "Aperture shape and Optical Drift controls are opt-in and have no image effect until Aperture Response is active. Optical Drift moves only the energy centre of growing defocus. This is one of the more expensive responses."
     },
     {
       "controls": [

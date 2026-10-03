@@ -42,11 +42,11 @@ HAWK_REFERENCE ?= $(CURDIR)/inputs/Reference_Lenses/Hawk V-Lite Vintage `74 Anam
 COOKE_SPECIAL_REFERENCE ?= $(CURDIR)/inputs/Reference_Lenses/Cooke Anamorphic :i Special Flare/CookeSpecial_TIFFs/Cooke Anamorphic i Special Flare 50mm T2.3 at T2.3_log.tif
 ARRI_REVEAL_LUT ?= /Library/Application Support/Blackmagic Design/DaVinci Resolve/LUT/Arri/ARRI_LogC4_v1_LUT_Package/LUTs/ARRI_LogC4-to-Gamma24_Rec709-D65_v1-65.cube
 VALIDATION_ROOT := outputs/engine-validation
-VISUAL_PASS_ID := 100
-VISUAL_PASS_LABEL := Visual Pass $(VISUAL_PASS_ID) - Continuous Field and Aperture PSF
+VISUAL_PASS_ID := 102
+VISUAL_PASS_LABEL := Visual Pass $(VISUAL_PASS_ID) - Optical Drift on Real Footage
 VALIDATION_OUTPUT := $(VALIDATION_ROOT)/passes/pass-$(VISUAL_PASS_ID)
 
-.PHONY: all ofx validate version-check performance-test deploy release aperture-chart synthetic-optical-chart guide-examples guide-examples-glare guide-examples-presets-166 guide-examples-presets-166b guide-examples-presets-167 guide-examples-preset-26 optical-model-validation optical-model-benchmark field-psf-experiment field-psf-library-experiment light-transport-audit full-preset-release-comparison full-library-validation user-guide guide-update guide-update-status guide-publish-record presets preset-test preset-schema preset-authoring-kit validate-user-preset install install-user test visual-test visual-check visual-rebuild clean
+.PHONY: all ofx validate version-check performance-test deploy release aperture-chart synthetic-optical-chart guide-examples guide-examples-glare guide-examples-presets-166 guide-examples-presets-166b guide-examples-presets-167 guide-examples-preset-26 optical-drift-comparison optical-drift-preset-validation optical-drift-demo-validation optical-model-validation optical-model-benchmark field-psf-experiment field-psf-library-experiment light-transport-audit full-preset-release-comparison full-library-validation user-guide guide-update guide-update-status guide-publish-record presets preset-test preset-schema preset-authoring-kit validate-user-preset install install-user test visual-test visual-check visual-rebuild clean
 
 all: $(METAL_LIB) $(TEST_BIN) $(VISUAL_BIN) $(BENCHMARK_BIN)
 
@@ -73,7 +73,7 @@ presets:
 	./scripts/generate-presets.py
 
 preset-test: presets
-	@test "$$(find presets/demonstrations presets/cinematic-lenses -name '*.ldbpreset' -type f | wc -l | tr -d ' ')" = 104 || { echo "ERROR: Expected 104 generated factory presets." >&2; exit 1; }
+	@test "$$(find presets/demonstrations presets/cinematic-lenses -name '*.ldbpreset' -type f | wc -l | tr -d ' ')" = 107 || { echo "ERROR: Expected 107 generated factory presets." >&2; exit 1; }
 	@! grep -REn '^(inputWorkingSpace|diagnosticView|depthSource)=' presets/demonstrations presets/cinematic-lenses || { echo "ERROR: A processing-only or removed control was serialized in a factory preset." >&2; exit 1; }
 
 preset-schema:
@@ -198,6 +198,32 @@ guide-examples-preset-26: $(METAL_LIB) $(GUIDE_EXAMPLES_BIN) $(SYNTHETIC_OPTICAL
 	@mkdir -p "$(GUIDE_EXAMPLES_DIR)"
 	$(GUIDE_EXAMPLES_BIN) $(METAL_LIB) "$(CURDIR)" "$(GUIDE_EXAMPLES_DIR)" changed-preset-26
 	./scripts/build-user-guide.py
+
+# Render the Optical Drift A/B images through the same Milano display LUT and
+# PNG writer used by the published guide. The comparison HTML is preserved.
+optical-drift-comparison: $(METAL_LIB) $(GUIDE_EXAMPLES_BIN)
+	@for reference in inputs/redistributable/iphone_milano_dwg_1.tif inputs/redistributable/Resolve-DWG-Intermediate-to-Rec709-Gamma24-Guide.cube; do test -f "$$reference" || { echo "ERROR: Required comparison source is missing: $$reference" >&2; exit 1; }; done
+	@mkdir -p outputs/experiments/optical-drift-pass-102/images
+	$(GUIDE_EXAMPLES_BIN) $(METAL_LIB) "$(CURDIR)" outputs/experiments/optical-drift-pass-102/images optical-drift-comparison
+	@printf '\nOptical Drift comparison: outputs/experiments/optical-drift-pass-102/index.html\n'
+
+# Render only the newly authored Optical Drift demo and compound candidates.
+# Existing guide examples and reviewed validation archives remain untouched.
+optical-drift-preset-validation: $(METAL_LIB) $(GUIDE_EXAMPLES_BIN) $(SYNTHETIC_OPTICAL_CHART) presets
+	@for reference in inputs/redistributable/ISO_12233-reschart.tif $(SYNTHETIC_OPTICAL_CHART) inputs/redistributable/iphone_milano_dwg_1.tif inputs/redistributable/iphone_milano2___dwg.tif inputs/redistributable/iphone_milano3_dwg.tif inputs/redistributable/Resolve-DWG-Intermediate-to-Rec709-Gamma24-Guide.cube; do test -f "$$reference" || { echo "ERROR: Required validation source is missing: $$reference" >&2; exit 1; }; done
+	rm -rf outputs/experiments/optical-drift-presets
+	mkdir -p outputs/experiments/optical-drift-presets
+	$(GUIDE_EXAMPLES_BIN) $(METAL_LIB) "$(CURDIR)" outputs/experiments/optical-drift-presets optical-drift-preset-validation
+	./scripts/build-optical-drift-preset-report.py outputs/experiments/optical-drift-presets
+	@printf '\nOptical Drift preset review: outputs/experiments/optical-drift-presets/index.html\n'
+
+# Revise only Demo 32 after the two compound Optical Drift presets pass.
+# Preserve their accepted renders byte-for-byte in the existing review folder.
+optical-drift-demo-validation: $(METAL_LIB) $(GUIDE_EXAMPLES_BIN) $(SYNTHETIC_OPTICAL_CHART) presets
+	@test -f outputs/experiments/optical-drift-presets/cinematic-27-decentered-drift-prime-milano1.png || { echo "ERROR: Run make optical-drift-preset-validation once before the focused Demo 32 revision." >&2; exit 1; }
+	$(GUIDE_EXAMPLES_BIN) $(METAL_LIB) "$(CURDIR)" outputs/experiments/optical-drift-presets optical-drift-demo-validation
+	./scripts/build-optical-drift-preset-report.py outputs/experiments/optical-drift-presets
+	@printf '\nRevised Demo 32 review: outputs/experiments/optical-drift-presets/index.html\n'
 
 # Focused review material for the promoted field-blur and chromatic-ordering
 # model. This does not touch guide images, visual-pass archives, or presets.

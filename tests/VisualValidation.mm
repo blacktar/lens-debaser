@@ -575,7 +575,7 @@ int main(int argc, char** argv) {
         // focused new outputs.
         const int passNumber=argc>=9?std::atoi(argv[7]):0;
         const bool baselineRebuild=passNumber<0;
-        const int reviewOutputFloor=passNumber>=99?491:(passNumber>=98?486:(passNumber>=97?479:(passNumber>=96?472:(passNumber>=94?455:(passNumber>=93?447:(passNumber>=92?439:(passNumber>=85?384:(passNumber>=84?379:(passNumber>=83?374:(passNumber>=82?368:(passNumber>=81?357:(passNumber>=80?350:(passNumber>=79?339:(passNumber>=77?325:(passNumber>=76?317:(passNumber>=68?310:(passNumber>=67?302:(passNumber>=66?293:(passNumber>=65?281:(passNumber>=64?273:(passNumber>=63?268:(passNumber>=62?263:(passNumber>=61?258:(passNumber>=60?252:0))))))))))))))))))))))));
+        const int reviewOutputFloor=passNumber>=102?503:(passNumber>=101?497:(passNumber>=99?491:(passNumber>=98?486:(passNumber>=97?479:(passNumber>=96?472:(passNumber>=94?455:(passNumber>=93?447:(passNumber>=92?439:(passNumber>=85?384:(passNumber>=84?379:(passNumber>=83?374:(passNumber>=82?368:(passNumber>=81?357:(passNumber>=80?350:(passNumber>=79?339:(passNumber>=77?325:(passNumber>=76?317:(passNumber>=68?310:(passNumber>=67?302:(passNumber>=66?293:(passNumber>=65?281:(passNumber>=64?273:(passNumber>=63?268:(passNumber>=62?263:(passNumber>=61?258:(passNumber>=60?252:0))))))))))))))))))))))))));
         const std::unordered_set<std::string> baselineOutputs = {
             // Neutral inputs and the principal optical families.
             "00-input.tiff", "01-modern.tiff", "02-vintage.tiff", "03-anamorphic.tiff",
@@ -653,6 +653,20 @@ int main(int argc, char** argv) {
                    << "  Current analytic flare primitives: 252-257\n"
                    << "  Current Cooke focal profile calibration: 268-272\n"
                    << "  Retired and superseded development renders are intentionally omitted.\n";
+            else if(passNumber>=102) marker
+                   << "  503-optical-drift-real-source.tiff\n"
+                   << "  504-optical-drift-real-neutral.tiff\n"
+                   << "  505-optical-drift-real-radial-out.tiff\n"
+                   << "  506-optical-drift-real-radial-in.tiff\n"
+                   << "  507-optical-drift-real-tangential.tiff\n"
+                   << "  508-optical-drift-real-directed.tiff\n";
+            else if(passNumber>=101) marker
+                   << "  497-optical-drift-source.tiff\n"
+                   << "  498-optical-drift-neutral.tiff\n"
+                   << "  499-optical-drift-radial-out.tiff\n"
+                   << "  500-optical-drift-radial-in.tiff\n"
+                   << "  501-optical-drift-tangential.tiff\n"
+                   << "  502-optical-drift-directed.tiff\n";
             else if(passNumber>=99) marker
                    << "  491-bokeh-swirl-range-source.tiff\n"
                    << "  492-bokeh-swirl-00.tiff\n"
@@ -1192,6 +1206,33 @@ int main(int argc, char** argv) {
                     engine,device,queue,apertureChart,width,height,progressive)));
             }
         }
+        if(passNumber>=101) {
+            save("497-optical-drift-source.tiff",displayPreview(apertureChart));
+            auto drift=LDBNeutralOpticsParameters(width,height);
+            drift.responseFieldOnset=.08f;
+            drift.responseFieldFalloff=1.10f;
+            drift.apertureResponse=1.0f;
+            drift.apertureRadius=24.0f;
+            drift.apertureSoftness=.22f;
+            drift.apertureCatEye=.48f;
+            save("498-optical-drift-neutral.tiff",displayPreview(render(
+                engine,device,queue,apertureChart,width,height,drift)));
+            drift.opticalDriftAmount=.72f;
+            drift.opticalDriftMode=LDBOpticalDriftRadial;
+            save("499-optical-drift-radial-out.tiff",displayPreview(render(
+                engine,device,queue,apertureChart,width,height,drift)));
+            drift.opticalDriftAmount=-.72f;
+            save("500-optical-drift-radial-in.tiff",displayPreview(render(
+                engine,device,queue,apertureChart,width,height,drift)));
+            drift.opticalDriftAmount=.72f;
+            drift.opticalDriftMode=LDBOpticalDriftTangential;
+            save("501-optical-drift-tangential.tiff",displayPreview(render(
+                engine,device,queue,apertureChart,width,height,drift)));
+            drift.opticalDriftMode=LDBOpticalDriftDirected;
+            drift.opticalDriftAngle=32.0f;
+            save("502-optical-drift-directed.tiff",displayPreview(render(
+                engine,device,queue,apertureChart,width,height,drift)));
+        }
         if(passNumber>=79) {
             save("339-bokeh-petzval-point-source.tiff",displayPreview(apertureChart));
             auto bokehConservative=LDBNeutralOpticsParameters(width,height);
@@ -1634,6 +1675,33 @@ int main(int argc, char** argv) {
             };
             auto neutralReal = LDBNeutralOpticsParameters(realWidth, realHeight);
             neutralReal.workingColorSpace = LDBWorkingColorSpaceDaVinciIntermediate;
+            if(passNumber>=102) {
+                saveReal("503-optical-drift-real-source.tiff",real);
+                auto drift=neutralReal;
+                drift.responseFieldOnset=.08f;
+                drift.responseFieldFalloff=1.10f;
+                drift.apertureResponse=1.0f;
+                drift.apertureRadius=42.0f;
+                drift.apertureSoftness=.24f;
+                drift.apertureCatEye=.38f;
+                saveReal("504-optical-drift-real-neutral.tiff",render(
+                    engine,device,queue,real,realWidth,realHeight,drift));
+                drift.opticalDriftAmount=.80f;
+                drift.opticalDriftMode=LDBOpticalDriftRadial;
+                saveReal("505-optical-drift-real-radial-out.tiff",render(
+                    engine,device,queue,real,realWidth,realHeight,drift));
+                drift.opticalDriftAmount=-.80f;
+                saveReal("506-optical-drift-real-radial-in.tiff",render(
+                    engine,device,queue,real,realWidth,realHeight,drift));
+                drift.opticalDriftAmount=.80f;
+                drift.opticalDriftMode=LDBOpticalDriftTangential;
+                saveReal("507-optical-drift-real-tangential.tiff",render(
+                    engine,device,queue,real,realWidth,realHeight,drift));
+                drift.opticalDriftMode=LDBOpticalDriftDirected;
+                drift.opticalDriftAngle=32.0f;
+                saveReal("508-optical-drift-real-directed.tiff",render(
+                    engine,device,queue,real,realWidth,realHeight,drift));
+            }
             if(passNumber==96) {
                 saveReal("477-causal-optical-real-source.tiff",real);
                 auto combined=neutralReal;

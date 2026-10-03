@@ -1403,6 +1403,38 @@ int main(int argc, char **argv) {
                           render(engine, device, queue, focusPattern, width,
                                  height, rimmedPupil)) > .001f,
             "Pupil Rim Weight must redistribute bokeh energy");
+    auto driftWithoutAperture = neutral;
+    driftWithoutAperture.opticalDriftAmount = 1.0f;
+    require(maxDifference(focusPattern,
+                          render(engine, device, queue, focusPattern, width,
+                                 height, driftWithoutAperture)) < 1e-6f,
+            "Optical Drift must not move the sharp image when Aperture Response is off");
+    auto radialDrift = circularAperture;
+    radialDrift.apertureRadius = 12.0f;
+    radialDrift.opticalDriftAmount = .75f;
+    radialDrift.opticalDriftMode = LDBOpticalDriftRadial;
+    auto radialDriftOut = render(engine, device, queue, focusPattern, width,
+                                 height, radialDrift);
+    require(maxDifference(circularApertureOut, radialDriftOut) > .001f,
+            "Radial Optical Drift must move the centre of defocus energy");
+    auto reversedDrift = radialDrift;
+    reversedDrift.opticalDriftAmount = -.75f;
+    require(maxDifference(radialDriftOut,
+                          render(engine, device, queue, focusPattern, width,
+                                 height, reversedDrift)) > .001f,
+            "Signed Optical Drift must reverse its energy displacement");
+    auto tangentialDrift = radialDrift;
+    tangentialDrift.opticalDriftMode = LDBOpticalDriftTangential;
+    auto directedDrift = radialDrift;
+    directedDrift.opticalDriftMode = LDBOpticalDriftDirected;
+    directedDrift.opticalDriftAngle = 31.0f;
+    require(maxDifference(radialDriftOut,
+                          render(engine, device, queue, focusPattern, width,
+                                 height, tangentialDrift)) > .001f &&
+                maxDifference(radialDriftOut,
+                              render(engine, device, queue, focusPattern,
+                                     width, height, directedDrift)) > .001f,
+            "Optical Drift modes must produce distinct lens-space directions");
     auto spatialAperture = circularAperture;
     spatialAperture.responseFieldOnset = .22f;
     spatialAperture.responseFieldFalloff = .82f;
@@ -2010,6 +2042,7 @@ int main(int argc, char **argv) {
     std::printf("PASS: normalized independent astigmatism and smear\n");
     std::printf("PASS: continuous spatial aperture and pupil response\n");
     std::printf("PASS: independent aperture shape controls\n");
+    std::printf("PASS: opt-in signed optical drift modes\n");
     std::printf("PASS: filled aperture footprint without directional spokes\n");
     std::printf("PASS: uniform aperture reconstruction without retained "
                 "point-source core\n");

@@ -1314,6 +1314,23 @@ kernel void ldbBlurAperture(device const float4* source [[buffer(0)]],
     float aspect=sqrt(clamp(p.apertureAspect,0.25f,8.0f));
     uint blades=clamp(p.apertureBladeCount,3u,16u);
     float curvature=clamp(p.apertureBladeCurvature,0.0f,1.0f);
+    // Optical Drift translates the centre of the pupil distribution as the
+    // PSF grows. Because the translation is proportional to the already
+    // field/depth-conditioned radius, focused regions remain exactly fixed.
+    // Radial and Tangential reuse the shaped field orientation; Directed is a
+    // global lens-space tilt selected by angle. The signed amount reverses the
+    // corresponding direction without adding another mode or coordinate.
+    float driftAmount=clamp(p.opticalDriftAmount,-1.0f,1.0f);
+    float2 driftDirection=radial;
+    float driftFieldWeight=smoothstep(.02f,.20f,fieldRadius);
+    if(p.opticalDriftMode==LDBOpticalDriftTangential) {
+        driftDirection=tangent;
+    } else if(p.opticalDriftMode==LDBOpticalDriftDirected) {
+        float driftAngle=p.opticalDriftAngle*(M_PI_F/180.0f);
+        driftDirection=float2(cos(driftAngle),sin(driftAngle));
+        driftFieldWeight=1.0f;
+    }
+    float2 opticalDrift=driftDirection*(driftAmount*radius*.80f*driftFieldWeight);
     // Do not privilege a zero-offset source sample: it leaves a concentrated
     // copy of point highlights inside an otherwise defocused pupil footprint.
     float4 result=0.0f;
@@ -1388,7 +1405,7 @@ kernel void ldbBlurAperture(device const float4* source [[buffer(0)]],
                         *mix(1.0f,positiveRimProfile,max(rimWeight,0.0f))
                         *mix(1.0f,negativeRimProfile,max(-rimWeight,0.0f))
                         *clipWeight;
-        float2 pupilPosition=float2(gid)+offset;
+        float2 pupilPosition=float2(gid)+offset+opticalDrift;
         float4 pupilSample=sampleBilinear(source,pupilPosition,width,height);
         if(p.depthMode>0u)
             edgeWeight*=depthSampleAgreement(targetDepth,

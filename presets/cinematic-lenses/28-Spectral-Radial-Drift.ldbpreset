@@ -1,0 +1,31 @@
+LensDebaserPreset=2
+# Family: Spectral Radial Drift
+# Strength: Signature
+# Stronger outward optical drift with coherent radial softness and cyan/orange edge separation; intended as an expressive demonstration rather than a default finishing strength.
+apertureCatEye=0.42
+apertureRadius=15
+apertureResponse=0.72
+apertureShape=0
+apertureSoftness=0.26
+chromaticFieldFalloff=1.1
+chromaticFieldOnset=0.16
+cornerSharpnessLoss=0.52
+farFocusB=1
+farFocusG=0.72
+farFocusR=0.22
+fieldCurvature=0.42
+fineDetail=-0.06
+lateralCABlue=-0.88
+lateralCARed=0.68
+longitudinalCA=0.12
+longitudinalCARadius=4.5
+microContrast=-0.12
+nearFocusB=0.28
+nearFocusG=0.62
+nearFocusR=1
+opticalDriftAmount=0.58
+opticalDriftMode=0
+radialSmear=0.32
+responseFieldFalloff=1.18
+responseFieldOnset=0.12
+tangentialSmear=0.12

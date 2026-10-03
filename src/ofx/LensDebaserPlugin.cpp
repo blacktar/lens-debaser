@@ -14,7 +14,7 @@
 #include <vector>
 
 namespace {
-constexpr const char *kName = "Lens Debaser 1.68";
+constexpr const char *kName = "Lens Debaser 1.69";
 constexpr const char *kIdentifier = "com.ldb.LensDebaser";
 constexpr const char *kDepthClipName = "Depth";
 struct DoubleSpec {
@@ -109,6 +109,10 @@ const DoubleSpec kSpecs[] = {
      "bounded response. Values above 1 extend through the creative range."},
     {"aperturePupilShift", "Pupil Shift", 0, 0, 1, .001,
      "Displaces the off-axis pupil along the radial field direction."},
+    {"opticalDriftAmount", "Optical Drift", 0, -1, 1, .001,
+     "Moves the energy centre of growing defocus without shifting the sharp image; sign reverses the selected direction."},
+    {"opticalDriftAngle", "Drift Angle", 0, -180, 180, .1,
+     "Lens-space direction in degrees when Drift Direction is Directed."},
     {"aperturePupilClip", "Pupil Clipping", 0, 0, 1, .001,
      "Asymmetrically clips the off-axis pupil at the lens-barrel boundary."},
     {"apertureRimWeight", "Pupil Rim Weight", 0, -1, 1, .001,
@@ -311,7 +315,7 @@ struct Preset {
       nearFocus{1, .35, .75}, farFocus{.35, 1, .65},
       anamorphicFlare{.35, .55, 1}, anamorphicFlareGhost{.55, .25, 1};
   int apertureShape = 0, apertureBladeCount = 6, depthMode = 0,
-      captureGate = 0, prismDistribution = 0;
+      captureGate = 0, prismDistribution = 0, opticalDriftMode = 0;
 };
 
 class Processor final : public OFX::ImageProcessor {
@@ -354,6 +358,7 @@ public:
     depthMode = fetchChoiceParam("depthMode");
     captureGate = fetchChoiceParam("captureGate");
     prismDistribution = fetchChoiceParam("prismDistribution");
+    opticalDriftMode = fetchChoiceParam("opticalDriftMode");
     apertureBladeCount = fetchDoubleParam("apertureBladeCount");
     opticalCenter = fetchDouble2DParam("opticalCenter");
     fieldCenter = fetchDouble2DParam("fieldCenter");
@@ -447,7 +452,8 @@ public:
       return;
     }
     if (name == "apertureShape" || name == "apertureCatEye" ||
-        name == "apertureBokehSwirl" || name == "apertureResponse")
+        name == "apertureBokehSwirl" || name == "apertureResponse" ||
+        name == "opticalDriftAmount" || name == "opticalDriftMode")
       updateApertureControls();
     if (name == "longitudinalCA")
       updateChromaticControls();
@@ -541,6 +547,8 @@ private:
     D(apertureAspect);
     D(apertureBokehSwirl);
     D(aperturePupilShift);
+    D(opticalDriftAmount);
+    D(opticalDriftAngle);
     D(aperturePupilClip);
     D(apertureRimWeight);
     D(fieldAspect);
@@ -621,15 +629,17 @@ private:
     p.opticalCenter = {float(x), float(y)};
     fieldCenter->getValueAtTime(t, x, y);
     p.fieldCenter = {float(x), float(y)};
-    int s = 0, d = 0, a = 0, dm = 0, cg = 0, pd = 0;
+    int s = 0, d = 0, a = 0, dm = 0, cg = 0, pd = 0, od = 0;
     workingSpace->getValueAtTime(t, s);
     diagnostic->getValueAtTime(t, d);
     apertureShape->getValueAtTime(t, a);
     depthMode->getValueAtTime(t, dm);
     captureGate->getValueAtTime(t, cg);
     prismDistribution->getValueAtTime(t, pd);
+    opticalDriftMode->getValueAtTime(t, od);
     p.depthMode = uint32_t(dm);
     p.prismDistribution = uint32_t(std::clamp(pd, 0, 4));
+    p.opticalDriftMode = uint32_t(std::clamp(od, 0, 2));
     p.depthChannel = 0u;
     p.depthNear = float(value("depthNear", t));
     p.depthFar = float(value("depthFar", t));
@@ -705,6 +715,7 @@ private:
     depthMode->getValueAtTime(time, p.depthMode);
     captureGate->getValueAtTime(time, p.captureGate);
     prismDistribution->getValueAtTime(time, p.prismDistribution);
+    opticalDriftMode->getValueAtTime(time, p.opticalDriftMode);
     double blades = 6;
     apertureBladeCount->getValueAtTime(time, blades);
     p.apertureBladeCount = std::clamp(int(std::lround(blades)), 3, 16);
@@ -714,7 +725,7 @@ private:
     for (const auto &s : kSpecs)
       if (name == s.id)
         return true;
-    static const std::array<const char *, 19> otherControls = {
+    static const std::array<const char *, 20> otherControls = {
         "opticalCenter",
         "fieldCenter",
         "transmissionColor",
@@ -728,6 +739,7 @@ private:
         "depthMode",
         "captureGate",
         "prismDistribution",
+        "opticalDriftMode",
         "opticalCenterX",
         "opticalCenterY",
         "fieldCenterX",
@@ -767,7 +779,8 @@ private:
            current.apertureBladeCount == target.apertureBladeCount &&
            current.depthMode == target.depthMode &&
            current.captureGate == target.captureGate &&
-           current.prismDistribution == target.prismDistribution;
+           current.prismDistribution == target.prismDistribution &&
+           current.opticalDriftMode == target.opticalDriftMode;
   }
   void updateApertureControls() {
     int shape = 0;
@@ -786,6 +799,14 @@ private:
     doubles.at("apertureAspect")->setEnabled(active);
     doubles.at("apertureBokehSwirl")->setEnabled(active);
     doubles.at("aperturePupilShift")->setEnabled(active);
+    double drift = 0;
+    doubles.at("opticalDriftAmount")->getValue(drift);
+    int driftMode = 0;
+    opticalDriftMode->getValue(driftMode);
+    doubles.at("opticalDriftAmount")->setEnabled(active);
+    opticalDriftMode->setEnabled(active && std::abs(drift) > 1e-8);
+    doubles.at("opticalDriftAngle")
+        ->setEnabled(active && std::abs(drift) > 1e-8 && driftMode == 2);
     doubles.at("aperturePupilClip")->setEnabled(active);
     doubles.at("apertureRimWeight")->setEnabled(active);
   }
@@ -920,7 +941,8 @@ private:
                                      "apertureRotation", "apertureSoftness",
                                      "apertureCatEye", "apertureAspect",
                                      "apertureBokehSwirl", "aperturePupilShift",
-                                     "aperturePupilClip", "apertureRimWeight"}) ||
+                                     "aperturePupilClip", "apertureRimWeight",
+                                     "opticalDriftAmount", "opticalDriftAngle"}) ||
                                  p.apertureShape != 0 ||
                                  p.apertureBladeCount != 6);
     setGroupOpen("bloom", active({"bloomEnergy", "bloomThreshold",
@@ -989,7 +1011,8 @@ private:
         active({"apertureResponse", "apertureRadius", "apertureBladeCurvature",
                 "apertureRotation", "apertureSoftness", "apertureCatEye",
                 "apertureAspect", "apertureBokehSwirl", "aperturePupilShift",
-                "aperturePupilClip", "apertureRimWeight", "vignetteNatural",
+                "aperturePupilClip", "apertureRimWeight", "opticalDriftAmount",
+                "opticalDriftAngle", "vignetteNatural",
                 "vignetteOptical",
                 "vignetteMechanical", "imageCircleSize", "imageCircleAspect",
                 "imageCircleSoftness"}) ||
@@ -1055,6 +1078,7 @@ private:
     depthMode->setValue(std::clamp(p.depthMode, 0, 5));
     captureGate->setValue(std::clamp(p.captureGate, 0, 12));
     prismDistribution->setValue(std::clamp(p.prismDistribution, 0, 4));
+    opticalDriftMode->setValue(std::clamp(p.opticalDriftMode, 0, 2));
     selectPresetIfNeeded(comparisonPresetIndex);
     endEditBlock();
     updateApertureControls();
@@ -1121,6 +1145,8 @@ private:
           p.captureGate = int(n);
         else if (key == "prismDistribution")
           p.prismDistribution = int(n);
+        else if (key == "opticalDriftMode")
+          p.opticalDriftMode = int(n);
         else if (key == "opticalCenterX")
           p.center[0] = n;
         else if (key == "opticalCenterY")
@@ -1239,6 +1265,7 @@ private:
       << "depthMode=" << p.depthMode << '\n'
       << "captureGate=" << p.captureGate << '\n'
       << "prismDistribution=" << p.prismDistribution << '\n'
+      << "opticalDriftMode=" << p.opticalDriftMode << '\n'
       << "opticalCenterX=" << p.center[0] << "\nopticalCenterY=" << p.center[1]
       << '\n'
       << "fieldCenterX=" << p.fieldCenter[0]
@@ -1269,7 +1296,8 @@ private:
   OFX::ChoiceParam *workingSpace = nullptr, *diagnostic = nullptr,
                    *presetChoice = nullptr,
                    *apertureShape = nullptr, *depthMode = nullptr,
-                   *captureGate = nullptr, *prismDistribution = nullptr;
+                   *captureGate = nullptr, *prismDistribution = nullptr,
+                   *opticalDriftMode = nullptr;
   OFX::DoubleParam *apertureBladeCount = nullptr;
   OFX::Double2DParam *opticalCenter = nullptr, *fieldCenter = nullptr;
   OFX::RGBParam *transmission = nullptr, *glare = nullptr, *nearFocus = nullptr,
@@ -1308,7 +1336,7 @@ OFX::GroupParamDescriptor *addGroup(OFX::ImageEffectDescriptor &d,
 } // namespace
 
 LensDebaserPluginFactory::LensDebaserPluginFactory()
-    : PluginFactoryHelper(kIdentifier, 1, 39) {}
+    : PluginFactoryHelper(kIdentifier, 1, 40) {}
 void LensDebaserPluginFactory::describe(OFX::ImageEffectDescriptor &d) {
   d.setLabels(kName, kName, kName);
   d.getPropertySet().propSetString(kOfxPropIcon, "com.ldb.LensDebaser.png", 1,
@@ -1522,7 +1550,8 @@ void LensDebaserPluginFactory::describeInContext(OFX::ImageEffectDescriptor &d,
                id == "depthEdgeSoftness") {
       g = depthGroup;
       p = advanced;
-    } else if (id.rfind("aperture", 0) == 0) {
+    } else if (id.rfind("aperture", 0) == 0 ||
+               id.rfind("opticalDrift", 0) == 0) {
       g = aperture;
       p = pupil;
     } else if (id.rfind("imageCircle", 0) == 0) {
@@ -1613,6 +1642,19 @@ void LensDebaserPluginFactory::describeInContext(OFX::ImageEffectDescriptor &d,
           "Selects the pupil used by aperture and bokeh reconstruction.");
       shape->setParent(*aperture);
       pupil->addChild(*shape);
+    }
+    if (id == "opticalDriftAmount") {
+      auto *mode = d.defineChoiceParam("opticalDriftMode");
+      mode->setLabels("Drift Direction", "Drift Direction",
+                      "Drift Direction");
+      mode->appendOption("Radial");
+      mode->appendOption("Tangential");
+      mode->appendOption("Directed");
+      mode->setDefault(0);
+      mode->setHint(
+          "Radial and Tangential follow Field Center and Field Shape. Directed uses Drift Angle.");
+      mode->setParent(*aperture);
+      pupil->addChild(*mode);
     }
   }
   auto addColor = [&](const char *id, const char *label,
