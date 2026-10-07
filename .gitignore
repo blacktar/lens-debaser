@@ -52,3 +52,8 @@
 *.arx
 /inputs/Reference_Lenses/
 /LDB_HANDOFF.md
+
+/releases/Lens-Debaser-1.35-Apple-Silicon.zip
+/releases/Lens-Debaser-1.35-Apple-Silicon.zip.sha256
+/releases/Lens-Debaser-1.64-Apple-Silicon.zip
+/releases/Lens-Debaser-1.64-Apple-Silicon.zip.sha256
