@@ -1,0 +1,34 @@
+{
+  "cases": [
+    {
+      "id": "01-Normal-Barrel",
+      "preset": "01-Normal-Barrel.ldbpreset"
+    },
+    {
+      "id": "02-Strong-Inward-Warp",
+      "preset": "02-Strong-Inward-Warp.ldbpreset"
+    },
+    {
+      "id": "03-Extreme-Projection",
+      "preset": "03-Extreme-Projection.ldbpreset"
+    },
+    {
+      "id": "04-Decentered-Projection",
+      "preset": "04-Decentered-Projection.ldbpreset"
+    },
+    {
+      "id": "05-Black-Image-Circle",
+      "preset": "05-Black-Image-Circle.ldbpreset"
+    }
+  ],
+  "modes": [
+    "Off",
+    "Auto Fill",
+    "Manual",
+    "Auto Fill + Safety Margin"
+  ],
+  "sources": [
+    "milano1"
+  ],
+  "limitations": "Auto coverage is a padded65x37 grid, not an exact guarantee for arbitrary folds, blur footprints or source letterboxing. Zoom search capped8x; impossible cases require manual judgment."
+}

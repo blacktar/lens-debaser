@@ -5,9 +5,9 @@ DaVinci Resolve. It models perceptually useful aspects of modern, vintage,
 anamorphic and exotic optics, prioritising pleasing visual approximations and
 interactive performance over scientific lens simulation.
 
-Current development version: **1.70**.
+Current development version: **1.72**.
 
-Release 1.70 (build 171): engine, UI, factory presets and updated guide accepted. The guide upload is pending manual publication.
+Version 1.72 (internal build 172, approved RC1 binary) adds Final Framing: Auto Fill Frame with signed Adjust Auto, plus independent Manual Crop. Integrated validation and Resolve checks passed. Existing optical presets remain unchanged; the guide update is awaiting review and manual publication.
 
 Read the online [Lens Debaser user guide](https://vidarandersen.com/dmz/lens-debaser-ofx/) for the complete workflow, control reference, depth setup, and preset catalogue.
 

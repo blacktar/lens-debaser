@@ -2,3 +2,8 @@ LensDebaserPreset=2
 # Give the file a descriptive name ending in .ldbpreset.
 # Add only controls intentionally changed from their defaults.
 # Example: transmissionWarmth=0.12
+
+# Final Framing (neutral)
+finalFramingMode=0
+finalAutoCropAdjustment=0
+finalManualCrop=0

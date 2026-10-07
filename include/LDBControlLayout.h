@@ -43,8 +43,16 @@ inline constexpr Group groups[] = {
   {"frontWear","Front Element Wear","advancedSection","Direct attenuation and illumination-driven scatter from wear."},
   {"lensDirt","Internal Contamination","advancedSection","Direct density clouds and scatter from internal deposits."},
   {"output","Output","","Final original/effect blend after the optical graph."},
+#if defined(LDB_FINAL_FRAMING_EXPERIMENT) || defined(LDB_ENABLE_FINAL_FRAMING)
+  {"finalFraming","Final Framing","","Crop the finished optical result without changing its lens response."},
+#endif
 };
 inline constexpr Control controls[] = {
+#if defined(LDB_FINAL_FRAMING_EXPERIMENT) || defined(LDB_ENABLE_FINAL_FRAMING)
+  {"finalFramingMode","finalFraming","Auto Fill Frame",""},
+  {"finalAutoCropAdjustment","finalFraming","Adjust Auto",""},
+  {"finalManualCrop","finalFraming","Manual Crop (%)",""},
+#endif
   {"preset","presetGroup","Preset",""},
   {"loadPreset","presetGroup","Load",""},
   {"savePreset","presetGroup","Save",""},

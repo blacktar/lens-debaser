@@ -32,6 +32,7 @@ int main(int argc,char** argv) {
    if(!lut.load((root/"inputs/redistributable/Resolve-DWG-Intermediate-to-Rec709-Gamma24-Guide.cube").c_str()))return 4;
   } else return 4;
   if(source.size()!=size_t(w)*h)return 4;
+  if(getenv("LDB_REVIEW_GUIDE_DEPTH"))source=withGuideDepth(source,w,h);
   auto oldPreset=loadPreset(argv[4],w,h),newPreset=loadPreset(argv[5],w,h);
   #if defined(LDB_RESOLUTION_RELATIVE_CANDIDATE) || defined(LDB_ENABLE_FRAME_RELATIVE)
   if(getenv("LDB_REVIEW_BASELINE_FIXED"))oldPreset.processingFlags|=(1u<<30);
@@ -48,8 +49,8 @@ int main(int argc,char** argv) {
   const bool singleRender=getenv("LDB_REVIEW_SINGLE_RENDER")!=nullptr;
   if(!singleRender&&!standalone) { @autoreleasepool { after=render(newEngine,device,queue,source,w,h,newPreset); } }
   else after=before;
-  double mae=0;size_t bad=0;
-  for(size_t i=0;i<before.size();++i)for(int c=0;c<4;++c){if(!std::isfinite(before[i][c])||!std::isfinite(after[i][c]))++bad;if(c<3)mae+=fabs(double(before[i][c])-after[i][c]);}
+  double mae=0,maxError=0;size_t bad=0;
+  for(size_t i=0;i<before.size();++i)for(int c=0;c<4;++c){if(!std::isfinite(before[i][c])||!std::isfinite(after[i][c]))++bad;maxError=std::max(maxError,fabs(double(before[i][c])-after[i][c]));if(c<3)mae+=fabs(double(before[i][c])-after[i][c]);}
   if(bad){fprintf(stderr,"Nonfinite components: %zu\n",bad);return 5;}
   auto display=[&](const auto& pixels){return key.rfind("milano",0)!=0?guideRec709Gamma24FromAP1(pixels):guideMilanoDisplayFromAP1(pixels,lut);};
   if(getenv("LDB_REVIEW_SOURCE_ONLY"))return writePNG(prefix+"-source.png",display(source),w,h)?0:6;
@@ -60,6 +61,30 @@ int main(int argc,char** argv) {
    audit<<"{\"width\":"<<w<<",\"height\":"<<h<<",\"nonfinite\":0,\"benchmark_performed\":false}\n";
    return audit?0:7;
   }
+#if defined(LDB_FINAL_FRAMING_EXPERIMENT) || defined(LDB_ENABLE_FINAL_FRAMING)
+  if(getenv("LDB_REVIEW_CACHE_AUDIT")) {
+    double maxError=0;int checked=0;
+    for(int state=0;state<6;++state) {
+      auto test=newPreset;auto input=source;
+      if(state==1)test.opticalCenter.x+=.02f;
+      if(state==2)test.finalFramingZoom=90;
+      if(state==3){test.finalFramingMode=0;test.finalFramingZoom=125;}
+      if(state==5)for(auto& pixel:input){pixel.x*=.5f;pixel.y*=.5f;pixel.z*=.5f;}
+      for(int repeat=0;repeat<2;++repeat) {@autoreleasepool {
+        auto expected=render(oldEngine,device,queue,input,w,h,test);
+        auto actual=render(newEngine,device,queue,input,w,h,test);
+        for(size_t i=0;i<actual.size();++i)for(int c=0;c<4;++c){
+          if(!std::isfinite(actual[i][c]))return 5;
+          maxError=std::max(maxError,fabs(double(actual[i][c])-expected[i][c]));
+        }
+        ++checked;
+      }}
+    }
+    std::ofstream audit(prefix+"-cache-audit.json");
+    audit<<"{\"checks\":"<<checked<<",\"max_error\":"<<maxError<<",\"nonfinite\":0}\n";
+    return maxError==0?0:8;
+  }
+#endif
   NSUInteger bytes=source.size()*sizeof(simd_float4);
   id<MTLBuffer> src=[device newBufferWithBytes:source.data() length:bytes options:MTLResourceStorageModeShared];
   id<MTLBuffer> dst=[device newBufferWithLength:bytes options:MTLResourceStorageModeShared];
@@ -73,7 +98,7 @@ int main(int argc,char** argv) {
    for(int run=0;run<benchmarkRuns;++run){auto value=measure(newEngine,newPreset);if(run)metrics<<",";metrics<<"{\"gpu\":"<<value.first<<",\"wall\":"<<value.second<<"}";}
    metrics<<"]}\n";return metrics?0:7;
   }
-  std::ofstream metrics(prefix+"-metrics.json");metrics<<"{\"width\":"<<w<<",\"height\":"<<h<<",\"nonfinite\":0,\"mae\":"<<mae/(source.size()*3)<<",\"frames\":"<<benchmarkFrames<<",\"runs\":[";
+  std::ofstream metrics(prefix+"-metrics.json");metrics<<"{\"width\":"<<w<<",\"height\":"<<h<<",\"nonfinite\":0,\"mae\":"<<mae/(source.size()*3)<<",\"max_error\":"<<maxError<<",\"frames\":"<<benchmarkFrames<<",\"runs\":[";
   for(int run=0;run<benchmarkRuns;++run){std::pair<double,double> a,b;if(run%2){b=measure(newEngine,newPreset);a=measure(oldEngine,oldPreset);}else{a=measure(oldEngine,oldPreset);b=measure(newEngine,newPreset);}if(run)metrics<<",";metrics<<"{\"old_gpu\":"<<a.first<<",\"new_gpu\":"<<b.first<<",\"old_wall\":"<<a.second<<",\"new_wall\":"<<b.second<<"}";}
   metrics<<"]}\n";if(!metrics)return 7;
   printf("PASS: %s / %s, finite renders and bounded paired timing runs\n",argv[5],argv[6]);

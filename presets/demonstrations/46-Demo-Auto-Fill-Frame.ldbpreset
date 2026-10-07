@@ -1,0 +1,12 @@
+LensDebaserPreset=2
+# Family: Demo-Auto-Fill-Frame
+# Strength: Educational
+# Extreme projection exposes unwanted edges; Auto Fill crops the completed result.
+effectSize=0
+projectionModel=1
+projectionAmount=70
+projectionFieldAngle=75
+projectionFraming=2
+finalFramingMode=1
+finalAutoCropAdjustment=0
+finalManualCrop=0

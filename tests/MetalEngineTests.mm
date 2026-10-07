@@ -27,7 +27,13 @@ render(LDBOpticsEngine &engine, id<MTLDevice> device, id<MTLCommandQueue> queue,
     id<MTLBuffer> dst = [device newBufferWithLength:bytes
                                             options:MTLResourceStorageModeShared];
     id<MTLCommandBuffer> command = [queue commandBuffer];
-    engine.encode(command, src, dst, width, height, parameters);
+    auto fixedFixture=parameters;
+#if defined(LDB_ENABLE_FRAME_RELATIVE) || defined(LDB_RESOLUTION_RELATIVE_CANDIDATE)
+    // Legacy 64x48 fixtures and thresholds specify radii in source pixels.
+    // Resolution-relative scaling has its own dedicated integration checks.
+    fixedFixture.processingFlags|=(1u<<30);
+#endif
+    engine.encode(command, src, dst, width, height, fixedFixture);
     [command commit];
     [command waitUntilCompleted];
     require(command.status == MTLCommandBufferStatusCompleted,
@@ -55,7 +61,13 @@ static std::vector<simd_float4> renderWithDepth(
     id<MTLBuffer> dst = [device newBufferWithLength:bytes
                                             options:MTLResourceStorageModeShared];
     id<MTLCommandBuffer> command = [queue commandBuffer];
-    engine.encode(command, src, dst, width, height, parameters, z);
+    auto fixedFixture=parameters;
+#if defined(LDB_ENABLE_FRAME_RELATIVE) || defined(LDB_RESOLUTION_RELATIVE_CANDIDATE)
+    // Legacy 64x48 fixtures and thresholds specify radii in source pixels.
+    // Resolution-relative scaling has its own dedicated integration checks.
+    fixedFixture.processingFlags|=(1u<<30);
+#endif
+    engine.encode(command, src, dst, width, height, fixedFixture, z);
     [command commit];
     [command waitUntilCompleted];
     require(command.status == MTLCommandBufferStatusCompleted,

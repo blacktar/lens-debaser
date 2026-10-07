@@ -114,6 +114,10 @@ static std::vector<simd_float4> guideMilanoDisplayFromAP1(
 
 static void assignValue(LDBOpticsParameters& p,const std::string& key,float v) {
 #define SET(name) if(key==#name){p.name=v;return;}
+#if defined(LDB_FINAL_FRAMING_EXPERIMENT) || defined(LDB_ENABLE_FINAL_FRAMING)
+ if(key=="finalCropAdjustment"){p.finalFramingZoom=100.0f+float(v);return;}
+ SET(finalFramingMode) SET(finalFramingZoom) SET(finalFramingX) SET(finalFramingY) SET(finalFramingMargin)
+#endif
 #if defined(LDB_RESOLUTION_RELATIVE_CANDIDATE) || defined(LDB_ENABLE_FRAME_RELATIVE)
     if(key=="effectSize") { if(v==1)p.processingFlags|=(1u<<30);else p.processingFlags&=~(1u<<30);return; }
 #endif
@@ -168,13 +172,17 @@ static void assignValue(LDBOpticsParameters& p,const std::string& key,float v) {
 }
 
 static LDBOpticsParameters loadPreset(const fs::path& path,uint32_t width,uint32_t height) {
-    auto p=LDBNeutralOpticsParameters(width,height); std::ifstream in(path); std::string line; bool focusDistanceRead=false;
+    auto p=LDBNeutralOpticsParameters(width,height); std::ifstream in(path); std::string line; bool focusDistanceRead=false; float autoCrop=0,manualCrop=0; bool hasSeparateCrop=false;
 #if defined(LDB_PROJECTION_RESOLVE_CANDIDATE) || defined(LDB_ENABLE_PROJECTION)
     int model=0,framing=1;double amount=0,angle=55;
 #endif
     while(std::getline(in,line)){auto at=line.find('=');if(at==std::string::npos||line.empty()||line[0]=='#')continue;
         try{
             auto key=line.substr(0,at);float value=std::stof(line.substr(at+1));
+#if defined(LDB_FINAL_FRAMING_EXPERIMENT) || defined(LDB_ENABLE_FINAL_FRAMING)
+            if(key=="finalAutoCropAdjustment"){autoCrop=value;hasSeparateCrop=true;continue;}
+            if(key=="finalManualCrop"){manualCrop=value;hasSeparateCrop=true;continue;}
+#endif
             if(key=="captureFocusDistance")focusDistanceRead=true;
 #if defined(LDB_PROJECTION_RESOLVE_CANDIDATE) || defined(LDB_ENABLE_PROJECTION)
             if(key=="projectionModel")model=int(value);
@@ -187,6 +195,9 @@ static LDBOpticsParameters loadPreset(const fs::path& path,uint32_t width,uint32
         }catch(...){} }
 #if defined(LDB_PROJECTION_RESOLVE_CANDIDATE) || defined(LDB_ENABLE_PROJECTION)
     LDBSetProjectionCandidate(p,model,amount,angle,framing);
+#endif
+#if defined(LDB_FINAL_FRAMING_EXPERIMENT) || defined(LDB_ENABLE_FINAL_FRAMING)
+    if(hasSeparateCrop) p.finalFramingZoom=100+(p.finalFramingMode>0?autoCrop:manualCrop);
 #endif
     if(focusDistanceRead) p.captureFocusDistance=p.captureFocusDistance>=999.5f?1000.0f:p.captureFocusDistance*.01f;
     return p;

@@ -17,6 +17,8 @@ def number(token: str) -> float:
 
 
 def group_for(control_id: str) -> str:
+    if control_id.startswith("final"):
+        return "Final Framing"
     if control_id.startswith("capture"):
         return "Capture"
     if control_id.startswith("look"):
@@ -93,6 +95,7 @@ def parse_double_specs(text: str) -> dict[str, dict]:
 
 
 def add_special_controls(controls: dict[str, dict]) -> None:
+    controls["finalFramingMode"] = {"label": "Auto Fill Frame", "group": "Final Framing", "type": "integer", "ui_type": "checkbox", "default": 0, "minimum": 0, "maximum": 1, "step": 1, "description": "0 disables automatic edge cropping; 1 enables it. Adjust Auto is active only at 1; Manual Crop only at 0. Both adjustments default to zero and retain independent values."}
     choices = {
         "effectSize": ("Effect Size", "Input & Diagnostics", ["Frame Relative", "Fixed Pixels"], 0),
         "projectionModel": ("Projection Model", "Projection", ["Off", "Equidistant", "Stereographic"], 0),
@@ -172,6 +175,7 @@ def main() -> None:
             {"controls": ["depthNear", "depthFar", "depthFocus", "responseDefocusOnset", "responseDefocusFalloff", "responseScatterEdgeProtection", "depthEdgeSoftness"], "requires": {"depthMode": "> 0 and a second RGB input"}, "note": "Depth Input modifies depth-aware Aperture Response, longitudinal color, spherical halo, and bloom/glare occlusion; it does not create those responses by itself."},
             {"controls": ["fieldAspect", "fieldRotation", "fieldCenterX", "fieldCenterY", "responseFieldOnset", "responseFieldFalloff"], "requires": {"an affected response": "active"}, "note": "Field Shape routes and gates other spatial responses and may be visually neutral on its own."},
         ],
+        "final_framing_guidance": "Final Framing crops the completed optical result. Positive Adjust Auto increases automatic crop, negative reduces it and may reveal unwanted edges. Manual Crop is nonnegative. Both values are retained independently. Leave Auto Fill off and Manual Crop at zero to preserve framing. Cropping enlarges retained detail and can soften insufficient-resolution sources. Auto Fill is approximate, not a guarantee for every extreme distortion or source border.",
         "performance_guidance": [
             "Aperture Response and combined chromatic defocus are the most expensive common paths; add them deliberately.",
             "Geometry, prism, detail transfer, vignette and simple transmission treatments are generally lighter.",

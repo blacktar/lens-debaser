@@ -1,0 +1,1 @@
+Load these plain .ldbpreset files in Lens Debaser Final Framing Test. Existing geometry creates the edge problems; Final Framing starts Off. Compare Auto Fill, Manual (start at150% zoom), then Auto Fill with5% Safety Margin. Position adjusts the crop centre; it does not move the lens axis. All files belong to this experiment only.

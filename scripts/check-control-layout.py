@@ -9,7 +9,7 @@ spec=source.split('const DoubleSpec kSpecs[] = {',1)[1].split('struct Preset',1)
 doubles=set(re.findall(r'\{"([^"]+)",\s*"',spec))
 # The remaining descriptors are explicitly defined choice/point/color/button controls.
 function=source.split('void LensDebaserPluginFactory::describeInContext',1)[1]
-other=set(re.findall(r'd\.define(?:Choice|Double2D|PushButton|Double)Param\("([^"]+)"',function))
+other=set(re.findall(r'd\.define(?:Choice|Boolean|Double2D|PushButton|Double)Param\("([^"]+)"',function))
 other.update(re.findall(r'addColor\("([^"]+)"',function))
 controls=set(re.findall(r'^  \{"([^"]+)",',header.split('inline constexpr Control controls[] = {',1)[1].split('};',1)[0],re.M))
 assert controls==doubles|other,(sorted((doubles|other)-controls),sorted(controls-(doubles|other)))

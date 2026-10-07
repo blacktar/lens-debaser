@@ -4,6 +4,8 @@
 #endif
 #include "LDBOpticsEngine.h"
 #include <algorithm>
+#include <atomic>
+#include <cstring>
 #include <cmath>
 #include <dispatch/dispatch.h>
 #include <memory>
@@ -52,6 +54,13 @@ struct LDBBufferPool {
   NSUInteger cachedBytes = 0;
 };
 
+#if defined(LDB_FINAL_FRAMING_EXPERIMENT) || defined(LDB_ENABLE_FINAL_FRAMING)
+struct LDBFinalFramingCache {
+  id<MTLBuffer> buffer=nil;
+  LDBOpticsParameters key{};
+  std::atomic<bool> valid{false};
+};
+#endif
 struct LDBOpticsEngine::Impl {
   id<MTLDevice> device = nil;
   id<MTLComputePipelineState> opticsPipeline = nil;
@@ -65,6 +74,11 @@ struct LDBOpticsEngine::Impl {
   id<MTLComputePipelineState> flareSourceDetectionPipeline = nil;
   id<MTLComputePipelineState> apertureBlurPipeline = nil;
   id<MTLComputePipelineState> compositePipeline = nil;
+#if defined(LDB_FINAL_FRAMING_EXPERIMENT) || defined(LDB_ENABLE_FINAL_FRAMING)
+  id<MTLComputePipelineState> finalFindPipeline=nil,finalApplyPipeline=nil;
+  bool finalCacheEnabled=false,finalDirectOutput=false;
+  std::shared_ptr<LDBFinalFramingCache> finalCache=std::make_shared<LDBFinalFramingCache>();
+#endif
   id<MTLComputePipelineState> encodePipeline = nil;
   id<MTLBuffer> zeroScatterBuffer = nil;
   std::shared_ptr<LDBBufferPool> bufferPool;
@@ -292,6 +306,12 @@ LDBOpticsEngine::LDBOpticsEngine(id<MTLDevice> device, NSURL *metallibURL)
       makePipeline(device, library, @"ldbComposite", impl_->error);
   impl_->encodePipeline =
       makePipeline(device, library, @"ldbEncodeFromLinearAP1", impl_->error);
+#if defined(LDB_FINAL_FRAMING_EXPERIMENT) || defined(LDB_ENABLE_FINAL_FRAMING)
+  impl_->finalFindPipeline=makePipeline(device,library,@"ldbFindFinalFraming",impl_->error);
+  impl_->finalApplyPipeline=makePipeline(device,library,@"ldbApplyFinalFraming",impl_->error);
+  impl_->finalCacheEnabled=[library newFunctionWithName:@"ldbFinalFramingCacheVersion"]!=nil;
+  impl_->finalDirectOutput=[library newFunctionWithName:@"ldbFinalFramingDirectOutputVersion"]!=nil;
+#endif
   simd_float4 zero = {0, 0, 0, 0};
   impl_->zeroScatterBuffer =
       [device newBufferWithBytes:&zero
@@ -345,6 +365,13 @@ void LDBOpticsEngine::encode(id<MTLCommandBuffer> commandBuffer,
     return buffer;
   };
 
+  id<MTLBuffer> finishedOutput=destination;
+#if defined(LDB_FINAL_FRAMING_EXPERIMENT) || defined(LDB_ENABLE_FINAL_FRAMING)
+  if(impl_->finalDirectOutput && (p.finalFramingMode!=0 || p.finalFramingZoom!=100)) {
+    finishedOutput=scratch(byteCount);
+    if(!finishedOutput)throw std::runtime_error("Unable to allocate finished crop input");
+  }
+#endif
   id<MTLBuffer> opticalSource = source;
   if (depthSource && p.depthMode > 0u) {
     opticalSource = scratch(byteCount);
@@ -374,7 +401,11 @@ void LDBOpticsEngine::encode(id<MTLCommandBuffer> commandBuffer,
                      size:byteCount];
     [blit endEncoding];
   };
-  if (p.effectBlend <= 0.0f) {
+  if (p.effectBlend <= 0.0f
+#if defined(LDB_FINAL_FRAMING_EXPERIMENT) || defined(LDB_ENABLE_FINAL_FRAMING)
+      && p.finalFramingMode==0 && p.finalFramingZoom==100
+#endif
+      ) {
     copySource();
     return;
   }
@@ -403,6 +434,9 @@ void LDBOpticsEngine::encode(id<MTLCommandBuffer> commandBuffer,
       p.refractiveIrregularity == 0.0f && p.prismAmount == 0.0f;
   bool diagnosticActive = (p.processingFlags & LDBDiagnosticMask) != 0;
   if (noOpticalEffect && !diagnosticActive
+#if defined(LDB_FINAL_FRAMING_EXPERIMENT) || defined(LDB_ENABLE_FINAL_FRAMING)
+      && p.finalFramingMode==0 && p.finalFramingZoom==100
+#endif
 #if defined(LDB_PROJECTION_RESOLVE_CANDIDATE) || defined(LDB_ENABLE_PROJECTION)
       && !LDBProjectionCandidateActive(p)
 #endif
@@ -644,7 +678,7 @@ void LDBOpticsEngine::encode(id<MTLCommandBuffer> commandBuffer,
   id<MTLBuffer> apertureScattered =
       apertureActive ? apertureTemporary1 : direct;
   id<MTLBuffer> linearResult =
-      linearAP1Input ? destination : scratch(byteCount);
+      linearAP1Input ? finishedOutput : scratch(byteCount);
   if (!linearSource || !direct || !achromaticDirect || !bloomSource ||
       !bloomTemporary || !bloomScattered || !glareSource || !glareTemporary ||
       !glareScattered || !haloSource || !haloTemporary || !haloScattered ||
@@ -841,12 +875,49 @@ void LDBOpticsEngine::encode(id<MTLCommandBuffer> commandBuffer,
     [encoder setComputePipelineState:impl_->encodePipeline];
     [encoder setBuffer:source offset:0 atIndex:0];
     [encoder setBuffer:linearResult offset:0 atIndex:1];
-    [encoder setBuffer:destination offset:0 atIndex:2];
+    [encoder setBuffer:finishedOutput offset:0 atIndex:2];
     [encoder setBytes:&p length:sizeof(p) atIndex:3];
     dispatchImage(encoder, impl_->encodePipeline, width, height);
     [encoder endEncoding];
   }
 
+#if defined(LDB_FINAL_FRAMING_EXPERIMENT) || defined(LDB_ENABLE_FINAL_FRAMING)
+  if(p.finalFramingMode!=0 || p.finalFramingZoom!=100) {
+    if(!impl_->finalFindPipeline||!impl_->finalApplyPipeline)throw std::runtime_error("Final framing kernels unavailable");
+    auto completed=impl_->finalDirectOutput?finishedOutput:scratch(byteCount);
+    auto cache=impl_->finalCache;
+    bool reuse=false;
+    id<MTLBuffer> framing=nil;
+    if(impl_->finalCacheEnabled) {
+      if(!cache->buffer)cache->buffer=[impl_->device newBufferWithLength:sizeof(simd_float4) options:MTLResourceStorageModePrivate];
+      framing=cache->buffer;
+      // The engine render gate serializes command completion and cache access.
+      // Full effective parameter packet is conservative: any settings change
+      // invalidates, independent of image contents. Failed commands never cache.
+      reuse=cache->valid.load() && std::memcmp(&cache->key,&p,sizeof(p))==0;
+      if(!reuse){cache->valid.store(false);cache->key=p;}
+    } else framing=scratch(sizeof(simd_float4));
+    if(!completed||!framing)throw std::runtime_error("Unable to allocate final framing buffers");
+    if(!impl_->finalDirectOutput) {
+      auto blit=[commandBuffer blitCommandEncoder];
+      [blit copyFromBuffer:destination sourceOffset:0 toBuffer:completed destinationOffset:0 size:byteCount];[blit endEncoding];
+    }
+    id<MTLComputeCommandEncoder> finalEncoder=nil;
+    if(!reuse) {
+      finalEncoder=[commandBuffer computeCommandEncoder];
+      [finalEncoder setComputePipelineState:impl_->finalFindPipeline];
+      [finalEncoder setBytes:&p length:sizeof(p) atIndex:0];[finalEncoder setBuffer:framing offset:0 atIndex:1];
+      [finalEncoder dispatchThreadgroups:MTLSizeMake(1,1,1) threadsPerThreadgroup:MTLSizeMake(256,1,1)];[finalEncoder endEncoding];
+      if(impl_->finalCacheEnabled)[commandBuffer addCompletedHandler:^(id<MTLCommandBuffer> cb){cache->valid.store(cb.status==MTLCommandBufferStatusCompleted);}];
+    }
+    finalEncoder=[commandBuffer computeCommandEncoder];[finalEncoder setComputePipelineState:impl_->finalApplyPipeline];
+    [finalEncoder setBuffer:completed offset:0 atIndex:0];[finalEncoder setBuffer:destination offset:0 atIndex:1];
+    [finalEncoder setBytes:&p length:sizeof(p) atIndex:2];[finalEncoder setBuffer:framing offset:0 atIndex:3];
+    if(impl_->finalDirectOutput)[finalEncoder dispatchThreads:MTLSizeMake(width,height,1) threadsPerThreadgroup:MTLSizeMake(32,8,1)];
+    else dispatchImage(finalEncoder,impl_->finalApplyPipeline,width,height);
+    [finalEncoder endEncoding];
+  }
+#endif
   auto pool = impl_->bufferPool;
   [commandBuffer addCompletedHandler:^(id<MTLCommandBuffer>) {
     pool->release(pooledBuffers);

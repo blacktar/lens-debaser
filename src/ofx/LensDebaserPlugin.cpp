@@ -21,7 +21,10 @@
 #include <vector>
 
 namespace {
-#if defined(LDB_PROJECTION_RESOLVE_CANDIDATE)
+#if defined(LDB_FINAL_FRAMING_EXPERIMENT)
+constexpr const char *kName = "Lens Debaser Final Framing Test";
+constexpr const char *kIdentifier = "com.ldb.LensDebaser.FinalFramingTest";
+#elif defined(LDB_PROJECTION_RESOLVE_CANDIDATE)
 constexpr const char *kName = "Lens Debaser Projection Test";
 constexpr const char *kIdentifier = "com.ldb.LensDebaser.ProjectionTest";
 #elif defined(LDB_RESOLUTION_RELATIVE_CANDIDATE)
@@ -31,7 +34,7 @@ constexpr const char *kIdentifier = "com.ldb.LensDebaser.FrameRelativeTest";
 constexpr const char *kName = "Lens Debaser 1.70 Parameter Audit";
 constexpr const char *kIdentifier = "com.ldb.LensDebaser.ParameterAudit";
 #else
-constexpr const char *kName = "Lens Debaser 1.70";
+constexpr const char *kName = "Lens Debaser 1.72 RC1";
 constexpr const char *kIdentifier = "com.ldb.LensDebaser";
 #endif
 constexpr const char *kDepthClipName = "Depth";
@@ -42,6 +45,10 @@ struct DoubleSpec {
   const char *hint;
 };
 const DoubleSpec kSpecs[] = {
+#if defined(LDB_FINAL_FRAMING_EXPERIMENT) || defined(LDB_ENABLE_FINAL_FRAMING)
+    {"finalAutoCropAdjustment","Adjust Auto",0,-50,300,.01,"Increase or reduce the automatic crop to fine-tune unwanted edge effects."},
+    {"finalManualCrop","Manual Crop (%)",0,0,300,.1,"Crop into the image to remove unwanted effects along its edges."},
+#endif
 #if defined(LDB_PROJECTION_RESOLVE_CANDIDATE) || defined(LDB_ENABLE_PROJECTION)
     {"projectionAmount", "Amount (%)", 0, 0, 100, .1,
      "Blends ideal projection geometry. Zero preserves the existing lens treatment."},
@@ -338,6 +345,10 @@ struct Preset {
 #if defined(LDB_PROJECTION_RESOLVE_CANDIDATE) || defined(LDB_ENABLE_PROJECTION)
   int projectionModel=0, projectionFraming=1;
 #endif
+
+#if defined(LDB_FINAL_FRAMING_EXPERIMENT) || defined(LDB_ENABLE_FINAL_FRAMING)
+  int finalFramingMode=0;
+#endif
   std::string name;
   std::unordered_map<std::string, double> values;
   std::array<double, 2> center{.5, .5}, fieldCenter{.5, .5};
@@ -388,6 +399,9 @@ public:
 #endif
     #if defined(LDB_RESOLUTION_RELATIVE_CANDIDATE) || defined(LDB_ENABLE_FRAME_RELATIVE)
     effectSize=fetchChoiceParam("effectSize");
+#endif
+#if defined(LDB_FINAL_FRAMING_EXPERIMENT) || defined(LDB_ENABLE_FINAL_FRAMING)
+    finalFramingMode=fetchBooleanParam("finalFramingMode");
 #endif
     workingSpace = fetchChoiceParam("workingSpace");
     diagnostic = fetchChoiceParam("diagnosticView");
@@ -454,6 +468,9 @@ public:
   }
   bool isIdentity(const OFX::IsIdentityArguments &a, OFX::Clip *&clip,
                   double &time) override {
+#if defined(LDB_FINAL_FRAMING_EXPERIMENT) || defined(LDB_ENABLE_FINAL_FRAMING)
+    bool fm=false;finalFramingMode->getValueAtTime(a.time,fm);if(fm||value("finalManualCrop",a.time)!=0)return false;
+#endif
     if (value("effectBlend", a.time) <= 0) {
       clip = source;
       time = a.time;
@@ -465,6 +482,9 @@ public:
                     const std::string &name) override {
     if (inPresetChange)
       return;
+#if defined(LDB_FINAL_FRAMING_EXPERIMENT) || defined(LDB_ENABLE_FINAL_FRAMING)
+    if(name=="finalFramingMode")updateV4Controls();
+#endif
     if (name == "loadPreset") {
       std::string path = ChooseLensDebaserPresetToLoad();
       if (!path.empty())
@@ -540,6 +560,10 @@ private:
   LDBOpticsParameters parameters(double t) const {
     LDBOpticsParameters p = LDBNeutralOpticsParameters(0, 0);
 #define D(x) p.x = float(value(#x, t))
+#if defined(LDB_FINAL_FRAMING_EXPERIMENT) || defined(LDB_ENABLE_FINAL_FRAMING)
+    bool fm=false;finalFramingMode->getValueAtTime(t,fm);p.finalFramingMode=float(fm);
+    p.finalFramingZoom=100.0f+float(value(fm?"finalAutoCropAdjustment":"finalManualCrop",t));
+#endif
 #if defined(LDB_RESOLUTION_RELATIVE_CANDIDATE) || defined(LDB_ENABLE_FRAME_RELATIVE)
     int sizeMode=0;effectSize->getValueAtTime(t,sizeMode);
     if(sizeMode==1)p.processingFlags|=(1u<<30);
@@ -771,6 +795,9 @@ private:
                                          p.anamorphicFlareGhost[1],
                                          p.anamorphicFlareGhost[2]);
     apertureShape->getValueAtTime(time, p.apertureShape);
+#if defined(LDB_FINAL_FRAMING_EXPERIMENT) || defined(LDB_ENABLE_FINAL_FRAMING)
+    bool fm=false;finalFramingMode->getValueAtTime(time,fm);p.finalFramingMode=int(fm);
+#endif
     depthMode->getValueAtTime(time, p.depthMode);
     #if defined(LDB_RESOLUTION_RELATIVE_CANDIDATE) || defined(LDB_ENABLE_FRAME_RELATIVE)
     effectSize->getValueAtTime(time,p.effectSize);
@@ -788,6 +815,9 @@ private:
     return p;
   }
   bool isPresetControl(const std::string &name) const {
+#if defined(LDB_FINAL_FRAMING_EXPERIMENT) || defined(LDB_ENABLE_FINAL_FRAMING)
+    if(name=="finalFramingMode")return true;
+#endif
 #if defined(LDB_RESOLUTION_RELATIVE_CANDIDATE) || defined(LDB_ENABLE_FRAME_RELATIVE)
     if(name=="effectSize")return true;
 #endif
@@ -839,6 +869,9 @@ private:
       return true;
     };
     return
+#if defined(LDB_FINAL_FRAMING_EXPERIMENT) || defined(LDB_ENABLE_FINAL_FRAMING)
+           current.finalFramingMode==target.finalFramingMode &&
+#endif
 #if defined(LDB_RESOLUTION_RELATIVE_CANDIDATE) || defined(LDB_ENABLE_FRAME_RELATIVE)
            current.effectSize==target.effectSize &&
 #endif
@@ -932,6 +965,11 @@ private:
     doubles.at("prismSoftness")->setEnabled(active && mode == 0);
   }
   void updateV4Controls() {
+#if defined(LDB_FINAL_FRAMING_EXPERIMENT) || defined(LDB_ENABLE_FINAL_FRAMING)
+    bool autoFill=false;finalFramingMode->getValue(autoFill);
+    doubles.at("finalAutoCropAdjustment")->setEnabled(autoFill);
+    doubles.at("finalManualCrop")->setEnabled(!autoFill);
+#endif
     auto enabledBy = [&](const char *parent,
                          std::initializer_list<const char *> children) {
       double amount = 0;
@@ -1204,6 +1242,9 @@ private:
                                    p.anamorphicFlareGhost[2]);
     apertureShape->setValue(std::clamp(p.apertureShape, 0, 2));
     apertureBladeCount->setValue(std::clamp(p.apertureBladeCount, 3, 16));
+#if defined(LDB_FINAL_FRAMING_EXPERIMENT) || defined(LDB_ENABLE_FINAL_FRAMING)
+    finalFramingMode->setValue(p.finalFramingMode==1);
+#endif
     depthMode->setValue(std::clamp(p.depthMode, 0, 5));
     #if defined(LDB_RESOLUTION_RELATIVE_CANDIDATE) || defined(LDB_ENABLE_FRAME_RELATIVE)
     effectSize->setValue(std::clamp(p.effectSize,0,1));
@@ -1276,6 +1317,9 @@ private:
           p.apertureShape = int(n);
         else if (key == "apertureBladeCount")
           p.apertureBladeCount = int(std::lround(n));
+#if defined(LDB_FINAL_FRAMING_EXPERIMENT) || defined(LDB_ENABLE_FINAL_FRAMING)
+        else if(key=="finalFramingMode")p.finalFramingMode=std::isfinite(n)?int(std::clamp(n,0.0,2.0)):0;
+#endif
         else if (key == "depthMode")
           p.depthMode = int(n);
         else if (key == "captureGate")
@@ -1405,6 +1449,9 @@ private:
 #if defined(LDB_RESOLUTION_RELATIVE_CANDIDATE) || defined(LDB_ENABLE_FRAME_RELATIVE)
     f << "effectSize=" << p.effectSize << '\n';
 #endif
+#if defined(LDB_FINAL_FRAMING_EXPERIMENT) || defined(LDB_ENABLE_FINAL_FRAMING)
+    f<<"finalFramingMode="<<p.finalFramingMode<<'\n';
+#endif
     for (const auto &s : kSpecs)
       f << s.id << '=' << p.values[s.id] << '\n';
 #if defined(LDB_PROJECTION_RESOLVE_CANDIDATE) || defined(LDB_ENABLE_PROJECTION)
@@ -1443,6 +1490,9 @@ private:
   Preset cleanSlateComparison = neutralPreset();
   int comparisonPresetIndex = 0;
   int editedPresetIndex = -1;
+#if defined(LDB_FINAL_FRAMING_EXPERIMENT) || defined(LDB_ENABLE_FINAL_FRAMING)
+  OFX::BooleanParam *finalFramingMode=nullptr;
+#endif
   OFX::Clip *source = nullptr, *destination = nullptr, *depthInput = nullptr;
 #if defined(LDB_PROJECTION_RESOLVE_CANDIDATE) || defined(LDB_ENABLE_PROJECTION)
   OFX::ChoiceParam *projectionModel=nullptr,*projectionFraming=nullptr;
@@ -1476,6 +1526,9 @@ OFX::DoubleParamDescriptor *addDouble(OFX::ImageEffectDescriptor &d,
   x->setDefault(s.value);
   x->setRange(s.low, s.high);
   x->setDisplayRange(s.low, s.high);
+#if defined(LDB_FINAL_FRAMING_EXPERIMENT) || defined(LDB_ENABLE_FINAL_FRAMING)
+  if(std::string(s.id)=="finalAutoCropAdjustment")x->setDisplayRange(-10,10);
+#endif
   x->setIncrement(s.step);
   x->setParent(g);
   p.addChild(*x);
@@ -1567,6 +1620,12 @@ void LensDebaserPluginFactory::describeInContext(OFX::ImageEffectDescriptor &d,
   auto *lightSection = uiGroup(d, *page, "lightSection", "Light");
   auto *advancedSection = uiGroup(d, *page, "advancedSection", "Advanced");
   auto *output = uiGroup(d, *page, "output", "Blend", true);
+#if defined(LDB_FINAL_FRAMING_EXPERIMENT) || defined(LDB_ENABLE_FINAL_FRAMING)
+  auto* finalMode=d.defineBooleanParam("finalFramingMode");
+  finalMode->setLabels("Auto Fill Frame","Auto Fill Frame","Auto Fill Frame");
+  finalMode->setDefault(false);finalMode->setHint("Crop into the image to remove unwanted effects along its edges.");
+  finalMode->setParent(*layoutGroups.at("finalFraming"));page->addChild(*finalMode);
+#endif
   auto *presetGroup = uiGroup(d, *setup, "presetGroup", "Presets", true);
   presetGroup->setParent(*setupSection);
   auto *preset = d.defineChoiceParam("preset");
@@ -1810,6 +1869,9 @@ void LensDebaserPluginFactory::describeInContext(OFX::ImageEffectDescriptor &d,
       g = output;
       p = advanced;
     }
+#if defined(LDB_FINAL_FRAMING_EXPERIMENT) || defined(LDB_ENABLE_FINAL_FRAMING)
+    if(id=="finalAutoCropAdjustment" || id=="finalManualCrop"){g=layoutGroups.at("finalFraming");p=page;}
+#endif
     if (id == "captureFocusDistance") {
       auto *gate = d.defineChoiceParam("captureGate");
       gate->setLabels("Gate / Capture Format", "Gate / Capture Format",

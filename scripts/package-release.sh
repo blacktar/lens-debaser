@@ -15,9 +15,15 @@ cleanup() {
 }
 trap cleanup EXIT
 
-make -C "$project_dir" ofx presets
+bundle="$project_dir/build/LensDebaser.ofx.bundle"
+if [[ "$version" == "1.72" ]]; then
+  bundle="$(/usr/bin/python3 "$project_dir/scripts/check-1.72-release.py")"
+  make -C "$project_dir" presets
+else
+  make -C "$project_dir" ofx presets
+fi
 mkdir -p "$stage_dir/Presets" "$stage_dir/Preset Authoring Kit/examples" "$release_root"
-ditto "$project_dir/build/LensDebaser.ofx.bundle" "$stage_dir/LensDebaser.ofx.bundle"
+ditto --norsrc --noextattr "$bundle" "$stage_dir/LensDebaser.ofx.bundle"
 cp -R "$project_dir/presets/demonstrations" "$stage_dir/Presets/Demonstrations"
 cp -R "$project_dir/presets/cinematic-lenses" "$stage_dir/Presets/Cinematic Lenses"
 cp "$project_dir/presets/README.md" "$stage_dir/Presets/README.md"
@@ -32,7 +38,7 @@ cp "$project_dir/resources/Release-README.txt" "$stage_dir/README.txt"
 cp "$project_dir/resources/THIRD-PARTY-NOTICES.txt" "$stage_dir/THIRD-PARTY-NOTICES.txt"
 
 xattr -cr "$stage_dir/LensDebaser.ofx.bundle"
-codesign --force --deep --sign - "$stage_dir/LensDebaser.ofx.bundle"
+if [[ "$version" != "1.72" ]]; then codesign --force --deep --sign - "$stage_dir/LensDebaser.ofx.bundle"; fi
 codesign --verify --deep --strict --verbose=2 "$stage_dir/LensDebaser.ofx.bundle"
 
 rm -f "$archive" "$archive.sha256" "$authoring_archive"

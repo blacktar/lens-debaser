@@ -293,6 +293,10 @@ struct alignas(16) LDBOpticsParameters {
     float anamorphicFlareGhostSpacing;
     float anamorphicFlareGhostScaleDecay;
     float anamorphicFlareGhostEnergyDecay;
+#if defined(LDB_FINAL_FRAMING_EXPERIMENT) || defined(LDB_ENABLE_FINAL_FRAMING)
+    float finalFramingMode, finalFramingZoom, finalFramingX, finalFramingY;
+    float finalFramingMargin;
+#endif
     // ABI v15 reuses established reserved slots for general pupil clipping,
     // rim energy and multi-scale internal optical-density fields. The buffer
     // layout and size remain stable; zero values retain the v14 response.
@@ -318,7 +322,11 @@ struct alignas(16) LDBFlareSource {
 
 #ifndef __METAL_VERSION__
 static_assert(std::is_standard_layout_v<LDBOpticsParameters>);
+#if !defined(LDB_FINAL_FRAMING_EXPERIMENT) && !defined(LDB_ENABLE_FINAL_FRAMING)
 static_assert(sizeof(LDBOpticsParameters) == 784, "LDB optics ABI v19 size changed");
+#else
+static_assert(sizeof(LDBOpticsParameters) == 816);
+#endif
 static_assert(alignof(LDBOpticsParameters) == 16, "LDB optics ABI v2 alignment changed");
 static_assert(offsetof(LDBOpticsParameters, distortionK1) == 16);
 static_assert(offsetof(LDBOpticsParameters, cornerSharpnessLoss) == 64);
@@ -444,6 +452,9 @@ static inline LDBOpticsParameters LDBNeutralOpticsParameters(float width, float 
     p.coatingWearScale = 1.0f;
     p.refractiveScale = 1.0f;
     p.internalDirtScale = 1.0f;
+#if defined(LDB_FINAL_FRAMING_EXPERIMENT) || defined(LDB_ENABLE_FINAL_FRAMING)
+    p.finalFramingZoom=100.0f;
+#endif
     return p;
 }
 

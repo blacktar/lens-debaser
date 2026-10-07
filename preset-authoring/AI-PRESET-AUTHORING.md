@@ -65,3 +65,7 @@ Use a distinctive file name and include a short comment describing intent and an
 ## Version1.70 additions
 
 Projection Model:Off/Equidistant/Stereographic; Amount0–100%, Field Angle0–89° half-diagonal, Framing:Fill Frame/Balanced/Preserve Centre Scale. Start at55° and moderate Amount. Shared Field is independent of projection angle. Effect Size defaults to Frame Relative (960×540 reference); Fixed Pixels keeps pixel radii fixed. Use the version-matched JSON schema for exact keys, ranges and current UI labels. Geometry magnification benefits from4K-or-higher source footage; a high-resolution timeline cannot restore missing detail.
+
+## Version 1.72: Final Framing
+
+Auto Fill Frame (`finalFramingMode=1`) crops the completed optical result to remove unwanted edge effects. It defaults to off (`0`). `finalAutoCropAdjustment` defaults to 0%, accepts −50 to +300%, and applies only with Auto Fill on; negative reduces automatic crop and positive increases it. `finalManualCrop` defaults to 0%, accepts 0 to +300%, and applies only with Auto Fill off. Keep the two settings independent. Do not use internal render-packet keys such as finalFramingZoom. Cropping changes composition and magnifies detail; insufficient source resolution can soften the result. Extreme effects can still require fine-tuning. Existing optical presets need no retuning for neutral Final Framing.

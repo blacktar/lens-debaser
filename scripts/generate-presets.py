@@ -8,7 +8,7 @@ from lens_profiles import cooke_focal_calibrations, reference_lens_families
 
 ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / "presets"
-CURRENT_PRESET_TAG = "v1.70"
+CURRENT_PRESET_TAG = "v1.72"
 TIERS = (("1-Subtle", 0.35), ("2-Medium", 0.65), ("3-Caricature", 1.0))
 GENERATED_PRESETS = set()
 
@@ -911,7 +911,8 @@ def validate_library():
 
 def merge_approved_library():
     import json, importlib.util
-    approved = json.loads((OUT / 'approved-1.70.json').read_text())
+    approved_path = OUT / ('approved-1.72.json' if CURRENT_PRESET_TAG == 'v1.72' and (OUT / 'approved-1.72.json').exists() else 'approved-1.70.json')
+    approved = json.loads(approved_path.read_text())
     for name, content in approved['files'].items():
         path = OUT / name
         path.parent.mkdir(parents=True, exist_ok=True)
@@ -926,7 +927,7 @@ def merge_approved_library():
         for path in paths:
             errors, _ = validator.validate(path, schema)
             assert not errors, (path, errors)
-    print('Merged approved1.70 library:132 presets; unchanged files preserved.')
+    print(f"Merged approved {approved['version']} library: {sum(approved['counts'].values())} presets; unchanged files preserved.")
 
 if (OUT / 'approved-1.70.json').exists():
     merge_approved_library()

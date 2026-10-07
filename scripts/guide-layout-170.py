@@ -7,14 +7,16 @@ def update(root, old_groups, descriptions):
  group_rows=parse(text.split('groups[] = {',1)[1].split('};',1)[0]);control_rows=parse(text.split('controls[] = {',1)[1].split('};',1)[0])
  lookup={gid:(label,parent,hint) for gid,label,parent,hint in group_rows}
  schema=json.loads((root/'preset-authoring/Lens-Debaser-Preset-Schema.json').read_text())['controls']
- aliases={'presetGroup':'presets','projectionGroup':'projection','fieldShape':'field-shape','focusField':'focus-field','offAxis':'off-axis','depthGroup':'depth','imageCircle':'image-circle','glareHalo':'glare-halo','highlightResponse':'highlight-response','frontWear':'front-wear','lensDirt':'internal-contamination','output':'blend','anamorphicFlareGroup':'anamorphic-flare'}
+ aliases={'finalFraming':'final-framing','presetGroup':'presets','projectionGroup':'projection','fieldShape':'field-shape','focusField':'focus-field','offAxis':'off-axis','depthGroup':'depth','imageCircle':'image-circle','glareHalo':'glare-halo','highlightResponse':'highlight-response','frontWear':'front-wear','lensDirt':'internal-contamination','output':'blend','anamorphicFlareGroup':'anamorphic-flare'}
  old={g[0]:g for g in old_groups};new=[];roots={}
  for gid,label,parent,hint in group_rows:
   controls=[]
   for cid,group,name,tooltip in control_rows:
    if group!=gid:continue
    spec=schema.get(cid,{})
-   if cid=='preset':value,kind='Golden Portrait Prime — Medium','select'
+   if cid=='finalFramingMode':value,kind='Off','checkbox'
+   elif cid=='finalAutoCropAdjustment':value,kind='0.00','slider-disabled'
+   elif cid=='preset':value,kind='Golden Portrait Prime — Medium','select'
    elif cid in ('loadPreset','savePreset'):value,kind=name,'button'
    elif cid=='workingSpace':value,kind='DaVinci Wide Gamut / Intermediate','select'
    elif cid=='diagnosticView':value,kind='Off','select'
@@ -65,4 +67,6 @@ def update(root, old_groups, descriptions):
   if slug in descriptions:
    note=f'When {name} enlarges the image, use source footage at a higher resolution than the output if possible. Insufficient input detail can slightly blur or defocus the in-focus area. Changing timeline resolution alone will not fix that degradation.'
    descriptions[slug]=(descriptions[slug][0],descriptions[slug][1]+' '+note)
+ descriptions['final-framing']=('Crop into the finished image to remove unwanted effects along its edges.', 'Auto Fill Frame estimates the crop needed to hide edges stretched or exposed by lens effects. It is off by default. With Auto Fill on, Adjust Auto starts at 0%; negative values reduce the estimated crop and positive values increase it. With Auto Fill off, Manual Crop starts at 0% and lets you choose the crop yourself. The inactive slider is unavailable; both settings are retained independently when switching modes. Cropping changes composition and enlarges the remaining detail: use higher-resolution source footage when possible. Extreme distortion, large blur or borders already in the source can still need manual fine-tuning. Auto Fill adds rendering work, so leave it off when it is unnecessary.')
+ roots['Final Framing']='Finish the framing after the lens effects and overall mix, without applying the optical response again.'
  return new,roots

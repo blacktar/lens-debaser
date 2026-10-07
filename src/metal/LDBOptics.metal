@@ -2144,3 +2144,71 @@ kernel void ldbEncodeFromLinearAP1(device const float4* original [[buffer(0)]],
                                 encodeTransfer(linear.b, p.workingColorSpace),
                                 linearAP1[index].a);
 }
+
+#if defined(LDB_FINAL_FRAMING_EXPERIMENT) || defined(LDB_ENABLE_FINAL_FRAMING)
+kernel void ldbFinalFramingDirectOutputVersion(uint id [[thread_position_in_grid]]) { (void)id; }
+kernel void ldbFinalFramingCacheVersion(uint id [[thread_position_in_grid]]) { (void)id; }
+// Initial bounded coverage estimator. Tests source coordinates, never brightness.
+// Sampling grid is conservative padding, not proof of arbitrary folded mappings.
+static bool framingCovered(float2 uv, constant LDBOpticsParameters& p) {
+    float2 refractive;
+    float2 mapped=distortCoordinate(uv,p,refractive);
+    float ca=max(abs(p.lateralCARed),abs(p.lateralCABlue))*.006f;
+    float2 padding=1.5f/p.imageSize+ca;
+    if(!all(isfinite(mapped))||any(mapped<padding)||any(mapped>1.0f-padding))return false;
+    if(p.vignetteMechanical>=.99f) {
+        float2 q=uv-p.opticalCenter;
+        q.x*=sqrt(max(p.anamorphicSqueeze,.001f));q.y/=max(p.imageCircleAspect,.01f);
+        if(length(q)*2.0f>max(.001f,p.imageCircleSize-p.imageCircleSoftness))return false;
+    }
+    return true;
+}
+// One cooperative group evaluates the same grid/search as the initial estimator.
+// Shared failure reduction keeps all threads on the same search branch.
+static bool framingRectangle(float zoom,float2 center,constant LDBOpticsParameters& p,
+                             uint lane,threadgroup atomic_uint& failed) {
+    if(lane==0)atomic_store_explicit(&failed,0u,memory_order_relaxed);
+    threadgroup_barrier(mem_flags::mem_threadgroup);
+    bool covered=true;
+    for(uint index=lane;index<65u*37u;index+=256u) {
+        uint x=index%65u,y=index/65u;
+        float2 uv=center+(float2(float(x)/64.0f,float(y)/36.0f)-.5f)/zoom;
+        if(!framingCovered(uv,p)){covered=false;break;}
+    }
+    if(!covered)atomic_store_explicit(&failed,1u,memory_order_relaxed);
+    threadgroup_barrier(mem_flags::mem_threadgroup);
+    bool result=atomic_load_explicit(&failed,memory_order_relaxed)==0u;
+    threadgroup_barrier(mem_flags::mem_threadgroup);
+    return result;
+}
+kernel void ldbFindFinalFraming(constant LDBOpticsParameters& p [[buffer(0)]],
+ device float4* framing [[buffer(1)]], uint lane [[thread_index_in_threadgroup]]) {
+    threadgroup atomic_uint failed;
+    float2 center=.5f+float2(p.finalFramingX,p.finalFramingY);
+    float zoom=1.0f,valid=1.0f;
+    if(p.finalFramingMode==1.0f) {
+        float previous=1.0f;valid=0.0f;
+        for(uint step=0;step<=48;step++) {
+            zoom=exp2(float(step)/16.0f);
+            if(framingRectangle(zoom,center,p,lane,failed)) {
+                float low=previous,high=zoom;
+                for(uint j=0;j<10;j++){float mid=(low+high)*.5f;if(framingRectangle(mid,center,p,lane,failed))high=mid;else low=mid;}
+                zoom=high;valid=1.0f;break;
+            }
+            previous=zoom;
+        }
+        zoom*=1.0f+clamp(p.finalFramingMargin,0.0f,20.0f)*.01f;
+    }
+    zoom*=max(p.finalFramingZoom*.01f,.5f);
+    if(lane==0)framing[0]=float4(zoom,valid,center);
+}
+kernel void ldbApplyFinalFraming(device const float4* source [[buffer(0)]],
+ device float4* destination [[buffer(1)]],constant LDBOpticsParameters& p [[buffer(2)]],
+ device const float4* framing [[buffer(3)]],uint2 gid [[thread_position_in_grid]]) {
+    uint width=uint(p.imageSize.x),height=uint(p.imageSize.y);
+    if(gid.x>=width||gid.y>=height)return;
+    float4 f=framing[0];float2 uv=(float2(gid)+.5f)/p.imageSize;
+    float2 pixel=(f.zw+(uv-.5f)/f.x)*p.imageSize-.5f;
+    destination[gid.y*width+gid.x]=sampleBilinear(source,pixel,width,height);
+}
+#endif

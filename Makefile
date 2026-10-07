@@ -6,7 +6,7 @@ SDKROOT := $(shell $(XCRUN) --sdk macosx --show-sdk-path)
 MOBILE_METAL_BIN := $(dir $(firstword $(wildcard /private/var/run/com.apple.security.cryptexd/mnt/com.apple.MobileAsset.MetalToolchain-*/Metal.xctoolchain/usr/bin/metal)))
 METAL := $(if $(MOBILE_METAL_BIN),$(MOBILE_METAL_BIN)metal,$(shell $(XCRUN) --find metal 2>/dev/null))
 METALLIB := $(if $(MOBILE_METAL_BIN),$(MOBILE_METAL_BIN)metallib,$(shell $(XCRUN) --find metallib 2>/dev/null))
-FEATURE_FLAGS := -DLDB_ENABLE_PROJECTION=1 -DLDB_ENABLE_FRAME_RELATIVE=1
+FEATURE_FLAGS := -DLDB_ENABLE_PROJECTION=1 -DLDB_ENABLE_FRAME_RELATIVE=1 -DLDB_ENABLE_FINAL_FRAMING=1
 CXX := $(XCRUN) clang++ $(FEATURE_FLAGS)
 BUILD := build
 export CLANG_MODULE_CACHE_PATH := $(CURDIR)/$(BUILD)/module-cache
@@ -64,7 +64,10 @@ release: release-readiness validate preset-authoring-kit ofx
 # Deployment validation is a correctness and visual-output gate. Keep the
 # sustained benchmark explicit: it is sensitive to machine load and thermal
 # state, and is required when processing changes rather than for every install.
-ifeq ($(PRODUCT_VERSION),1.70)
+ifeq ($(PRODUCT_VERSION),1.72)
+validate:
+	./scripts/validate-1.72-integration.sh
+else ifeq ($(PRODUCT_VERSION),1.70)
 validate:
 	./scripts/validate-1.70-integration.sh
 else
@@ -100,6 +103,8 @@ validate-user-preset: preset-schema
 deploy:
 ifeq ($(PROJECTION_CANDIDATE),1)
 	./scripts/install-projection-resolve-candidate.sh
+else ifeq ($(PRODUCT_VERSION),1.72)
+	./scripts/deploy-1.72-integration.sh
 else ifeq ($(PRODUCT_VERSION),1.70)
 	./scripts/deploy-1.70-integration.sh
 else
@@ -433,6 +438,9 @@ $(BUILD)/ldb-control-layout-tests: tests/ControlLayoutTests.cpp include/LDBContr
 
 .PHONY: release-readiness
 release-readiness:
+ifeq ($(PRODUCT_VERSION),1.72)
+	@./scripts/check-1.72-release.py >/dev/null
+endif
 ifeq ($(PRODUCT_VERSION),1.70)
 	@test -f build/integration/1.70/FACTORY-REVIEW-APPROVED || { echo "ERROR: 1.70 is a development integration. Complete factory-preset agreement and final release checks before packaging." >&2; exit 1; }
 endif

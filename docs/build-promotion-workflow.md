@@ -241,3 +241,63 @@ this feature is not part of the current 1.70 scope.
 ### Benchmark interpretation
 
 Judge benchmark changes by absolute baseline/candidate time and delta in milliseconds first; percentages are secondary context. Consider run variability and practical impact before requesting investigation or blocking acceptance. Never flag a small absolute increase solely because its percentage is large; no universal millisecond cutoff is implied. Report GPU and wall times separately and retain their measured spread.
+
+## Required next guide revision: preset navigation and completeness (2026-10-07)
+
+- Menu anchors for Cinematic Presets and Effect Demo Presets must land on their
+  respective list summaries. Give the demo list its own stable anchor; keep
+  visual galleries separately labeled and linked.
+- Audit every shipped demo against the list and visual cards. Current guide has
+  30 summary entries for 44 demos: 31 Prism Refraction, 33–38 Projection,
+  39 Vintage Caricature, 40 Anamorphic Fringing, 41–42 Optical Drift,
+  43 Linear Edge Prism and 44–45 Depth are missing.
+- Existing visuals33–43 have generic applied-preset text only. Introduce what
+  each demonstrates, prerequisites and how to judge it; link summary to visual
+  and visual back to summary/reference.44–45need documented depth-input examples,
+  not fabricated ordinaryRGB illustrations.
+- Check all cinematic families and all visualisations for orphaned entries,
+  stale/misleading links and missing introductory text. Validate correspondence
+  between shipped presets, list summaries and supported visual evidence.
+- Preserve published1.70guide and baseline. Prepare changes for next revision,
+  with review before diff; no extra rendering until justified missing inputs.
+
+### Future guide header exploration (2026-10-07)
+
+- Inspect https://tomacco.github.io/amazing-glass/ as a possible treatment for the
+  decorative “Ldb” letters. Evaluate appearance, readability, browser support and
+  performance before proposing adoption; no current design change authorized.
+- Review decorative “Ldb” sizing/placement specifically on smartphone portrait
+  screens. Keep the letters visually meaningful rather than shrinking them to an
+  almost irrelevant size. Preserve readable headline, copy and buttons.
+- Use a separate header preview and user visual approval before changing the
+  published guide or packaging its upload diff.
+
+## 1.72 release work after normal Resolve acceptance (2026-10-07)
+
+User explicitly requests, after the integrated build passes its Resolve check:
+
+- Package the approved release binaries, following existing validation, exact
+  snapshot, signing, version/build, archive and checksum procedures. Keep old
+  release archives and passed comparison evidence intact.
+- Update the user guide with a Final Framing / Auto Fill reference section:
+  Auto Fill Frame, Adjust Auto (signed; available only when Auto Fill is on),
+  Manual Crop (available only when Auto Fill is off), zero defaults, independent
+  retained values, edge removal, composition/detail tradeoffs and render cost.
+- Add an Auto Fill demonstration preset and visual comparison. Explicit exception
+  to the usual five-source guide rule: this demonstration needs ONE image only.
+  Reuse an existing extreme preset's exact rendered Off result as reference and
+  compare with Auto Fill on using the same optical preset/source/settings. Do
+  not benchmark the demo preset or regenerate the existing Off reference.
+- Test Amazing Glass treatment of decorative Ldb lettering in a separate header
+  preview; address portrait-phone letter scale/placement. Do not change the
+  published guide until the user approves the preview and complete guide.
+- Include the previously recorded preset-summary anchors/orphaned-demo audit
+  in the next guide revision. Update AI preset-authoring kit/schema for the new
+  controls and version; review existing presets for compatible neutral framing
+  rather than changing their optical looks without approval.
+- Complete guide review/pass before packaging the upload diff ZIP. User uploads
+  manually; verify live and record publication only after their confirmation.
+
+### Cinematic guide examples (2026-10-07)
+
+User requests every available Subtle, Medium and Caricature member of each cinematic family in the guide, each with both charts and three iPhone images. Treat members as distinct optical interpretations, not merely amplified controls. Reuse approved matching outputs; render only missing pictures. Single-version presets remain signature examples. This supersedes the guide generator’s previous Medium-only selection.
