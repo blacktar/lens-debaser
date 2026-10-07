@@ -1,0 +1,23 @@
+LensDebaserPreset=2
+# Family: 31-Tilted-Miniature
+# Strength: Medium
+# An elongated tilted focus island with pupil defocus, full aperture response and a broad transition; reduced blur radius keeps the miniature impression usable.
+apertureRadius=12
+apertureResponse=1
+apertureShape=0
+apertureSoftness=0.18
+astigmatism=0
+cornerSharpnessLoss=0
+effectSize=0
+fieldAspect=0.25
+fieldCenterX=0.5
+fieldCenterY=0.56
+fieldCurvature=0
+fieldRotation=16
+lateralCABlue=0
+lateralCARed=0
+longitudinalCA=0
+radialSmear=0
+responseFieldFalloff=0.6
+responseFieldOnset=0.22
+tangentialSmear=0

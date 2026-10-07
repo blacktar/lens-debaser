@@ -1,0 +1,6 @@
+LensDebaserPreset=2
+# 1.70 review: Same Equidistant treatment with Centre scale; inspect central scale and perimeter stretch.
+projectionModel=1
+projectionAmount=45
+projectionFieldAngle=55
+projectionFraming=2

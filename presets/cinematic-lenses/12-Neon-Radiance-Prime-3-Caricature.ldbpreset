@@ -3,7 +3,7 @@ LensDebaserPreset=2
 # Strength: Caricature
 # Clean blue highlight radiance; lamps, reflections and bright windows are required to drive it.
 anamorphicAberration=0.42
-anamorphicFlareAmount=2.5
+anamorphicFlareAmount=2
 anamorphicFlareB=1
 anamorphicFlareG=0.38
 anamorphicFlareR=0.12

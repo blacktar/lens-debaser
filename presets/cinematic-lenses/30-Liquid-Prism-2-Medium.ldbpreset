@@ -1,0 +1,24 @@
+LensDebaserPreset=2
+# Family: Liquid-Prism
+# Strength: Medium
+# Broad flowing refractive pockets and radial spectral echoes rather than a single one-sided prism; a readable central region anchors the liquid perimeter.
+chromaticFieldFalloff=0.85
+chromaticFieldOnset=0.28
+cornerSharpnessLoss=0.35
+effectSize=0
+prismAmount=0.4
+prismDirection=28
+prismDispersion=0.6
+prismDistribution=3
+prismEdgeBias=0.72
+prismSoftness=0.6
+refractiveAnisotropy=0.62
+refractiveDispersion=0.7
+refractiveEdgeBias=0.85
+refractiveIrregularity=0.45
+refractiveRotation=-24
+refractiveScale=3.2
+refractiveSeed=30517
+responseFieldFalloff=0.85
+responseFieldOnset=0.3
+tangentialSmear=0.22

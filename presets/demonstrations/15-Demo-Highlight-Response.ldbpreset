@@ -1,7 +1,7 @@
 LensDebaserPreset=2
 # Family: Demo-Highlight-Response
 # Strength: Educational
-# A moderate Highlight Knee coordinates neutral bloom, glare, halo and coma while preserving shadows and black borders.
+# Shared Scatter Threshold Softness changes enabled highlight extraction, not final-image highlight compression.
 bloomEnergy=0.38
 bloomRadius=28
 bloomThreshold=0.72

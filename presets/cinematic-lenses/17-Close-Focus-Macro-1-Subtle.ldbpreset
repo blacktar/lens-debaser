@@ -12,6 +12,6 @@ fieldCurvature=0.4
 fineDetail=0.1
 longitudinalCA=0.28
 microContrast=0.12
-responseFieldFalloff=1.52
+responseFieldFalloff=1.5
 responseFieldOnset=0.18
 sphericalHalo=0.12

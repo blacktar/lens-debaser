@@ -1,16 +1,21 @@
 LensDebaserPreset=2
+# Current-engine proposal: Keep the existing wide-family identity while assigning most large-scale mapping to Projection; compare composition and usable edges.
 # Family: Stressed-Ultra-Wide
 # Strength: Subtle
-# Wide-angle moustache geometry; straight lines and high-contrast edges reveal the signature.
+# Equidistant wide-angle character with restrained moustache distortion; inspect curved lines, framing and stressed edges.
 cornerSharpnessLoss=0.16
-distortionK1=-0.012
-distortionK2=0.055
+distortionK1=-0.006
+distortionK2=0.025
 geometryFieldAmount=1
 lateralCABlue=-0.28
 lateralCARed=0.22
-moustacheK3=0.08
-peripheralStretch=0.1
-peripheralWarp=0.06
-responseFieldFalloff=1.68
+moustacheK3=0.035
+peripheralStretch=0.04
+peripheralWarp=0.03
+responseFieldFalloff=1.5
 responseFieldOnset=0.24
 vignetteNatural=0.04
+projectionModel=1
+projectionAmount=20
+projectionFieldAngle=55
+projectionFraming=1

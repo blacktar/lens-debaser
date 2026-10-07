@@ -28,7 +28,6 @@ nearFocusR=0.72
 prismAmount=0
 prismDirection=0
 prismDispersion=0
-prismDistribution=3
 responseFieldFalloff=0.82
 responseFieldOnset=0.24
 tangentialSmear=0.28

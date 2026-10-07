@@ -1,7 +1,8 @@
 LensDebaserPreset=2
+# Current-engine proposal: Directed pupil-footprint drift supports decentered character without moving sharp source geometry.
 # Family: Decentered-Dream-Glass
 # Strength: Subtle
-# Decentered dream glass combining a displaced focus island, asymmetric clipped pupil, warm transmission and irregular seven-blade bokeh.
+# Decentered dream glass with gently directed bokeh drift, a displaced focus island, clipped seven-blade pupil and warm transmission.
 apertureAspect=1.08
 apertureBladeCount=7
 apertureBladeCurvature=0.48
@@ -30,3 +31,6 @@ variationAmount=0.12
 variationFieldAsymmetry=0.18
 variationPupilIrregularity=0.16
 variationSeed=24571
+opticalDriftMode=2
+opticalDriftAngle=-18
+opticalDriftAmount=0.06

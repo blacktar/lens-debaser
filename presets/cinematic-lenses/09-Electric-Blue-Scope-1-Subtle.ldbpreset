@@ -21,5 +21,5 @@ cornerSharpnessLoss=0.2
 fieldAspect=1.65
 lateralCABlue=-0.24
 lateralCARed=0.18
-responseFieldFalloff=1.58
+responseFieldFalloff=1.5
 responseFieldOnset=0.2

@@ -1,7 +1,8 @@
 LensDebaserPreset=2
+# Current-engine proposal: Retain the bodycam signature but avoid doubling its polynomial bend with the new mapping.
 # Family: Bodycam Edge Stress
 # Strength: Signature
-# Heavy but gradual bodycam edge stress: protected centre, local glass deformation, colored edge separation and mechanical image-circle pressure.
+# Equidistant bodycam framing with a protected centre, local glass deformation, coloured edge separation and mechanical image-circle pressure.
 apertureCatEye=0.3
 apertureRadius=20
 apertureResponse=1
@@ -10,9 +11,9 @@ chromaticFieldOnset=0.22
 coatingWear=0.12
 cornerSharpnessLoss=2
 damageScale=1.6
-damageSeed=28052023
-distortionK1=-0.012
-distortionK2=0.04
+damageSeed=65535
+distortionK1=-0.006
+distortionK2=0.025
 fieldCurvature=1.75
 frontHaze=0.12
 geometryFieldAmount=1
@@ -22,7 +23,7 @@ imageCircleSoftness=0.06
 lateralCABlue=-3.35
 lateralCARed=2.65
 longitudinalCA=0.3
-moustacheK3=0.06
+moustacheK3=0.03
 peripheralStretch=0.03
 peripheralWarp=0.03
 radialSmear=0.55
@@ -32,8 +33,12 @@ refractiveEdgeBias=0.9
 refractiveIrregularity=0.15
 refractiveRotation=-12
 refractiveScale=1.45
-refractiveSeed=28052023
+refractiveSeed=65535
 responseFieldFalloff=1.1
 responseFieldOnset=0.16
 tangentialSmear=0.72
 vignetteMechanical=1
+projectionModel=1
+projectionAmount=20
+projectionFieldAngle=55
+projectionFraming=1

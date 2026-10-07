@@ -1,3 +1,7 @@
+#include "LDBResolveParameterAudit.h"
+#if defined(LDB_PROJECTION_RESOLVE_CANDIDATE) || defined(LDB_ENABLE_PROJECTION)
+#include "LDBProjectionCandidateParameters.h"
+#endif
 #include "LDBOpticsEngine.h"
 #include <algorithm>
 #include <cmath>
@@ -322,7 +326,15 @@ void LDBOpticsEngine::encode(id<MTLCommandBuffer> commandBuffer,
   applyCaptureAndLookMappings(p);
   // Capture and Look can add pixel-radius contributions, so host render
   // scaling must happen only after those macros have resolved.
+  #if defined(LDB_RESOLUTION_RELATIVE_CANDIDATE) || defined(LDB_ENABLE_FRAME_RELATIVE)
+  // The actual render height already incorporates host/proxy render scaling.
+  // Reference units are pixels in a 960 x 540 render, independent of host scale.
+  if(!(p.processingFlags & (1u<<30)))p.renderPixelScale = float(height) / 540.0f;
+#endif
   LDBApplyRenderPixelScale(p);
+#ifdef LDB_RESOLVE_PARAMETER_AUDIT
+  LDBRecordResolveParameters("engine-effective",p,width,height);
+#endif
   NSUInteger byteCount =
       NSUInteger(width) * NSUInteger(height) * sizeof(simd_float4);
   std::vector<id<MTLBuffer>> pooledBuffers;
@@ -390,7 +402,11 @@ void LDBOpticsEngine::encode(id<MTLCommandBuffer> commandBuffer,
       p.internalDirtAmount == 0.0f &&
       p.refractiveIrregularity == 0.0f && p.prismAmount == 0.0f;
   bool diagnosticActive = (p.processingFlags & LDBDiagnosticMask) != 0;
-  if (noOpticalEffect && !diagnosticActive) {
+  if (noOpticalEffect && !diagnosticActive
+#if defined(LDB_PROJECTION_RESOLVE_CANDIDATE) || defined(LDB_ENABLE_PROJECTION)
+      && !LDBProjectionCandidateActive(p)
+#endif
+      ) {
     copySource();
     return;
   }
@@ -496,7 +512,11 @@ void LDBOpticsEngine::encode(id<MTLCommandBuffer> commandBuffer,
   // 400-pixel ceiling forced physically long flares into a short glow patch.
   // Scatter processing is already downsampled for radii above 48 pixels, so
   // extending the optical reach does not allocate a larger working image.
-  float flareRadius = std::clamp(p.anamorphicFlareRadius, 0.0f, 2400.0f);
+  float flareRadius = std::clamp(p.anamorphicFlareRadius, 0.0f, 2400.0f
+#if defined(LDB_RESOLUTION_RELATIVE_CANDIDATE) || defined(LDB_ENABLE_FRAME_RELATIVE)
+      * ((p.processingFlags & (1u<<30))?1.0f:pixelScale)
+#endif
+    );
   uint32_t flareScale =
       std::max(memoryScale, scatterScale(flareRadius));
   uint32_t bloomWidth =
@@ -756,7 +776,11 @@ void LDBOpticsEngine::encode(id<MTLCommandBuffer> commandBuffer,
   if (apertureActive) {
     constexpr float pi = 3.14159265358979323846f;
     float rotation = p.apertureRotation * pi / 180.0f;
-    float radius = std::clamp(p.apertureRadius, 0.0f, 48.0f);
+    float radius = std::clamp(p.apertureRadius, 0.0f, 48.0f
+#if defined(LDB_RESOLUTION_RELATIVE_CANDIDATE) || defined(LDB_ENABLE_FRAME_RELATIVE)
+      * ((p.processingFlags & (1u<<30))?1.0f:pixelScale)
+#endif
+    );
     id<MTLBuffer> passSources[3] = {direct, apertureTemporary1,
                                     apertureTemporary2};
     id<MTLBuffer> passDestinations[3] = {apertureTemporary1, apertureTemporary2,

@@ -1,0 +1,23 @@
+LensDebaserPreset=2
+# Family: Vortex-Glass
+# Strength: Caricature
+# Rotational image geometry, tangential smear and tangential pupil drift combine into a kinetic vortex around a protected centre; distinct from pupil-only portrait bokeh.
+apertureBokehSwirl=10
+apertureCatEye=0.5
+apertureRadius=23
+apertureResponse=0.95
+cornerSharpnessLoss=1.15
+effectSize=0
+fieldCurvature=0.8
+lateralCABlue=-0.48
+lateralCARed=0.35
+opticalDriftAmount=0.4
+opticalDriftMode=1
+projectionAmount=55
+projectionFieldAngle=55
+projectionFraming=1
+projectionModel=1
+responseFieldFalloff=0.85
+responseFieldOnset=0.22
+swirl=0.55
+tangentialSmear=1.7

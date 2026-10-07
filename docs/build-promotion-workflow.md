@@ -6,6 +6,16 @@ for the new work. Passed files that were not modified remain the authoritative
 versions; they are not regenerated, replaced, reformatted, or repackaged merely
 because another part of the project changed.
 
+## Established procedure comes first
+
+Before choosing an approach, check the project handoff, workflow documents and
+previous comparable work for established rules and procedures. Follow them when
+they still serve the purpose. If an improvement or replacement seems useful,
+explain the proposed change and ask the user before departing from an established
+step, process or rule. Do not independently discard or silently substitute them.
+This approval is for a procedural departure, not routine work already authorized
+within the existing procedure.
+
 ## Generation rule
 
 - Generate or rewrite an artifact only when its source or resulting content
@@ -20,18 +30,51 @@ because another part of the project changed.
 - Build and release packaging may copy the complete approved product into a
   temporary staging directory, but must not mutate unchanged repository files.
 
+## Working reports and passed archives
+
+- Comparison reference rule: a NEW preset’s first attempt compares visually with the unprocessed original image. While that new preset remains unpassed, each iteration compares with its immediate previous rendered state. For changes to an EXISTING PASSED or RELEASED preset, use that preset’s LAST PASSED visual output and benchmark measurements as the fixed reference throughout candidate iteration; never replace it with an unpassed intermediate result or regenerate it. Keep OK/passed presets unchanged during other presets’ iterations. Maintain the appropriate task HTML until sign-off; only accepted evidence becomes future benchmarking reference material.
+
+After the user signs off new presets as passed, add their exact approved renders, recipes, engine/source context and standalone timings to the benchmark HTML as references for future build comparisons. Until sign-off, keep them in their separate new-preset review. Do not invent a previous-release baseline or percentage change when promoting a newly passed preset; its accepted state becomes the reference for subsequent builds.
+
+Use a NEW HTML for NEW things to inspect and iterate on, then keep revising that new task’s canonical HTML. Use the existing release benchmarking HTML ONLY for the previous release baseline versus the new candidate release. Do not append new preset families or unrelated experiments to it, and do not invent a baseline for new work. Archive only explicitly passed states.
+
+Revise one canonical working comparison HTML in place. Only a state explicitly
+agreed as passed becomes a retained comparison archive for later versions.
+Unpassed iterations are working material, not historical comparison baselines;
+do not create a new permanent review report/archive for each revision. Preserve
+accepted states and their exact preset, engine, source and benchmark evidence.
+Existing material is not deleted automatically; cleanup requires a scoped review.
+
 ## Promotion rule
 
-1. Implement the scoped changes on top of the last passed build.
-2. Run the relevant automated tests and performance benchmark.
-3. Render only the new or affected visual-validation material.
-4. Review the affected output in Resolve and obtain explicit user sign-off.
-5. After sign-off, treat that exact combined state—changed files plus unchanged
-   previously passed files—as the new passed build.
-6. Deploy and package that signed-off state using the user-run Metal/Resolve
-   workflow.
-7. Commit the promoted source, presets, documentation, and intended release
-   artifacts, then push the build update to GitHub.
+Benchmarking is required for engine changes and changed or new cinematic presets.
+Educational demo presets require visual review, not preset benchmarks. Review and
+validate every current cinematic preset, including every strength; unchanged recipe
+values do not establish compatibility after an engine change. Reuse exact matching
+passed evidence, and add targeted renders only where current coverage is missing.
+Cinematic before/after output and speed comparisons use the same actual footage
+frame on both sides. Synthetic charts remain supplementary diagnostics for
+geometry, pupil shape and highlight behavior; their timings do not replace
+actual-footage benchmarks. At the cinematic preset review stage, keep the exact
+established speed-test image, dimensions, encoding/conversion and display path
+fixed across the entire comparison; baseline and candidate must receive identical
+input pixels. Do not select different sources by preset family or replace the
+fixed image with synthetic fixtures. Synthetic sources are appropriate for new
+feature/model experiments and targeted diagnostics. Distinguish repeated-frame GPU timings from video
+decoding, motion/export testing and native-resolution playback.
+
+
+1. Implement scoped changes on top of the last passed build.
+2. Test, benchmark and visually inspect the affected outputs. Iterate until
+   Codex and the user agree that the exact state passes; retain passed unchanged
+   material and repeat only checks affected by revisions.
+3. Record that agreement, then run `make deploy` for the agreed state.
+4. Inspect the deployment script output and retain it as additional evidence
+   informing benchmark interpretation. Deployment follows acceptance; its output
+   can reveal issues requiring further investigation or another iteration.
+5. Verify the installed state in Resolve. Record deployment and host results
+   separately from the pre-deployment test/benchmark/visual acceptance.
+6. Package, commit and push only when the agreed release workflow is complete.
 
 ## Externally hosted user guide
 
@@ -43,7 +86,9 @@ For every signed-off build that changes the guide or any displayed image:
    user-visible changes without internal development terminology.
 2. Build only the required guide renders and regenerate the HTML when its source
    content has changed.
-3. Run `make guide-update-status` to review the exact hosted paths that changed,
+3. Present the complete local guide, including current text, generated UI approximations and
+   visual renders, for user review. Wait for explicit guide acceptance before
+   packaging its upload diff. Then run `make guide-update-status` to review the exact hosted paths that changed,
    were added, or were removed since the last confirmed manual upload.
 4. Run `make guide-update`. The resulting versioned folder and ZIP under
    `releases/user-guide-updates/` contain only the changed/new files, preserving
@@ -63,6 +108,25 @@ release archive.
 
 An unfinished or merely rendered visual pass is not a signed-off build and must
 not be promoted, released, or pushed as the current public build.
+
+## Handoff-document rule
+
+Before ending a substantial development session or moving to a new context,
+bring the active Markdown continuity documents up to date:
+
+- `LDB_HANDOFF.md` must identify the released baseline, exact dirty files,
+  experimental versus promoted work, latest evidence and the next safe action.
+- `docs/resolve-host-validation.md` must identify the current host-validated
+  version, passed checks, known host issues and checks required next time.
+- `presets/tests/README.md` must identify the version and scope of fixtures that
+  are actually present in the active test folder.
+- `README.md` must match the current public release and shipped feature/library
+  counts.
+
+Audit all project Markdown for contradictory “current version”, “open items” or
+“next step” statements. Historical ABI, model-audit and roadmap documents remain
+historical and should not be rewritten merely to mention the newest release.
+Run `git diff --check` after updating the handoff documents.
 
 ### Next guide clarification
 
@@ -86,3 +150,94 @@ not be promoted, released, or pushed as the current public build.
 - State that the groups complement one another: Capture establishes broad
   photographic behavior, while Aperture & Bokeh determines the appearance of
   shaped defocus when Aperture Response is enabled.
+
+## 1.70 integration, factory-library review and release sequence
+
+Agreed with the user on 2026-10-05. The next integrated development/deploy version
+is 1.70 (build 170); the public approved baseline remains 1.69 until promotion.
+The complete candidate control-layout audit is implemented and compiled. The
+new layout will receive its Resolve appearance check in the integrated build.
+
+1. Integrate projection and the audited UI into the stable product identity.
+   Preserve parameter IDs, preset keys, choice indices, neutral defaults and the
+   ABI. Keep a recoverable 1.69 bundle and prior validation outputs. Version-match
+   the build metadata and development documentation. Produce a new named,
+   immutable integration validation pass using `make validate` for user-run GPU
+   work. Review benchmarks and visuals before explicit acceptance; record the
+   accepted inputs with `./scripts/pass-1.70-integration.py --accept`. Only then
+   use `make deploy`, which installs that snapshot without rebuilding, rendering
+   or opening a validation report. Check existing project nodes,
+   old presets, Off/zero behavior, UI ordering/nesting, group expansion and
+   preset state. Do not treat candidate checks as a complete integrated-build pass.
+2. Inventory and re-evaluate every current factory preset, including all
+   demonstrations, cinematic profiles and signatures. Give every entry a
+   recorded decision: keep, revise, replace or retire with rationale. Do not
+   blindly add projection to all presets or invent physical lens attribution.
+   Reuse passed unchanged images; render only settings or outputs that change.
+   Native resolution is required for fine-detail/sharpness decisions; 960px is
+   suitable for guide examples and framing/character review.
+3. Add focused demonstration presets for projection model, amount, field angle
+   and framing, plus controls whose presentation or demonstration needs updating.
+   Reconsider every creative preset for benefits from the new engine, remake
+   those that benefit, and add creative examples showing distinctive new value.
+   Keep numerical endpoint tests separate from recommended creative presets.
+   Preserve the approved 0–89° field-angle range; 89°/100% magnification is not a
+   useful default just because it is finite. Preferred examples start at 55°,
+   Balanced, Amount 20/45/70%.
+4. Validate and benchmark changed/new presets on a small representative set.
+   For revisions, preserve the exact old preset, engine and render as the
+   comparison baseline. Use matched sources, resolution, input encoding and
+   optical conditions; identify whether a comparison measures engine changes,
+   preset changes or the combined user-visible result. Repeat paired timing
+   runs where necessary; show GPU and wall times and percent changes, including
+   variability. Do not claim speedups from noisy negative deltas. Present before/
+   after swipe comparisons with on-image labels, natural ratios and inline
+   readable validation/benchmark tables in the established HTML format. No
+   CSV/log/data links. Iterate only failing or altered examples, retaining passed
+   material. Record user visual/preset acceptance per entry before promotion.
+5. After agreement on the changed/new library, finalize the exact integrated
+   source, factory presets and counts. Update and validate the AI Preset Authoring
+   Kit/schema/templates, including projection choices, units, defaults, ranges
+   and the revised UI descriptions. Avoid hardcoded stale factory counts in
+   build/package checks. Complete the relevant regressions, sustained benchmark,
+   signed bundle/architecture/identity checks and final Resolve smoke pass.
+   Recheck the known thumbnail-scaling issue; fix it or explicitly retain its
+   documented status rather than claiming it resolved. Check installation,
+   preset discovery, project reload, viewer/playback/export and rollback.
+6. Build and verify the approved 1.70 release package and authoring-kit package.
+   Update the user guide for the new UI, feature semantics, release metadata and
+   final preset catalogue. Prepare focused rendering scripts for the user to run
+   with their Metal device; generate only added/changed visualizations and merge
+   with unchanged passed guide assets. Check HTML, images, navigation, comparison
+   sliders, counts and download links. Create the upload diff with `make
+   guide-update-status` and `make guide-update`; preserve the last confirmed
+   published baseline. The user uploads/publishes the guide manually, checks the
+   live result, then records publication with `make guide-publish-record`.
+7. Once the release state is approved, commit and push the intended source,
+   presets, tests, docs and release artifacts. Inspect the staged list; exclude
+   historical untracked 1.36/1.57 archives and unrelated local material. Check
+   archive contents, checksums, version consistency, clean-install paths and
+   public download references. Record exact release/publication results and any
+   remaining issue in continuity docs. Never mark guide publication complete
+   merely because the upload diff or release archive was created.
+
+Codex maintains the per-preset decisions, validation evidence and remaining-step
+checklist, and reminds the user when a required release/publishing step is missing.
+The user's request authorizes this staged workflow; release/preset agreement gates
+remain explicit. No release package, public guide promotion, commit or push is
+claimed by recording this plan.
+
+## Next feature after 1.70 acceptance
+
+After 1.70 is signed off as passed, prioritize optional automatic cropping of
+unusable lens-produced edges, with manual override/fine-tuning. Investigate the
+user-reported issue that zoom/crop before the effect merely changes its input
+and Lens Debaser then applies its mapping over that current image again. Prefer
+an explicit final framing/crop stage whose optical coordinate domain stays
+consistent, and reproduce Resolve transform/node ordering before deciding the
+implementation. Follow the focused endpoint experiment and approval workflow;
+this feature is not part of the current 1.70 scope.
+
+### Benchmark interpretation
+
+Judge benchmark changes by absolute baseline/candidate time and delta in milliseconds first; percentages are secondary context. Consider run variability and practical impact before requesting investigation or blocking acceptance. Never flag a small absolute increase solely because its percentage is large; no universal millisecond cutoff is implied. Report GPU and wall times separately and retain their measured spread.

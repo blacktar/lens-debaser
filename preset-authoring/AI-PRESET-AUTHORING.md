@@ -61,3 +61,7 @@ That check confirms structural compatibility, not visual quality. Load the downl
 ## Sharing presets
 
 Use a distinctive file name and include a short comment describing intent and any required second input. Treat generated presets as starting points: the author who visually evaluates and publishes the result is responsible for its behaviour and for any reference material used while designing it.
+
+## Version1.70 additions
+
+Projection Model:Off/Equidistant/Stereographic; Amount0–100%, Field Angle0–89° half-diagonal, Framing:Fill Frame/Balanced/Preserve Centre Scale. Start at55° and moderate Amount. Shared Field is independent of projection angle. Effect Size defaults to Frame Relative (960×540 reference); Fixed Pixels keeps pixel radii fixed. Use the version-matched JSON schema for exact keys, ranges and current UI labels. Geometry magnification benefits from4K-or-higher source footage; a high-resolution timeline cannot restore missing detail.

@@ -6,7 +6,8 @@ SDKROOT := $(shell $(XCRUN) --sdk macosx --show-sdk-path)
 MOBILE_METAL_BIN := $(dir $(firstword $(wildcard /private/var/run/com.apple.security.cryptexd/mnt/com.apple.MobileAsset.MetalToolchain-*/Metal.xctoolchain/usr/bin/metal)))
 METAL := $(if $(MOBILE_METAL_BIN),$(MOBILE_METAL_BIN)metal,$(shell $(XCRUN) --find metal 2>/dev/null))
 METALLIB := $(if $(MOBILE_METAL_BIN),$(MOBILE_METAL_BIN)metallib,$(shell $(XCRUN) --find metallib 2>/dev/null))
-CXX := $(XCRUN) clang++
+FEATURE_FLAGS := -DLDB_ENABLE_PROJECTION=1 -DLDB_ENABLE_FRAME_RELATIVE=1
+CXX := $(XCRUN) clang++ $(FEATURE_FLAGS)
 BUILD := build
 export CLANG_MODULE_CACHE_PATH := $(CURDIR)/$(BUILD)/module-cache
 METAL_AIR := $(BUILD)/LDBOptics.air
@@ -17,8 +18,11 @@ BENCHMARK_BIN := $(BUILD)/ldb-optics-benchmark
 APERTURE_CHART_BIN := $(BUILD)/ldb-aperture-chart
 SYNTHETIC_OPTICAL_CHART_BIN := $(BUILD)/ldb-synthetic-optical-chart
 GUIDE_EXAMPLES_BIN := $(BUILD)/ldb-guide-examples
+PROJECTION_AUDIT_BIN := $(BUILD)/ldb-projection-image-audit
 FIELD_PSF_AIR := $(BUILD)/experiments/LDBOptics-field-psf.air
 FIELD_PSF_LIB := $(BUILD)/experiments/LDBOptics-field-psf.metallib
+PROJECTION_AIR := $(BUILD)/experiments/LDBOptics-projection.air
+PROJECTION_LIB := $(BUILD)/experiments/LDBOptics-projection.metallib
 GUIDE_EXAMPLES_DIR := docs/user-guide/images/examples
 APERTURE_CHART := outputs/aperture-pupil-test-acescg-linear.tiff
 SYNTHETIC_OPTICAL_CHART := inputs/redistributable/LDB-Synthetic-Optical-Chart.png
@@ -46,7 +50,7 @@ VISUAL_PASS_ID := 102
 VISUAL_PASS_LABEL := Visual Pass $(VISUAL_PASS_ID) - Optical Drift on Real Footage
 VALIDATION_OUTPUT := $(VALIDATION_ROOT)/passes/pass-$(VISUAL_PASS_ID)
 
-.PHONY: all ofx validate version-check performance-test deploy release aperture-chart synthetic-optical-chart guide-examples guide-examples-glare guide-examples-presets-166 guide-examples-presets-166b guide-examples-presets-167 guide-examples-preset-26 optical-drift-comparison optical-drift-preset-validation optical-drift-demo-validation optical-model-validation optical-model-benchmark field-psf-experiment field-psf-library-experiment light-transport-audit full-preset-release-comparison full-library-validation user-guide guide-update guide-update-status guide-publish-record presets preset-test preset-schema preset-authoring-kit validate-user-preset install install-user test visual-test visual-check visual-rebuild clean
+.PHONY: all ofx validate version-check performance-test deploy release aperture-chart synthetic-optical-chart guide-examples guide-examples-glare guide-examples-presets-166 guide-examples-presets-166b guide-examples-presets-167 guide-examples-preset-26 optical-drift-comparison optical-drift-preset-validation optical-drift-demo-validation optical-model-validation optical-model-benchmark field-psf-experiment field-psf-library-experiment projection-model-experiment projection-model-audit light-transport-audit full-preset-release-comparison full-library-validation user-guide guide-update guide-update-status guide-publish-record presets preset-test preset-schema preset-authoring-kit validate-user-preset install install-user test visual-test visual-check visual-rebuild clean
 
 all: $(METAL_LIB) $(TEST_BIN) $(VISUAL_BIN) $(BENCHMARK_BIN)
 
@@ -54,13 +58,18 @@ ofx: $(OFX_BINARY)
 
 install: install-user
 
-release: validate preset-authoring-kit ofx
+release: release-readiness validate preset-authoring-kit ofx
 	./scripts/package-release.sh
 
 # Deployment validation is a correctness and visual-output gate. Keep the
 # sustained benchmark explicit: it is sensitive to machine load and thermal
 # state, and is required when processing changes rather than for every install.
+ifeq ($(PRODUCT_VERSION),1.70)
+validate:
+	./scripts/validate-1.70-integration.sh
+else
 validate: version-check preset-test test visual-check
+endif
 
 version-check:
 	@grep -Fq 'constexpr const char *kName = "$(PRODUCT_LABEL)";' src/ofx/LensDebaserPlugin.cpp || { echo "ERROR: OFX display name does not match $(PRODUCT_LABEL)." >&2; exit 1; }
@@ -73,7 +82,7 @@ presets:
 	./scripts/generate-presets.py
 
 preset-test: presets
-	@test "$$(find presets/demonstrations presets/cinematic-lenses -name '*.ldbpreset' -type f | wc -l | tr -d ' ')" = 107 || { echo "ERROR: Expected 107 generated factory presets." >&2; exit 1; }
+	@python3 -c 'import json,pathlib; r=pathlib.Path("presets"); a=json.loads((r/"approved-1.70.json").read_text()); assert all(len(list((r/f).glob("*.ldbpreset")))==n for f,n in a["counts"].items()), "Factory counts differ from approved inventory"'
 	@! grep -REn '^(inputWorkingSpace|diagnosticView|depthSource)=' presets/demonstrations presets/cinematic-lenses || { echo "ERROR: A processing-only or removed control was serialized in a factory preset." >&2; exit 1; }
 
 preset-schema:
@@ -86,9 +95,14 @@ validate-user-preset: preset-schema
 	@test -n "$(PRESET)" || { echo "ERROR: Supply PRESET=/absolute/path/My-Lens.ldbpreset" >&2; exit 1; }
 	./scripts/validate-preset.py "$(PRESET)"
 
-# One command for a Resolve test build: validate the engine and visual outputs,
-# then install only if every preceding step succeeds.
+# Deploy consumes an exact previously reviewed and approved build.
+# GPU tests, benchmarks and visualization belong to explicit validation.
 deploy:
+ifeq ($(PROJECTION_CANDIDATE),1)
+	./scripts/install-projection-resolve-candidate.sh
+else ifeq ($(PRODUCT_VERSION),1.70)
+	./scripts/deploy-1.70-integration.sh
+else
 	@if pgrep -x "Resolve" >/dev/null; then echo "ERROR: Fully quit DaVinci Resolve before deployment." >&2; exit 1; fi
 	@test -d "$(XCODE_DEVELOPER_DIR)" || { echo "ERROR: Full Xcode is required at $(XCODE_DEVELOPER_DIR)." >&2; exit 1; }
 	@test -d "$(OFX_INCLUDE)" || { echo "ERROR: Resolve OpenFX SDK is unavailable at $(OFX_INCLUDE)." >&2; exit 1; }
@@ -98,19 +112,21 @@ deploy:
 	@printf '\nInspect $(VALIDATION_OUTPUT), especially newly changed optical renders.\nInstall $(PRODUCT_LABEL) (build $(PRODUCT_BUILD)) into Resolve? [y/N] '; \
 		read answer; case "$$answer" in y|Y|yes|YES) $(MAKE) install-user ;; *) echo "Validation completed; installation skipped." ;; esac
 
+endif
+
 install-user:
 	./scripts/install-user.sh
 
 $(OFX_BUILD):
 	mkdir -p $(OFX_BUILD)
 
-$(OFX_BUILD)/LensDebaserPlugin.o: src/ofx/LensDebaserPlugin.cpp src/ofx/LensDebaserPlugin.h src/ofx/LensDebaserMetal.h include/LDBOpticsParameters.h | $(OFX_BUILD)
+$(OFX_BUILD)/LensDebaserPlugin.o: src/ofx/LensDebaserPlugin.cpp src/ofx/LensDebaserPlugin.h src/ofx/LensDebaserMetal.h include/LDBOpticsParameters.h include/LDBProjectionCandidateParameters.h include/LDBControlLayout.h | $(OFX_BUILD)
 	$(CXX) -std=c++20 -arch arm64 -fvisibility=hidden -Iinclude -Isrc/ofx -I"$(OFX_INCLUDE)" -I"$(OFX_SUPPORT_INCLUDE)" -c $< -o $@
 
 $(OFX_BUILD)/LensDebaserMetal.o: src/ofx/LensDebaserMetal.mm src/ofx/LensDebaserMetal.h src/engine/LDBOpticsEngine.mm include/LDBOpticsEngine.h | $(OFX_BUILD)
 	$(CXX) -std=c++20 -arch arm64 -fvisibility=hidden -Iinclude -Isrc/ofx -c $< -o $@
 
-$(OFX_BUILD)/LDBOpticsEngine.o: src/engine/LDBOpticsEngine.mm include/LDBOpticsEngine.h include/LDBOpticsParameters.h | $(OFX_BUILD)
+$(OFX_BUILD)/LDBOpticsEngine.o: src/engine/LDBOpticsEngine.mm include/LDBOpticsEngine.h include/LDBOpticsParameters.h include/LDBProjectionCandidateParameters.h | $(OFX_BUILD)
 	$(CXX) -std=c++20 -fobjc-arc -arch arm64 -fvisibility=hidden -Iinclude -c $< -o $@
 
 $(OFX_SUPPORT_OBJECTS): | $(OFX_BUILD)
@@ -131,7 +147,7 @@ $(BUILD):
 	mkdir -p $(BUILD)/module-cache
 
 $(METAL_AIR): src/metal/LDBOptics.metal include/LDBOpticsParameters.h | $(BUILD)
-	$(METAL) -c $< -o $@ -std=metal3.1 -Iinclude -isysroot $(SDKROOT) -fmodules-cache-path=$(CURDIR)/$(BUILD)/module-cache
+	$(METAL) -c $< -o $@ -std=metal3.1 $(FEATURE_FLAGS) -Iinclude -isysroot $(SDKROOT) -fmodules-cache-path=$(CURDIR)/$(BUILD)/module-cache
 
 $(METAL_LIB): $(METAL_AIR)
 	$(METALLIB) $< -o $@
@@ -143,6 +159,13 @@ $(FIELD_PSF_AIR): src/metal/LDBOptics.metal include/LDBOpticsParameters.h | $(BU
 $(FIELD_PSF_LIB): $(FIELD_PSF_AIR)
 	$(METALLIB) $< -o $@
 
+$(PROJECTION_AIR): src/metal/LDBOptics.metal include/LDBOpticsParameters.h | $(BUILD)
+	mkdir -p $(BUILD)/experiments
+	$(METAL) -c $< -o $@ -std=metal3.1 -DLDB_EXPERIMENT_WIDE_PROJECTION=1 -Iinclude -isysroot $(SDKROOT) -fmodules-cache-path=$(CURDIR)/$(BUILD)/module-cache
+
+$(PROJECTION_LIB): $(PROJECTION_AIR)
+	$(METALLIB) $< -o $@
+
 $(TEST_BIN): tests/MetalEngineTests.mm src/engine/LDBOpticsEngine.mm include/LDBOpticsEngine.h include/LDBOpticsParameters.h include/LDBColorReference.h | $(BUILD)
 	$(CXX) -std=c++20 -fobjc-arc -arch arm64 -Iinclude tests/MetalEngineTests.mm src/engine/LDBOpticsEngine.mm -o $@ -framework Foundation -framework Metal
 
@@ -151,6 +174,9 @@ $(VISUAL_BIN): tests/VisualValidation.mm src/engine/LDBOpticsEngine.mm include/L
 
 $(GUIDE_EXAMPLES_BIN): tests/GuideExamples.mm tests/VisualValidation.mm src/engine/LDBOpticsEngine.mm include/LDBOpticsEngine.h include/LDBOpticsParameters.h include/LDBColorReference.h | $(BUILD)
 	$(CXX) -std=c++20 -fobjc-arc -arch arm64 -Iinclude -Itests tests/GuideExamples.mm src/engine/LDBOpticsEngine.mm -o $@ -framework Foundation -framework Metal -framework CoreGraphics -framework ImageIO
+
+$(PROJECTION_AUDIT_BIN): tests/ProjectionImageAudit.mm | $(BUILD)
+	$(CXX) -std=c++20 -fobjc-arc -arch arm64 $< -o $@ -framework Foundation -framework CoreGraphics -framework ImageIO
 
 guide-examples: $(METAL_LIB) $(GUIDE_EXAMPLES_BIN) $(SYNTHETIC_OPTICAL_CHART) presets
 	@for reference in inputs/redistributable/ISO_12233-reschart.tif $(SYNTHETIC_OPTICAL_CHART) inputs/redistributable/iphone_milano_dwg_1.tif inputs/redistributable/iphone_milano2___dwg.tif inputs/redistributable/iphone_milano3_dwg.tif inputs/redistributable/Resolve-DWG-Intermediate-to-Rec709-Gamma24-Guide.cube; do test -f "$$reference" || { echo "ERROR: Required guide source is missing: $$reference" >&2; exit 1; }; done
@@ -267,6 +293,19 @@ field-psf-library-experiment: $(METAL_LIB) $(FIELD_PSF_LIB) $(GUIDE_EXAMPLES_BIN
 	./scripts/build-field-psf-report.py outputs/experiments/field-psf-library
 	@printf '\nFull relevant-preset comparison: outputs/experiments/field-psf-library/index.html\n'
 
+# Non-promoted ideal-projection study. The released metallib and factory
+# presets remain untouched; reserved values are read only by the candidate.
+projection-model-experiment: $(METAL_LIB) $(PROJECTION_LIB) $(GUIDE_EXAMPLES_BIN) $(BENCHMARK_BIN)
+	rm -rf outputs/experiments/projection-models
+	mkdir -p outputs/experiments/projection-models/images
+	$(GUIDE_EXAMPLES_BIN) $(PROJECTION_LIB) "$(CURDIR)" outputs/experiments/projection-models/images projection-model-validation
+	$(BENCHMARK_BIN) $(METAL_LIB) $(PROJECTION_LIB) projection | tee outputs/experiments/projection-models/benchmark.txt
+	./scripts/build-projection-experiment-report.py outputs/experiments/projection-models
+	@printf '\nExperimental comparison: outputs/experiments/projection-models/index.html\n'
+
+projection-model-audit: $(PROJECTION_AUDIT_BIN)
+	$(PROJECTION_AUDIT_BIN) outputs/experiments/projection-models | tee outputs/experiments/projection-models/image-audit.txt
+
 # One-command audit of every factory preset against an immutable packaged
 # release. Pass BASELINE_VERSION=x.y to select another retained release.
 full-preset-release-comparison:
@@ -378,3 +417,28 @@ benchmark: all
 
 clean:
 	rm -rf $(BUILD)
+
+# Isolated angle-limits library; never replaces the completed projection library.
+$(BUILD)/experiments/LDBOptics-projection-angle-limits.air: src/metal/LDBOptics.metal include/LDBOpticsParameters.h | $(BUILD)
+	mkdir -p $(BUILD)/experiments
+	$(METAL) -c $< -o $@ -std=metal3.1 -DLDB_EXPERIMENT_WIDE_PROJECTION=1 -DLDB_EXPERIMENT_PROJECTION_ANGLE_LIMITS=1 -Iinclude -isysroot $(SDKROOT) -fmodules-cache-path=$(CURDIR)/$(BUILD)/module-cache
+
+$(BUILD)/experiments/LDBOptics-projection-angle-limits.metallib: $(BUILD)/experiments/LDBOptics-projection-angle-limits.air
+	$(METALLIB) $< -o $@
+
+$(BUILD)/ldb-projection-integration-tests: tests/ProjectionCandidateTests.mm src/engine/LDBOpticsEngine.mm include/LDBProjectionCandidateParameters.h include/LDBOpticsParameters.h | $(BUILD)
+	$(CXX) -std=c++20 -fobjc-arc -arch arm64 -Iinclude $< src/engine/LDBOpticsEngine.mm -o $@ -framework Foundation -framework Metal
+$(BUILD)/ldb-control-layout-tests: tests/ControlLayoutTests.cpp include/LDBControlLayout.h | $(BUILD)
+	$(CXX) -std=c++20 -arch arm64 -Iinclude $< -o $@
+
+.PHONY: release-readiness
+release-readiness:
+ifeq ($(PRODUCT_VERSION),1.70)
+	@test -f build/integration/1.70/FACTORY-REVIEW-APPROVED || { echo "ERROR: 1.70 is a development integration. Complete factory-preset agreement and final release checks before packaging." >&2; exit 1; }
+endif
+
+$(BUILD)/ldb-factory-preset-review: tests/FactoryPresetReview.mm tests/GuideExamples.mm tests/VisualValidation.mm src/engine/LDBOpticsEngine.mm include/LDBProjectionCandidateParameters.h | $(BUILD)
+	$(CXX) -std=c++20 -fobjc-arc -arch arm64 -Iinclude tests/FactoryPresetReview.mm src/engine/LDBOpticsEngine.mm -o $@ -framework Foundation -framework Metal -framework CoreGraphics -framework ImageIO
+
+$(BUILD)/ldb-factory-host-parameter-audit: tests/FactoryHostParameterAudit.mm tests/GuideExamples.mm tests/VisualValidation.mm include/LDBOpticsParameters.h src/engine/LDBOpticsEngine.mm | $(BUILD)
+	$(CXX) -std=c++20 -fobjc-arc -arch arm64 -Iinclude tests/FactoryHostParameterAudit.mm src/engine/LDBOpticsEngine.mm -o $@ -framework Foundation -framework Metal -framework CoreGraphics -framework ImageIO

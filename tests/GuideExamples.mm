@@ -1,3 +1,6 @@
+#if defined(LDB_PROJECTION_RESOLVE_CANDIDATE) || defined(LDB_ENABLE_PROJECTION)
+#include "LDBProjectionCandidateParameters.h"
+#endif
 #define main LDBVisualValidationMainNotUsedByGuideExamples
 #include "VisualValidation.mm"
 #undef main
@@ -111,6 +114,9 @@ static std::vector<simd_float4> guideMilanoDisplayFromAP1(
 
 static void assignValue(LDBOpticsParameters& p,const std::string& key,float v) {
 #define SET(name) if(key==#name){p.name=v;return;}
+#if defined(LDB_RESOLUTION_RELATIVE_CANDIDATE) || defined(LDB_ENABLE_FRAME_RELATIVE)
+    if(key=="effectSize") { if(v==1)p.processingFlags|=(1u<<30);else p.processingFlags&=~(1u<<30);return; }
+#endif
     SET(distortionK1) SET(distortionK2) SET(moustacheK3) SET(geometryFieldAmount)
     SET(peripheralStretch) SET(peripheralWarp) SET(anamorphicSqueeze) SET(lateralCARed)
     SET(lateralCABlue) SET(chromaticFieldOnset) SET(chromaticFieldFalloff) SET(longitudinalCA)
@@ -162,10 +168,27 @@ static void assignValue(LDBOpticsParameters& p,const std::string& key,float v) {
 }
 
 static LDBOpticsParameters loadPreset(const fs::path& path,uint32_t width,uint32_t height) {
-    auto p=LDBNeutralOpticsParameters(width,height); std::ifstream in(path); std::string line;
+    auto p=LDBNeutralOpticsParameters(width,height); std::ifstream in(path); std::string line; bool focusDistanceRead=false;
+#if defined(LDB_PROJECTION_RESOLVE_CANDIDATE) || defined(LDB_ENABLE_PROJECTION)
+    int model=0,framing=1;double amount=0,angle=55;
+#endif
     while(std::getline(in,line)){auto at=line.find('=');if(at==std::string::npos||line.empty()||line[0]=='#')continue;
-        try{assignValue(p,line.substr(0,at),std::stof(line.substr(at+1)));}catch(...){} }
-    if(p.captureFocusDistance<999.5f)p.captureFocusDistance*=.01f;
+        try{
+            auto key=line.substr(0,at);float value=std::stof(line.substr(at+1));
+            if(key=="captureFocusDistance")focusDistanceRead=true;
+#if defined(LDB_PROJECTION_RESOLVE_CANDIDATE) || defined(LDB_ENABLE_PROJECTION)
+            if(key=="projectionModel")model=int(value);
+            else if(key=="projectionFraming")framing=int(value);
+            else if(key=="projectionAmount")amount=value;
+            else if(key=="projectionFieldAngle")angle=value;
+            else
+#endif
+            assignValue(p,key,value);
+        }catch(...){} }
+#if defined(LDB_PROJECTION_RESOLVE_CANDIDATE) || defined(LDB_ENABLE_PROJECTION)
+    LDBSetProjectionCandidate(p,model,amount,angle,framing);
+#endif
+    if(focusDistanceRead) p.captureFocusDistance=p.captureFocusDistance>=999.5f?1000.0f:p.captureFocusDistance*.01f;
     return p;
 }
 
@@ -208,8 +231,11 @@ static std::string guideFileSlug(std::string value) {
     return result;
 }
 
+#ifdef LDB_FACTORY_REVIEW_TOOL
+#define main LDBGuideExamplesUnusedMain
+#endif
 int main(int argc,char** argv) {
-    if(argc<4||argc>5){std::fprintf(stderr,"usage: %s metallib repo-root output-dir [changed-glare|changed-presets-166|changed-presets-166b|changed-presets-167|changed-preset-26|optical-model-validation|field-psf-validation|field-psf-library-validation|all-preset-library-validation|light-transport-validation|optical-drift-comparison|optical-drift-preset-validation|optical-drift-demo-validation]\n",argv[0]);return 2;}
+    if(argc<4||argc>5){std::fprintf(stderr,"usage: %s metallib repo-root output-dir [changed-glare|changed-presets-166|changed-presets-166b|changed-presets-167|changed-preset-26|optical-model-validation|field-psf-validation|field-psf-library-validation|all-preset-library-validation|light-transport-validation|optical-drift-comparison|optical-drift-preset-validation|optical-drift-demo-validation|projection-model-validation|projection-balanced-validation|projection-balanced-20|projection-balanced-70|projection-angle-limits]\n",argv[0]);return 2;}
     @autoreleasepool {
         const bool changedGlareOnly=argc==5&&std::string(argv[4])=="changed-glare";
         const bool changedPresets166=argc==5&&std::string(argv[4])=="changed-presets-166";
@@ -232,6 +258,14 @@ int main(int argc,char** argv) {
             argc==5&&std::string(argv[4])=="optical-drift-preset-validation";
         const bool opticalDriftDemoValidation=
             argc==5&&std::string(argv[4])=="optical-drift-demo-validation";
+        const bool projectionModelValidation=
+            argc==5&&std::string(argv[4])=="projection-model-validation";
+        const bool projectionBalancedValidation=
+            argc==5&&(std::string(argv[4])=="projection-balanced-validation"||
+                     std::string(argv[4])=="projection-balanced-20"||
+                     std::string(argv[4])=="projection-balanced-70");
+        const float projectionStrength=argc==5&&std::string(argv[4])=="projection-balanced-20"?.20f:
+            (argc==5&&std::string(argv[4])=="projection-balanced-70"?.70f:.45f);
         id<MTLDevice> device=MTLCreateSystemDefaultDevice(); if(!device){std::fprintf(stderr,"No Metal device\n");return 3;}
         NSURL* libraryURL=[NSURL fileURLWithPath:[NSString stringWithUTF8String:argv[1]]];
         LDBOpticsEngine engine(device,libraryURL); id<MTLCommandQueue> queue=[device newCommandQueue];
@@ -249,6 +283,23 @@ int main(int argc,char** argv) {
         uint32_t mw=0,mh=0; auto milano1Encoded=loadEncodedTIFF((root/"inputs/redistributable/iphone_milano_dwg_1.tif").c_str(),mw,mh);
         const uint32_t milano1FullW=mw,milano1FullH=mh;
         auto milano1=resizePixels(convertEncoding(milano1Encoded,LDBWorkingColorSpaceDaVinciIntermediate,false),mw,mh,milanoW,milanoH);
+#if defined(LDB_PROJECTION_RESOLVE_CANDIDATE) || defined(LDB_ENABLE_PROJECTION)
+        if(argc==5&&std::string(argv[4])=="projection-resolution-comparison") {
+            auto full=convertEncoding(milano1Encoded,LDBWorkingColorSpaceDaVinciIntermediate,false);
+            auto neutral=LDBNeutralOpticsParameters(milano1FullW,milano1FullH);
+            auto projected=loadPreset(root/"presets/experiments/projection-resolve-candidate/01-Projection-Equidistant-Subtle.ldbpreset",milano1FullW,milano1FullH);
+            for(int which=0;which<2;++which) {
+                auto result=render(engine,device,queue,full,milano1FullW,milano1FullH,which?projected:neutral);
+                for(const auto& pixel:result)for(int c=0;c<4;++c)
+                    if(!std::isfinite(pixel[c])){std::fprintf(stderr,"Nonfinite resolution test output\n");return 12;}
+                auto display=guideMilanoDisplayFromAP1(result,milanoDisplayLUT);
+                const char* name=which?"native-projection.png":"native-baseline.png";
+                if(!writePNG((out/name).string(),display,milano1FullW,milano1FullH))return 10;
+                std::printf("PASS: %s %ux%u finite; native source resolution\n",name,milano1FullW,milano1FullH);
+            }
+            return 0;
+        }
+#endif
         auto milano2Encoded=loadEncodedTIFF((root/"inputs/redistributable/iphone_milano2___dwg.tif").c_str(),mw,mh);
         auto milano2=resizePixels(convertEncoding(milano2Encoded,LDBWorkingColorSpaceDaVinciIntermediate,false),mw,mh,milanoW,milanoH);
         auto milano3Encoded=loadEncodedTIFF((root/"inputs/redistributable/iphone_milano3_dwg.tif").c_str(),mw,mh);
@@ -256,6 +307,151 @@ int main(int argc,char** argv) {
         const GuideSource sources[]={{"iso",&iso,chartW,chartH},{"optical",&optical,chartW,chartH},
             {"milano1",&milano1,milanoW,milanoH},{"milano2",&milano2,milanoW,milanoH},
             {"milano3",&milano3,milanoW,milanoH}};
+
+#if defined(LDB_PROJECTION_RESOLVE_CANDIDATE) || defined(LDB_ENABLE_PROJECTION)
+        if(argc==5&&std::string(argv[4])=="projection-candidate-examples") {
+            std::vector<fs::path> presets;
+            for(const auto& entry:fs::directory_iterator(root/"presets/experiments/projection-resolve-candidate"))
+                if(entry.path().extension()==".ldbpreset")presets.push_back(entry.path());
+            std::sort(presets.begin(),presets.end());
+            if(presets.size()!=6){std::fprintf(stderr,"Expected six candidate examples\n");return 12;}
+            for(const auto& source:sources) {
+                if(std::string(source.key)!="iso"&&std::string(source.key)!="milano1")continue;
+                for(const auto& preset:presets) {
+                    auto p=loadPreset(preset,source.width,source.height);
+                    if(!LDBProjectionCandidateActive(p)){std::fprintf(stderr,"Inactive candidate example\n");return 12;}
+                    auto result=render(engine,device,queue,*source.pixels,source.width,source.height,p);
+                    for(const auto& pixel:result)for(int c=0;c<4;++c)
+                        if(!std::isfinite(pixel[c])){std::fprintf(stderr,"Nonfinite candidate example\n");return 12;}
+                    auto display=std::string(source.key)=="milano1"?guideMilanoDisplayFromAP1(result,milanoDisplayLUT):guideRec709Gamma24FromAP1(result);
+                    auto name=preset.stem().string()+"-"+source.key+".png";
+                    if(!writePNG((out/name).string(),display,source.width,source.height))return 10;
+                    std::printf("Wrote candidate example %s\n",name.c_str());
+                }
+            }
+            return 0;
+        }
+#endif
+
+        if(argc==5&&(std::string(argv[4])=="projection-angle-limits"||std::string(argv[4])=="projection-angle-zero-recheck")) {
+            const bool zeroOnly=std::string(argv[4])=="projection-angle-zero-recheck";
+            // Audit linear render values before display conversion can hide NaNs.
+            FILE* audit=std::fopen((out.parent_path()/"render-audit.csv").c_str(),"w");
+            if(!audit){std::fprintf(stderr,"Cannot open render audit\n");return 10;}
+            std::fprintf(audit,"image,nonfinite_components,min_rgb,max_rgb,zero_limit_max_error\n");
+            size_t invalidTotal=0;
+            for(const auto& source:sources) {
+                bool milano=std::string(source.key).rfind("milano",0)==0;
+                auto neutral=LDBNeutralOpticsParameters(source.width,source.height);
+                auto optical=neutral;
+                optical.responseFieldOnset=.18f;optical.responseFieldFalloff=1.12f;
+                optical.cornerSharpnessLoss=.72f;optical.fieldCurvature=.48f;
+                optical.astigmatism=.18f;optical.tangentialSmear=.16f;
+                optical.lateralCARed=1.8f;optical.lateralCABlue=-2.2f;
+                auto neutralIdentity=neutral;neutralIdentity.distortionK1=1e-12f;
+                auto opticalIdentity=optical;opticalIdentity.distortionK1=1e-12f;
+                // Match the forced sampling path; neutral can otherwise blit.
+                auto neutralReference=render(engine,device,queue,*source.pixels,source.width,source.height,neutralIdentity);
+                auto opticalReference=render(engine,device,queue,*source.pixels,source.width,source.height,opticalIdentity);
+                for(int angle:{0,1,5,15,35,55,75,82,85,88,89})
+                    for(int model:{1,3})for(int framing:{0,1,2})
+                        for(int strength:{20,45,100}) {
+                            if(zeroOnly&&angle!=0)continue;
+                            // Lower strengths only at candidate extremes.
+                            if(strength!=100&&angle!=1&&angle!=82&&angle!=89)continue;
+                            for(int kind:{0,1}) {
+                                auto p=kind?optical:neutral;
+                                p.distortionK1=1e-12f;p.reservedV4_3=float(strength)*.01f;
+                                p.reservedV4_4=float(model);p.reservedV4_5=float(angle);
+                                p.reservedV4_7=framing==0?0.0f:(framing==1?.55f:1.0f);
+                                std::string name=std::string(model==1?"equidistant":"stereographic")+
+                                    "-a"+std::to_string(angle)+"-f"+std::to_string(framing)+
+                                    "-s"+std::to_string(strength)+(kind?"-optical-":"-geometry-")+source.key+".png";
+                                auto result=render(engine,device,queue,*source.pixels,source.width,source.height,p);
+                                size_t invalid=0;float low=INFINITY,high=-INFINITY;
+                                for(const auto& pixel:result)for(int c=0;c<4;++c) {
+                                    if(!std::isfinite(pixel[c]))++invalid;
+                                    else if(c<3){low=std::min(low,pixel[c]);high=std::max(high,pixel[c]);}
+                                }
+                                invalidTotal+=invalid;
+                                float zeroError=0;
+                                if(angle==0) {
+                                    const auto& reference=kind?opticalReference:neutralReference;
+                                    for(size_t i=0;i<result.size();++i)for(int c=0;c<4;++c)
+                                        zeroError=std::max(zeroError,std::abs(result[i][c]-reference[i][c]));
+                                    if(zeroError>1e-6f){std::fprintf(stderr,"FAIL: zero-angle identity error %.9g\n",zeroError);++invalidTotal;}
+                                }
+                                std::fprintf(audit,"%s,%zu,%.9g,%.9g,%.9g\n",name.c_str(),invalid,low,high,zeroError);
+                                auto display=milano?guideMilanoDisplayFromAP1(result,milanoDisplayLUT):guideRec709Gamma24FromAP1(result);
+                                if(!writePNG((out/name).string(),display,source.width,source.height)){std::fclose(audit);return 10;}
+                            }
+                        }
+                std::printf("Completed angle sweep source %s\n",source.key);
+                std::fflush(audit);
+            }
+            std::fclose(audit);
+            if(invalidTotal){std::fprintf(stderr,"FAIL: %zu invalid components or zero-limit checks\n",invalidTotal);return 11;}
+            return 0;
+        }
+
+        if(projectionModelValidation||projectionBalancedValidation) {
+            struct Projection { int id; const char* slug; } projections[]={
+                {1,"equidistant"},{2,"equisolid"},{3,"stereographic"},{4,"orthographic"}};
+            for(const auto& source:sources) {
+                const bool milano=std::string(source.key).rfind("milano",0)==0;
+                auto save=[&](const std::string& name,const LDBOpticsParameters& p) {
+                    auto result=render(engine,device,queue,*source.pixels,
+                                       source.width,source.height,p);
+                    auto display=milano?guideMilanoDisplayFromAP1(result,milanoDisplayLUT):
+                        guideRec709Gamma24FromAP1(result);
+                    if(!writePNG((out/(name+"-"+source.key+".png")).string(),display,
+                                 source.width,source.height))std::exit(10);
+                };
+                auto neutral=LDBNeutralOpticsParameters(source.width,source.height);
+                if(!projectionBalancedValidation)save("baseline-geometry",neutral);
+                auto opticalRecipe=neutral;
+                opticalRecipe.responseFieldOnset=.18f;
+                opticalRecipe.responseFieldFalloff=1.12f;
+                opticalRecipe.cornerSharpnessLoss=.72f;
+                opticalRecipe.fieldCurvature=.48f;
+                opticalRecipe.astigmatism=.18f;
+                opticalRecipe.tangentialSmear=.16f;
+                opticalRecipe.lateralCARed=1.8f;
+                opticalRecipe.lateralCABlue=-2.2f;
+                if(!projectionBalancedValidation)save("baseline-optical",opticalRecipe);
+                for(const auto& projection:projections) {
+                    if(projectionBalancedValidation&&projection.id!=1&&projection.id!=3)continue;
+                    auto geometry=neutral;
+                    geometry.distortionK1=1e-12f;
+                    geometry.reservedV4_3=projectionStrength;
+                    geometry.reservedV4_4=float(projection.id);
+                    geometry.reservedV4_5=55.0f;
+                    geometry.reservedV4_7=projectionBalancedValidation?.55f:2.0f;
+                    save(std::string(projection.slug)+"-geometry",geometry);
+                    auto optics=opticalRecipe;
+                    optics.reservedV4_3=geometry.reservedV4_3;
+                    optics.reservedV4_4=geometry.reservedV4_4;
+                    optics.reservedV4_5=geometry.reservedV4_5;
+                    optics.reservedV4_7=geometry.reservedV4_7;
+                    save(std::string(projection.slug)+"-optical",optics);
+                    std::printf("Wrote projection experiment %s / %s\n",
+                                projection.slug,source.key);
+                }
+                if(!projectionBalancedValidation&&(std::string(source.key)=="iso"||std::string(source.key)=="milano1")) {
+                    struct Framing { const char* slug; float amount; } framings[]={
+                        {"full-frame",0.0f},{"balanced",.55f},{"center-scale",1.0f},
+                        {"boundary-safe",2.0f}};
+                    for(const auto& framing:framings) {
+                        auto p=neutral;
+                        p.distortionK1=1e-12f;
+                        p.reservedV4_3=.45f;p.reservedV4_4=1.0f;p.reservedV4_5=55.0f;
+                        p.reservedV4_7=framing.amount;
+                        save(std::string("framing-")+framing.slug,p);
+                    }
+                }
+            }
+            return 0;
+        }
 
         if(opticalDriftComparison) {
             auto milano1Full=convertEncoding(milano1Encoded,

@@ -16,5 +16,5 @@ comaThreshold=0.55
 cornerSharpnessLoss=0.2
 fieldCurvature=0.12
 longitudinalCA=0.08
-responseFieldFalloff=1.52
+responseFieldFalloff=1.5
 responseFieldOnset=0.18

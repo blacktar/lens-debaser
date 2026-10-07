@@ -1,10 +1,11 @@
 LensDebaserPreset=2
+# Current-engine proposal: Isolate geometry; existing Chromatic and Structured Flare demos retain the other behaviors.
 # Family: Demo-Anamorphic
 # Strength: Educational
-# Lines reveal cylindrical geometry while strong highlights reveal a controlled blue streak.
-anamorphicAberration=0.76
+# Straight lines reveal cylindrical distortion and an anamorphic field; chromatic fringing and flare are disabled to isolate geometry.
+anamorphicAberration=0
 anamorphicDistortion=0.034
-anamorphicFlareAmount=0.92
+anamorphicFlareAmount=0
 anamorphicFlareB=1
 anamorphicFlareG=0.46
 anamorphicFlareR=0.18

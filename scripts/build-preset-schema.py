@@ -94,6 +94,9 @@ def parse_double_specs(text: str) -> dict[str, dict]:
 
 def add_special_controls(controls: dict[str, dict]) -> None:
     choices = {
+        "effectSize": ("Effect Size", "Input & Diagnostics", ["Frame Relative", "Fixed Pixels"], 0),
+        "projectionModel": ("Projection Model", "Projection", ["Off", "Equidistant", "Stereographic"], 0),
+        "projectionFraming": ("Projection Framing", "Projection", ["Fill Frame", "Balanced", "Preserve Centre Scale"], 1),
         "apertureShape": ("Aperture Shape", "Aperture & Bokeh", ["Circular", "Polygon", "Oval / Anamorphic"], 0),
         "apertureBladeCount": ("Blade Count", "Aperture & Bokeh", list(range(3, 17)), 6),
         "depthMode": ("Depth Interpretation", "Depth Input", ["Depth-Free", "Near White", "Near Black", "Linear Camera Z", "Inverse Z / Disparity", "Logarithmic Z"], 0),
@@ -130,6 +133,14 @@ def main() -> None:
     text = SOURCE.read_text()
     controls = parse_double_specs(text)
     add_special_controls(controls)
+    layout = (ROOT / 'include/LDBControlLayout.h').read_text()
+    parse = lambda block: re.findall(r'\{"([^"]*)","([^"]*)","([^"]*)","([^"]*)"\}', block)
+    groups = {gid: label for gid,label,_,_ in parse(layout.split('groups[] = {',1)[1].split('};',1)[0])}
+    for cid,group,label,hint in parse(layout.split('controls[] = {',1)[1].split('};',1)[0]):
+        if cid in controls:
+            controls[cid]['label'] = label
+            controls[cid]['group'] = groups[group]
+            if hint: controls[cid]['description'] = hint
     version = re.search(r"<key>CFBundleShortVersionString</key>\s*<string>([^<]+)</string>", (ROOT / "resources/Info.plist").read_text()).group(1)
     schema = {
         "title": "Lens Debaser AI Preset Authoring Schema",

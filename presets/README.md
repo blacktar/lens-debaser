@@ -6,23 +6,10 @@ same folder.
 
 ## demonstrations
 
-Thirty single, moderate educational presets. Dependencies are intentionally enabled where a control would be
-neutral on its own. `Demo-Depth-Input` requires a depth map on the dedicated
-Depth Map RGB connector and assumes `Near Black` interpretation.
+44 educational presets, including projection, directed/tangential drift, anamorphic fringing, prism routing, depth focus and protection. Depth presets require the second RGB/depth input. Effect Size and Effect Blend do not need separate demo presets.
 
 ## cinematic-lenses
 
-Twenty-six optical-character families, normally supplied at three strengths,
-including reference-inspired Hawk V-Lite Vintage '74 and Cooke Anamorphic /i
-Special Flare families, Decentered Dream Glass and Edge Prism Glass, plus one
-independently authored Bodycam Edge Stress and Internal Field Edge FX signature
-presets.
-They are visual, behavior-inspired approximations rather than scientific lens
-profiles or claims of exact matching. Caricature variants are diagnostic and
-creative extremes; Medium is the best starting point; Subtle is intended for
-ordinary finishing. Each strength is authored independently rather than made
-by applying one global multiplier to a family recipe.
+88 presets across32 creative families. Most provide Subtle, Medium and Caricature strengths; four signature presets have a single strength. New families are Natural Wide Angle, Liquid Prism, Tilted Miniature and Vortex Glass. Medium is a useful starting point; Caricature is deliberately stylized. These are creative approximations, not measured physical lens profiles.
 
-Processing settings such as Input Working Space and Diagnostic View are not
-stored in these presets. Always set Input Working Space to match the image
-entering Lens Debaser.
+Effect Size defaults to Frame Relative; Fixed Pixels is available. Input Color Space and Diagnostic View remain host-context settings; match the colour encoding entering the node.

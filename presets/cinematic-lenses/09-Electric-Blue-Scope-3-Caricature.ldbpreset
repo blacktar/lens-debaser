@@ -4,7 +4,7 @@ LensDebaserPreset=2
 # Blue 2x anamorphic character; bright points drive streaks and reveal oval peripheral bokeh.
 anamorphicAberration=1.7
 anamorphicDistortion=0.028
-anamorphicFlareAmount=2.2
+anamorphicFlareAmount=2
 anamorphicFlareB=1
 anamorphicFlareG=0.4
 anamorphicFlareR=0.14
@@ -23,5 +23,5 @@ fieldAspect=1.65
 fieldCurvature=0.36
 lateralCABlue=-2
 lateralCARed=1.5
-responseFieldFalloff=1.58
+responseFieldFalloff=1.5
 responseFieldOnset=0.2

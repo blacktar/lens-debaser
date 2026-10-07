@@ -5,7 +5,9 @@ DaVinci Resolve. It models perceptually useful aspects of modern, vintage,
 anamorphic and exotic optics, prioritising pleasing visual approximations and
 interactive performance over scientific lens simulation.
 
-Current development version: **1.69**.
+Current development version: **1.70**.
+
+Release 1.70 (build 171): engine, UI, factory presets and updated guide accepted. The guide upload is pending manual publication.
 
 Read the online [Lens Debaser user guide](https://vidarandersen.com/dmz/lens-debaser-ofx/) for the complete workflow, control reference, depth setup, and preset catalogue.
 
@@ -28,12 +30,11 @@ Read the online [Lens Debaser user guide](https://vidarandersen.com/dmz/lens-deb
   LogC4 working-space handling;
 - editable external `.ldbpreset` preset files.
 
-The generated external preset library contains 107 files in
-`presets/demonstrations` and `presets/cinematic-lenses`: thirty-one single,
-moderate educational demonstrations, twenty-four cinematic-lens families with
-three independently authored variants each, and four single signature presets.
-The library includes a focused Optical Drift demonstration plus Decentered
-Drift Prime and Spectral Radial Drift compound looks. Installation copies
+The generated external preset library contains 132 files in
+`presets/demonstrations` and `presets/cinematic-lenses`: 44 educational demonstrations
+and 88 cinematic presets across 32 families (28 three-strength families and four
+single signature treatments). New creative families include Natural Wide Angle,
+Liquid Prism, Tilted Miniature and Vortex Glass. Installation copies
 them outside the OFX bundle to
 `~/Library/Application Support/Lens Debaser/Presets`.
 

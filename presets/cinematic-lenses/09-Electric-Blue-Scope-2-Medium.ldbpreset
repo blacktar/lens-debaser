@@ -23,5 +23,5 @@ fieldAspect=1.65
 fieldCurvature=0.18
 lateralCABlue=-0.6
 lateralCARed=0.45
-responseFieldFalloff=1.58
+responseFieldFalloff=1.5
 responseFieldOnset=0.2

@@ -15,6 +15,6 @@ fineDetail=0.18
 longitudinalCA=0.82
 microContrast=0.22
 radialSmear=0.15
-responseFieldFalloff=1.52
+responseFieldFalloff=1.5
 responseFieldOnset=0.18
 sphericalHalo=0.3

@@ -1,7 +1,7 @@
 LensDebaserPreset=2
 # Family: Breathing-Documentary-Zoom
 # Strength: Subtle
-# Uneven vintage zoom character; lines, fabric and edge detail reveal it best.
+# Static documentary zoom-inspired optical character; no automatic animated focus breathing is modeled.
 cornerSharpnessLoss=0.22
 detailEdgeFalloff=0.18
 distortionK1=0.008
@@ -12,7 +12,7 @@ lateralCABlue=-0.24
 lateralCARed=0.18
 microContrast=-0.14
 peripheralWarp=0.1
-responseFieldFalloff=1.66
+responseFieldFalloff=1.5
 responseFieldOnset=0.24
 transmissionB=0.74
 transmissionColorAmount=0.1

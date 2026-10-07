@@ -2,7 +2,8 @@
 set -euo pipefail
 
 project_dir="$(cd "$(dirname "$0")/.." && pwd)"
-source_bundle="$project_dir/build/LensDebaser.ofx.bundle"
+source_bundle="${LDB_VALIDATED_BUNDLE:-$project_dir/build/LensDebaser.ofx.bundle}"
+factory_source="${LDB_VALIDATED_FACTORY:-$project_dir/presets}"
 plugin_dir="/Library/OFX/Plugins"
 backup_dir="/Library/Application Support/Lens Debaser/Backups"
 factory_preset_dir="${HOME}/Library/Application Support/Lens Debaser/Presets"
@@ -21,8 +22,12 @@ if pgrep -x "Resolve" >/dev/null; then
   exit 1
 fi
 
-echo "Building Lens Debaser…"
-make -C "$project_dir" ofx
+if [[ -z "${LDB_VALIDATED_BUNDLE:-}" ]]; then
+  echo "Building Lens Debaser…"
+  make -C "$project_dir" ofx
+else
+  echo "Installing the previously passed Lens Debaser snapshot…"
+fi
 
 if [[ ! -x "$source_bundle/Contents/MacOS/LensDebaser.ofx" ]]; then
   echo "ERROR: Lens Debaser executable was not created." >&2
@@ -111,8 +116,8 @@ echo "Installed: $installed_bundle"
 echo "Version: $bundle_version"
 sudo codesign --verify --deep --strict --verbose=2 "$installed_bundle"
 mkdir -p "$factory_preset_dir/Demonstrations" "$factory_preset_dir/Cinematic Lenses"
-ditto "$project_dir/presets/demonstrations" "$factory_preset_dir/Demonstrations"
-ditto "$project_dir/presets/cinematic-lenses" "$factory_preset_dir/Cinematic Lenses"
-cp "$project_dir/presets/README.md" "$factory_preset_dir/README.md"
+ditto "$factory_source/demonstrations" "$factory_preset_dir/Demonstrations"
+ditto "$factory_source/cinematic-lenses" "$factory_preset_dir/Cinematic Lenses"
+cp "$factory_source/README.md" "$factory_preset_dir/README.md"
 echo "External presets: $factory_preset_dir"
 echo "Fully quit and restart DaVinci Resolve."

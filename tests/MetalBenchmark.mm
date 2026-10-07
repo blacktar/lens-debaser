@@ -1,3 +1,6 @@
+#if defined(LDB_PROJECTION_RESOLVE_CANDIDATE) || defined(LDB_ENABLE_PROJECTION)
+#include "LDBProjectionCandidateParameters.h"
+#endif
 #import <Foundation/Foundation.h>
 #import <Metal/Metal.h>
 #include <chrono>
@@ -38,8 +41,8 @@ static Result benchmark(const char* name, LDBOpticsEngine& engine, id<MTLDevice>
 
 int main(int argc, char** argv) {
     @autoreleasepool {
-        if (argc != 2 && argc != 3) {
-            std::fprintf(stderr, "usage: ldb-optics-benchmark baseline.metallib [candidate.metallib]\n");
+        if (argc != 2 && argc != 3 && argc != 4) {
+            std::fprintf(stderr, "usage: ldb-optics-benchmark baseline.metallib [candidate.metallib [projection]]\n");
             return 1;
         }
         constexpr uint32_t width = 1920, height = 1080;
@@ -50,7 +53,7 @@ int main(int argc, char** argv) {
         LDBOpticsEngine engine(device, [NSURL fileURLWithPath:[NSString stringWithUTF8String:argv[1]]]);
         if (!engine.valid()) return 3;
         std::unique_ptr<LDBOpticsEngine> candidate;
-        if(argc==3) {
+        if(argc>=3) {
             candidate=std::make_unique<LDBOpticsEngine>(device,
                 [NSURL fileURLWithPath:[NSString stringWithUTF8String:argv[2]]]);
             if(!candidate->valid())return 3;
@@ -190,7 +193,59 @@ int main(int argc, char** argv) {
         internalDirt.internalDirtSmear=.45f;internalDirt.internalDirtScatter=1.35f;
         internalDirt.internalDirtSeed=16180;
         std::printf("Metal device: %s\n", device.name.UTF8String);
+        if(candidate&&argc==4&&std::string(argv[3])=="projection-angle-limits") {
+            for(int model:{1,3})for(int angle:{1,55,89})for(int framing:{0,1,2}) {
+                auto p=neutral;p.distortionK1=1e-12f;
+                p.reservedV4_3=1.0f;p.reservedV4_4=float(model);p.reservedV4_5=float(angle);
+                p.reservedV4_7=framing==0?0.0f:(framing==1?.55f:1.0f);
+                std::string name=std::string(model==1?"equidistant":"stereographic")+"-a"+std::to_string(angle)+"-f"+std::to_string(framing);
+                auto base=benchmark((name+"-base").c_str(),engine,device,queue,source,destination,width,height,p,64);
+                auto test=benchmark((name+"-test").c_str(),*candidate,device,queue,source,destination,width,height,p,64);
+                std::printf("  %s GPU %+.1f%%\n",name.c_str(),(test.gpuMs/base.gpuMs-1.0)*100.0);
+            }
+            return 0;
+        }
+        if(candidate&&argc==4&&(std::string(argv[3])=="projection-balanced"||std::string(argv[3])=="projection-candidate")) {
+            for(int model:{1,3})for(float amount:{.20f,.45f,.70f}) {
+                auto p=neutral;p.distortionK1=1e-12f;
+                p.reservedV4_3=amount;p.reservedV4_4=float(model);
+                p.reservedV4_5=55.0f;p.reservedV4_7=.55f;
+#if defined(LDB_PROJECTION_RESOLVE_CANDIDATE) || defined(LDB_ENABLE_PROJECTION)
+                if(std::string(argv[3])=="projection-candidate") {
+                    p.distortionK1=0;
+                    LDBSetProjectionCandidate(p,model==1?1:2,amount*100.0,55,1);
+                }
+#endif
+                std::string name=std::string(model==1?"equidistant":"stereographic")+"-"+std::to_string(int(amount*100+.5f));
+                auto base=benchmark((name+"-base").c_str(),engine,device,queue,source,destination,width,height,p,64);
+                auto test=benchmark((name+"-test").c_str(),*candidate,device,queue,source,destination,width,height,p,64);
+                std::printf("  %s GPU %+.1f%%\n",name.c_str(),(test.gpuMs/base.gpuMs-1.0)*100.0);
+            }
+            return 0;
+        }
         if(candidate) {
+            if(argc==4&&std::string(argv[3])=="projection") {
+                struct ProjectionCase { const char* name; float model; } projectionCases[]={
+                    {"equidistant",1.0f},{"equisolid",2.0f},
+                    {"stereographic",3.0f},{"orthographic",4.0f}};
+                std::printf("\nProjection A/B (released baseline then experimental candidate)\n");
+                for(const auto& projection:projectionCases) {
+                    auto p=neutral;
+                    p.distortionK1=1e-12f;
+                    p.reservedV4_3=.45f;p.reservedV4_4=projection.model;p.reservedV4_5=55.0f;
+                    p.reservedV4_7=2.0f;
+                    std::string baseName=std::string(projection.name)+"-base";
+                    std::string testName=std::string(projection.name)+"-test";
+                    auto base=benchmark(baseName.c_str(),engine,device,queue,source,destination,
+                                        width,height,p,frames);
+                    auto test=benchmark(testName.c_str(),*candidate,device,queue,source,destination,
+                                        width,height,p,frames);
+                    std::printf("  %-12s GPU %+6.1f%%  wall %+6.1f%%\n",projection.name,
+                        (test.gpuMs/base.gpuMs-1.0)*100.0,
+                        (test.wallMs/base.wallMs-1.0)*100.0);
+                }
+                return 0;
+            }
             struct ABCase { const char* name; const LDBOpticsParameters* p; } cases[]={
                 {"geometry",&geometry},{"ca+defocus",&chromaticDefocus},
                 {"bokeh-swirl",&bokehSwirl},{"petzval",&petzval},

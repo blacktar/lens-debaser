@@ -1,0 +1,6 @@
+LensDebaserPreset=2
+# 1.70 review: Same Equidistant treatment with Full frame; inspect framing loss and filling of the frame.
+projectionModel=1
+projectionAmount=45
+projectionFieldAngle=55
+projectionFraming=0

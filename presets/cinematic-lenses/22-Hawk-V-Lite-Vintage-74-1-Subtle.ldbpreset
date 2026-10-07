@@ -49,5 +49,5 @@ glareThreshold=0.62
 lateralCABlue=-0.28
 lateralCARed=0.2
 microContrast=-0.06
-responseFieldFalloff=1.58
+responseFieldFalloff=1.5
 responseFieldOnset=0.2

@@ -1,0 +1,6 @@
+LensDebaserPreset=2
+# 1.70 review: Equidistant at 45%, 55 degrees, Balanced; compare with clean source.
+projectionModel=1
+projectionAmount=45
+projectionFieldAngle=55
+projectionFraming=1

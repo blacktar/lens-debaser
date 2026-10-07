@@ -50,6 +50,6 @@ lateralCABlue=-0.66
 lateralCARed=0.48
 longitudinalCA=0.16
 microContrast=-0.14
-responseFieldFalloff=1.58
+responseFieldFalloff=1.5
 responseFieldOnset=0.2
 tangentialSmear=0.18

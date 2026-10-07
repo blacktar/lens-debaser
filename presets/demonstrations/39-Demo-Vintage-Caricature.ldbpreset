@@ -1,0 +1,10 @@
+LensDebaserPreset=2
+# Family: 39-Demo-Vintage-Caricature
+# Strength: Educational
+# Vintage Caricature exaggerates field softness, chromatic separation and vintage lens character; adjust its bias to compare.
+lookAnamorphicBias=0
+lookCharacter=0
+lookExoticBias=0
+lookInfluence=1
+lookVintageBias=0
+lookVintageCaricatureBias=0.9

@@ -1,0 +1,51 @@
+{
+  "original_count": 3,
+  "candidate_count": 3,
+  "range_revision_count": 0,
+  "rows": [
+    {
+      "id": "cinematic-lenses--26-Internal-Field-Edge-FX",
+      "label": "26-Internal-Field-Edge-FX",
+      "decision": "diagnose unchanged-preset strength",
+      "rationale": "Exact released recipe in both engines: no retuning, no range normalization and no removed settings. Compare complete optical output to isolate an engine difference.",
+      "changes": {},
+      "status": "user-reported reduced strength; regression diagnosis pending",
+      "warnings": [],
+      "baseline": "presets/experiments/cinematic-strength-regression-1.70/baseline/cinematic-lenses/26-Internal-Field-Edge-FX.ldbpreset",
+      "candidate": "presets/experiments/cinematic-strength-regression-1.70/candidate/cinematic-lenses/26-Internal-Field-Edge-FX.ldbpreset"
+    },
+    {
+      "id": "cinematic-lenses--27-Decentered-Drift-Prime",
+      "label": "27-Decentered-Drift-Prime",
+      "decision": "diagnose unchanged-preset strength",
+      "rationale": "Exact released recipe in both engines: no retuning, no range normalization and no removed settings. Compare complete optical output to isolate an engine difference.",
+      "changes": {},
+      "status": "user-reported reduced strength; regression diagnosis pending",
+      "warnings": [],
+      "baseline": "presets/experiments/cinematic-strength-regression-1.70/baseline/cinematic-lenses/27-Decentered-Drift-Prime.ldbpreset",
+      "candidate": "presets/experiments/cinematic-strength-regression-1.70/candidate/cinematic-lenses/27-Decentered-Drift-Prime.ldbpreset"
+    },
+    {
+      "id": "cinematic-lenses--28-Spectral-Radial-Drift",
+      "label": "28-Spectral-Radial-Drift",
+      "decision": "diagnose unchanged-preset strength",
+      "rationale": "Exact released recipe in both engines: no retuning, no range normalization and no removed settings. Compare complete optical output to isolate an engine difference.",
+      "changes": {},
+      "status": "user-reported reduced strength; regression diagnosis pending",
+      "warnings": [],
+      "baseline": "presets/experiments/cinematic-strength-regression-1.70/baseline/cinematic-lenses/28-Spectral-Radial-Drift.ldbpreset",
+      "candidate": "presets/experiments/cinematic-strength-regression-1.70/candidate/cinematic-lenses/28-Spectral-Radial-Drift.ldbpreset"
+    }
+  ],
+  "batches": {
+    "regression": [
+      "cinematic-lenses--26-Internal-Field-Edge-FX",
+      "cinematic-lenses--27-Decentered-Drift-Prime",
+      "cinematic-lenses--28-Spectral-Radial-Drift"
+    ]
+  },
+  "notes": [
+    "Exact original 26\u201328 inputs on both sides. This is a regression check, not preset improvement."
+  ],
+  "review_context": "Regression diagnosis: exact original 26\u201328 recipes on both sides; no new demo or creative evaluation."
+}

@@ -1,7 +1,7 @@
 LensDebaserPreset=2
 # Family: Demo-Depth-Input
 # Strength: Educational
-# Connect a depth map to Second RGB; the recipe produces a neutral, clearly readable and protected depth transition without chromatic aberration.
+# Connect a depth map to the dedicated Depth Map input; this preset selects Near Black interpretation (depthMode=2).
 apertureRadius=11
 apertureResponse=0.5
 depthEdgeSoftness=0.55

@@ -1,5 +1,10 @@
+#include "LDBResolveParameterAudit.h"
 #include "LensDebaserPlugin.h"
 #include "LensDebaserMetal.h"
+#if defined(LDB_PROJECTION_RESOLVE_CANDIDATE) || defined(LDB_ENABLE_PROJECTION)
+#include "LDBProjectionCandidateParameters.h"
+#include "LDBControlLayout.h"
+#endif
 #include "ofxsProcessing.h"
 #include "ofxsSupportPrivate.h"
 #include <algorithm>
@@ -8,14 +13,27 @@
 #include <filesystem>
 #include <fstream>
 #include <memory>
+#include <map>
+#include <functional>
 #include <sstream>
 #include <string>
 #include <unordered_map>
 #include <vector>
 
 namespace {
-constexpr const char *kName = "Lens Debaser 1.69";
+#if defined(LDB_PROJECTION_RESOLVE_CANDIDATE)
+constexpr const char *kName = "Lens Debaser Projection Test";
+constexpr const char *kIdentifier = "com.ldb.LensDebaser.ProjectionTest";
+#elif defined(LDB_RESOLUTION_RELATIVE_CANDIDATE)
+constexpr const char *kName = "Lens Debaser Frame Relative Test";
+constexpr const char *kIdentifier = "com.ldb.LensDebaser.FrameRelativeTest";
+#elif defined(LDB_RESOLVE_PARAMETER_AUDIT)
+constexpr const char *kName = "Lens Debaser 1.70 Parameter Audit";
+constexpr const char *kIdentifier = "com.ldb.LensDebaser.ParameterAudit";
+#else
+constexpr const char *kName = "Lens Debaser 1.70";
 constexpr const char *kIdentifier = "com.ldb.LensDebaser";
+#endif
 constexpr const char *kDepthClipName = "Depth";
 struct DoubleSpec {
   const char *id;
@@ -24,6 +42,12 @@ struct DoubleSpec {
   const char *hint;
 };
 const DoubleSpec kSpecs[] = {
+#if defined(LDB_PROJECTION_RESOLVE_CANDIDATE) || defined(LDB_ENABLE_PROJECTION)
+    {"projectionAmount", "Amount (%)", 0, 0, 100, .1,
+     "Blends ideal projection geometry. Zero preserves the existing lens treatment."},
+    {"projectionFieldAngle", "Field Angle (degrees)", 55, 0, 89, .1,
+     "Half-diagonal angle from the optical axis to a frame corner. Zero is the neutral projection limit. High angles can strongly change framing or stretch edges."},
+#endif
     {"distortionK1", "Primary Distortion", 0, -.25, .25, .0001,
      "Barrel or pincushion distortion."},
     {"distortionK2", "Secondary Distortion", 0, -1, 1, .001,
@@ -308,6 +332,12 @@ const DoubleSpec kSpecs[] = {
      "Final dry/wet blend in increments of 0.001."}};
 
 struct Preset {
+#if defined(LDB_RESOLUTION_RELATIVE_CANDIDATE) || defined(LDB_ENABLE_FRAME_RELATIVE)
+  int effectSize=0;
+#endif
+#if defined(LDB_PROJECTION_RESOLVE_CANDIDATE) || defined(LDB_ENABLE_PROJECTION)
+  int projectionModel=0, projectionFraming=1;
+#endif
   std::string name;
   std::unordered_map<std::string, double> values;
   std::array<double, 2> center{.5, .5}, fieldCenter{.5, .5};
@@ -351,6 +381,14 @@ public:
     try { depthInput = fetchClip(kDepthClipName); } catch (...) { depthInput = nullptr; }
     for (const auto &s : kSpecs)
       doubles.emplace(s.id, fetchDoubleParam(s.id));
+#if defined(LDB_PROJECTION_RESOLVE_CANDIDATE) || defined(LDB_ENABLE_PROJECTION)
+    projectionModel=fetchChoiceParam("projectionModel");
+    projectionFraming=fetchChoiceParam("projectionFraming");
+    updateProjectionControls();
+#endif
+    #if defined(LDB_RESOLUTION_RELATIVE_CANDIDATE) || defined(LDB_ENABLE_FRAME_RELATIVE)
+    effectSize=fetchChoiceParam("effectSize");
+#endif
     workingSpace = fetchChoiceParam("workingSpace");
     diagnostic = fetchChoiceParam("diagnosticView");
     presetChoice = fetchChoiceParam("preset");
@@ -408,6 +446,10 @@ public:
         std::max(0.0001, std::sqrt(std::max(a.renderScale.x, 0.0001) *
                                   std::max(a.renderScale.y, 0.0001)));
     processor.p.renderPixelScale = float(renderScale);
+#ifdef LDB_RESOLVE_PARAMETER_AUDIT
+    const auto bounds=src->getBounds();
+    LDBRecordResolveParameters("ofx-input",processor.p,bounds.x2-bounds.x1,bounds.y2-bounds.y1);
+#endif
     processor.process();
   }
   bool isIdentity(const OFX::IsIdentityArguments &a, OFX::Clip *&clip,
@@ -451,6 +493,10 @@ public:
         apply(loaded[index - 2], false, index);
       return;
     }
+#if defined(LDB_PROJECTION_RESOLVE_CANDIDATE) || defined(LDB_ENABLE_PROJECTION)
+    if(name=="projectionModel"||name=="projectionAmount"||name=="projectionFieldAngle")
+      updateProjectionControls();
+#endif
     if (name == "apertureShape" || name == "apertureCatEye" ||
         name == "apertureBokehSwirl" || name == "apertureResponse" ||
         name == "opticalDriftAmount" || name == "opticalDriftMode")
@@ -494,6 +540,16 @@ private:
   LDBOpticsParameters parameters(double t) const {
     LDBOpticsParameters p = LDBNeutralOpticsParameters(0, 0);
 #define D(x) p.x = float(value(#x, t))
+#if defined(LDB_RESOLUTION_RELATIVE_CANDIDATE) || defined(LDB_ENABLE_FRAME_RELATIVE)
+    int sizeMode=0;effectSize->getValueAtTime(t,sizeMode);
+    if(sizeMode==1)p.processingFlags|=(1u<<30);
+#endif
+#if defined(LDB_PROJECTION_RESOLVE_CANDIDATE) || defined(LDB_ENABLE_PROJECTION)
+    int projection=0,framing=1;
+    projectionModel->getValueAtTime(t,projection);
+    projectionFraming->getValueAtTime(t,framing);
+    LDBSetProjectionCandidate(p,projection,value("projectionAmount",t),value("projectionFieldAngle",t),framing);
+#endif
     D(distortionK1);
     D(distortionK2);
     D(moustacheK3);
@@ -684,6 +740,9 @@ private:
     p.anamorphicFlareColor = {float(r), float(g), float(b)};
     anamorphicFlareGhost->getValueAtTime(t, r, g, b);
     p.anamorphicFlareGhostColor = {float(r), float(g), float(b)};
+#if defined(LDB_RESOLUTION_RELATIVE_CANDIDATE) || defined(LDB_ENABLE_FRAME_RELATIVE)
+    if(sizeMode==1)p.processingFlags|=(1u<<30);
+#endif
     return p;
   }
   Preset neutralPreset() const {
@@ -713,15 +772,28 @@ private:
                                          p.anamorphicFlareGhost[2]);
     apertureShape->getValueAtTime(time, p.apertureShape);
     depthMode->getValueAtTime(time, p.depthMode);
+    #if defined(LDB_RESOLUTION_RELATIVE_CANDIDATE) || defined(LDB_ENABLE_FRAME_RELATIVE)
+    effectSize->getValueAtTime(time,p.effectSize);
+#endif
     captureGate->getValueAtTime(time, p.captureGate);
     prismDistribution->getValueAtTime(time, p.prismDistribution);
     opticalDriftMode->getValueAtTime(time, p.opticalDriftMode);
+#if defined(LDB_PROJECTION_RESOLVE_CANDIDATE) || defined(LDB_ENABLE_PROJECTION)
+    projectionModel->getValueAtTime(time,p.projectionModel);
+    projectionFraming->getValueAtTime(time,p.projectionFraming);
+#endif
     double blades = 6;
     apertureBladeCount->getValueAtTime(time, blades);
     p.apertureBladeCount = std::clamp(int(std::lround(blades)), 3, 16);
     return p;
   }
   bool isPresetControl(const std::string &name) const {
+#if defined(LDB_RESOLUTION_RELATIVE_CANDIDATE) || defined(LDB_ENABLE_FRAME_RELATIVE)
+    if(name=="effectSize")return true;
+#endif
+#if defined(LDB_PROJECTION_RESOLVE_CANDIDATE) || defined(LDB_ENABLE_PROJECTION)
+    if(name=="projectionModel"||name=="projectionFraming")return true;
+#endif
     for (const auto &s : kSpecs)
       if (name == s.id)
         return true;
@@ -766,7 +838,15 @@ private:
           return false;
       return true;
     };
-    return arrayClose(current.center, target.center) &&
+    return
+#if defined(LDB_RESOLUTION_RELATIVE_CANDIDATE) || defined(LDB_ENABLE_FRAME_RELATIVE)
+           current.effectSize==target.effectSize &&
+#endif
+#if defined(LDB_PROJECTION_RESOLVE_CANDIDATE) || defined(LDB_ENABLE_PROJECTION)
+           current.projectionModel==target.projectionModel &&
+           current.projectionFraming==target.projectionFraming &&
+#endif
+           arrayClose(current.center, target.center) &&
            arrayClose(current.fieldCenter, target.fieldCenter) &&
            arrayClose(current.transmission, target.transmission) &&
            arrayClose(current.glare, target.glare) &&
@@ -782,6 +862,14 @@ private:
            current.prismDistribution == target.prismDistribution &&
            current.opticalDriftMode == target.opticalDriftMode;
   }
+#if defined(LDB_PROJECTION_RESOLVE_CANDIDATE) || defined(LDB_ENABLE_PROJECTION)
+  void updateProjectionControls() {
+    int model=0;projectionModel->getValue(model);
+    doubles.at("projectionAmount")->setEnabled(model!=0);
+    doubles.at("projectionFieldAngle")->setEnabled(model!=0);
+    projectionFraming->setEnabled(model!=0);
+  }
+#endif
   void updateApertureControls() {
     int shape = 0;
     apertureShape->getValue(shape);
@@ -906,6 +994,37 @@ private:
                                            open ? 1 : 0);
   }
   void updateGroups(const Preset &p) {
+#if defined(LDB_PROJECTION_RESOLVE_CANDIDATE) || defined(LDB_ENABLE_PROJECTION)
+    // Use the same hierarchy for descriptors and preset expansion. Every
+    // configured child opens its ancestors, including dormant test values.
+    const auto neutral = neutralPreset();
+    std::vector<std::string> configured;
+    for (const auto& spec : kSpecs)
+      if (std::abs(p.values.at(spec.id) - spec.value) > 1e-8)
+        configured.push_back(spec.id);
+    auto changed = [&](const char* id, const auto& current, const auto& original) {
+      if(current != original) configured.push_back(id);
+    };
+    changed("projectionModel",p.projectionModel,neutral.projectionModel);
+    changed("projectionFraming",p.projectionFraming,neutral.projectionFraming);
+    changed("opticalCenter",p.center,neutral.center);
+    changed("fieldCenter",p.fieldCenter,neutral.fieldCenter);
+    changed("captureGate",p.captureGate,neutral.captureGate);
+    changed("apertureShape",p.apertureShape,neutral.apertureShape);
+    changed("apertureBladeCount",p.apertureBladeCount,neutral.apertureBladeCount);
+    changed("depthMode",p.depthMode,neutral.depthMode);
+    changed("prismDistribution",p.prismDistribution,neutral.prismDistribution);
+    changed("opticalDriftMode",p.opticalDriftMode,neutral.opticalDriftMode);
+    changed("transmissionColor",p.transmission,neutral.transmission);
+    changed("glareColor",p.glare,neutral.glare);
+    changed("nearFocusColor",p.nearFocus,neutral.nearFocus);
+    changed("farFocusColor",p.farFocus,neutral.farFocus);
+    changed("anamorphicFlareColor",p.anamorphicFlare,neutral.anamorphicFlare);
+    changed("anamorphicFlareGhostColor",p.anamorphicFlareGhost,neutral.anamorphicFlareGhost);
+    const auto expanded = LDBControlLayout::expandedGroups(configured);
+    for(const auto& group : LDBControlLayout::groups)
+      setGroupOpen(group.id, expanded.count(group.id) != 0);
+#else
     auto active = [&](std::initializer_list<const char *> ids) {
       for (auto id : ids) {
         for (const auto &s : kSpecs)
@@ -920,6 +1039,11 @@ private:
                          "geometryFieldAmount", "peripheralStretch",
                          "peripheralWarp", "anamorphicSqueeze", "swirl"}) ||
                      p.center != std::array<double, 2>{.5, .5});
+#if defined(LDB_PROJECTION_RESOLVE_CANDIDATE) || defined(LDB_ENABLE_PROJECTION)
+    const bool projectionConfigured = p.projectionModel != 0 ||
+        p.projectionFraming != 1 || active({"projectionAmount", "projectionFieldAngle"});
+    setGroupOpen("projectionGroup", projectionConfigured);
+#endif
     const bool apertureActive = p.values.at("apertureResponse") > 1e-8;
     const bool highlightConsumers =
         active({"bloomEnergy", "glareEnergy", "sphericalHalo", "coma",
@@ -1005,7 +1129,11 @@ private:
                          "anamorphicFlareAmount"}) ||
                      p.center != std::array<double, 2>{.5, .5} ||
                      p.fieldCenter != std::array<double, 2>{.5, .5} ||
-                     apertureActive || p.depthMode > 0);
+                     apertureActive || p.depthMode > 0
+#if defined(LDB_PROJECTION_RESOLVE_CANDIDATE) || defined(LDB_ENABLE_PROJECTION)
+                     || projectionConfigured
+#endif
+                     );
     setGroupOpen(
         "pupilSection",
         active({"apertureResponse", "apertureRadius", "apertureBladeCurvature",
@@ -1033,6 +1161,7 @@ private:
                 "responseDefocusOnset", "responseDefocusFalloff",
                 "responseScatterEdgeProtection", "depthEdgeSoftness"}) ||
             p.depthMode > 0);
+#endif
   }
   void selectPresetIfNeeded(int desired) {
     int current = -1;
@@ -1076,9 +1205,17 @@ private:
     apertureShape->setValue(std::clamp(p.apertureShape, 0, 2));
     apertureBladeCount->setValue(std::clamp(p.apertureBladeCount, 3, 16));
     depthMode->setValue(std::clamp(p.depthMode, 0, 5));
+    #if defined(LDB_RESOLUTION_RELATIVE_CANDIDATE) || defined(LDB_ENABLE_FRAME_RELATIVE)
+    effectSize->setValue(std::clamp(p.effectSize,0,1));
+#endif
     captureGate->setValue(std::clamp(p.captureGate, 0, 12));
     prismDistribution->setValue(std::clamp(p.prismDistribution, 0, 4));
     opticalDriftMode->setValue(std::clamp(p.opticalDriftMode, 0, 2));
+#if defined(LDB_PROJECTION_RESOLVE_CANDIDATE) || defined(LDB_ENABLE_PROJECTION)
+    projectionModel->setValue(std::clamp(p.projectionModel,0,2));
+    projectionFraming->setValue(std::clamp(p.projectionFraming,0,2));
+    updateProjectionControls();
+#endif
     selectPresetIfNeeded(comparisonPresetIndex);
     endEditBlock();
     updateApertureControls();
@@ -1143,8 +1280,15 @@ private:
           p.depthMode = int(n);
         else if (key == "captureGate")
           p.captureGate = int(n);
+        #if defined(LDB_RESOLUTION_RELATIVE_CANDIDATE) || defined(LDB_ENABLE_FRAME_RELATIVE)
+        else if(key=="effectSize")p.effectSize=std::isfinite(n)?int(std::clamp(n,0.0,1.0)):0;
+#endif
         else if (key == "prismDistribution")
           p.prismDistribution = int(n);
+#if defined(LDB_PROJECTION_RESOLVE_CANDIDATE) || defined(LDB_ENABLE_PROJECTION)
+        else if(key=="projectionModel")p.projectionModel=std::isfinite(n)?int(std::clamp(n,0.0,2.0)):0;
+        else if(key=="projectionFraming")p.projectionFraming=std::isfinite(n)?int(std::clamp(n,0.0,2.0)):1;
+#endif
         else if (key == "opticalDriftMode")
           p.opticalDriftMode = int(n);
         else if (key == "opticalCenterX")
@@ -1258,8 +1402,15 @@ private:
       return;
     }
     f << "LensDebaserPreset=2\n";
+#if defined(LDB_RESOLUTION_RELATIVE_CANDIDATE) || defined(LDB_ENABLE_FRAME_RELATIVE)
+    f << "effectSize=" << p.effectSize << '\n';
+#endif
     for (const auto &s : kSpecs)
       f << s.id << '=' << p.values[s.id] << '\n';
+#if defined(LDB_PROJECTION_RESOLVE_CANDIDATE) || defined(LDB_ENABLE_PROJECTION)
+    f << "projectionModel=" << p.projectionModel << '\n'
+      << "projectionFraming=" << p.projectionFraming << '\n';
+#endif
     f << "apertureShape=" << p.apertureShape << '\n'
       << "apertureBladeCount=" << p.apertureBladeCount << '\n'
       << "depthMode=" << p.depthMode << '\n'
@@ -1293,6 +1444,12 @@ private:
   int comparisonPresetIndex = 0;
   int editedPresetIndex = -1;
   OFX::Clip *source = nullptr, *destination = nullptr, *depthInput = nullptr;
+#if defined(LDB_PROJECTION_RESOLVE_CANDIDATE) || defined(LDB_ENABLE_PROJECTION)
+  OFX::ChoiceParam *projectionModel=nullptr,*projectionFraming=nullptr;
+#endif
+  #if defined(LDB_RESOLUTION_RELATIVE_CANDIDATE) || defined(LDB_ENABLE_FRAME_RELATIVE)
+  OFX::ChoiceParam *effectSize=nullptr;
+#endif
   OFX::ChoiceParam *workingSpace = nullptr, *diagnostic = nullptr,
                    *presetChoice = nullptr,
                    *apertureShape = nullptr, *depthMode = nullptr,
@@ -1336,10 +1493,20 @@ OFX::GroupParamDescriptor *addGroup(OFX::ImageEffectDescriptor &d,
 } // namespace
 
 LensDebaserPluginFactory::LensDebaserPluginFactory()
+#if defined(LDB_ENABLE_PROJECTION) && !defined(LDB_PROJECTION_RESOLVE_CANDIDATE)
+    : PluginFactoryHelper(kIdentifier, 1, 70) {}
+#else
     : PluginFactoryHelper(kIdentifier, 1, 40) {}
+#endif
 void LensDebaserPluginFactory::describe(OFX::ImageEffectDescriptor &d) {
   d.setLabels(kName, kName, kName);
-  d.getPropertySet().propSetString(kOfxPropIcon, "com.ldb.LensDebaser.png", 1,
+  d.getPropertySet().propSetString(kOfxPropIcon,
+#if defined(LDB_PROJECTION_RESOLVE_CANDIDATE)
+                                   "com.ldb.LensDebaser.ProjectionTest.png",
+#else
+                                   "com.ldb.LensDebaser.png",
+#endif
+                                   1,
                                    false);
   d.setPluginGrouping("LDB");
   d.setPluginDescription("Perceptual cinematic lens character for Apple "
@@ -1371,18 +1538,36 @@ void LensDebaserPluginFactory::describeInContext(OFX::ImageEffectDescriptor &d,
   dst->addSupportedComponent(OFX::ePixelComponentRGBA);
   dst->setSupportsTiles(false);
   auto *page = d.definePageParam("Controls");
+#if defined(LDB_PROJECTION_RESOLVE_CANDIDATE) || defined(LDB_ENABLE_PROJECTION)
+  std::map<std::string, OFX::GroupParamDescriptor*> layoutGroups;
+  for(const auto& group : LDBControlLayout::groups) {
+    auto* descriptor = addGroup(d,*page,group.id,group.label,
+        LDBControlLayout::initiallyOpen(group.id));
+    descriptor->setHint(group.hint);
+    layoutGroups[group.id]=descriptor;
+    if(group.parent[0]) descriptor->setParent(*layoutGroups.at(group.parent));
+  }
+#endif
+  auto uiGroup = [&](OFX::ImageEffectDescriptor& effect, OFX::PageParamDescriptor& controls,
+                     const char* id, const char* label, bool open=false) {
+#if defined(LDB_PROJECTION_RESOLVE_CANDIDATE) || defined(LDB_ENABLE_PROJECTION)
+    return layoutGroups.at(id);
+#else
+    return addGroup(effect,controls,id,label,open);
+#endif
+  };
   auto *setup = page;
   auto *optics = page;
   auto *pupil = page;
   auto *light = page;
   auto *advanced = page;
-  auto *setupSection = addGroup(d, *page, "setupSection", "Setup", true);
-  auto *opticsSection = addGroup(d, *page, "opticsSection", "Optics", true);
-  auto *pupilSection = addGroup(d, *page, "pupilSection", "Pupil & Vignette");
-  auto *lightSection = addGroup(d, *page, "lightSection", "Light");
-  auto *advancedSection = addGroup(d, *page, "advancedSection", "Advanced");
-  auto *output = addGroup(d, *page, "output", "Blend", true);
-  auto *presetGroup = addGroup(d, *setup, "presetGroup", "Presets", true);
+  auto *setupSection = uiGroup(d, *page, "setupSection", "Setup", true);
+  auto *opticsSection = uiGroup(d, *page, "opticsSection", "Optics", true);
+  auto *pupilSection = uiGroup(d, *page, "pupilSection", "Pupil & Vignette");
+  auto *lightSection = uiGroup(d, *page, "lightSection", "Light");
+  auto *advancedSection = uiGroup(d, *page, "advancedSection", "Advanced");
+  auto *output = uiGroup(d, *page, "output", "Blend", true);
+  auto *presetGroup = uiGroup(d, *setup, "presetGroup", "Presets", true);
   presetGroup->setParent(*setupSection);
   auto *preset = d.defineChoiceParam("preset");
   preset->setLabels("Preset", "Preset", "Preset");
@@ -1399,8 +1584,16 @@ void LensDebaserPluginFactory::describeInContext(OFX::ImageEffectDescriptor &d,
   save->setLabels("Save", "Save", "Save");
   save->setParent(*presetGroup);
   setup->addChild(*save);
-  auto *processing = addGroup(d, *setup, "processing", "Processing", true);
+  auto *processing = uiGroup(d, *setup, "processing", "Processing", true);
   processing->setParent(*setupSection);
+  #if defined(LDB_RESOLUTION_RELATIVE_CANDIDATE) || defined(LDB_ENABLE_FRAME_RELATIVE)
+  auto* effectSize=d.defineChoiceParam("effectSize");
+  effectSize->setLabels("Effect Size","Effect Size","Effect Size");
+  effectSize->appendOption("Frame Relative");effectSize->appendOption("Fixed Pixels");
+  effectSize->setDefault(0);
+  effectSize->setHint("Choose whether blur and other effect sizes scale with the frame or stay fixed in pixels.");
+  effectSize->setParent(*processing);setup->addChild(*effectSize);
+#endif
   auto *ws = d.defineChoiceParam("workingSpace");
   ws->setLabels("Input Working Space", "Input Working Space",
                 "Input Working Space");
@@ -1427,16 +1620,16 @@ void LensDebaserPluginFactory::describeInContext(OFX::ImageEffectDescriptor &d,
   diag->setDefault(0);
   diag->setParent(*processing);
   setup->addChild(*diag);
-  auto *capture = addGroup(d, *setup, "capture", "Capture");
+  auto *capture = uiGroup(d, *setup, "capture", "Capture");
   capture->setParent(*setupSection);
-  auto *look = addGroup(d, *setup, "look", "Look");
+  auto *look = uiGroup(d, *setup, "look", "Look");
   look->setParent(*setupSection);
-  auto *geometry = addGroup(d, *optics, "geometry", "Geometry");
-  auto *fieldShape = addGroup(d, *optics, "fieldShape", "Field Shape");
-  auto *focus = addGroup(d, *optics, "focusField", "Focus & Field");
-  auto *detail = addGroup(d, *optics, "detail", "Detail Transfer");
-  auto *chromatic = addGroup(d, *optics, "chromatic", "Chromatic Aberration");
-  auto *anamorphic = addGroup(d, *optics, "anamorphic", "Anamorphic");
+  auto *geometry = uiGroup(d, *optics, "geometry", "Geometry");
+  auto *fieldShape = uiGroup(d, *optics, "fieldShape", "Field Shape");
+  auto *focus = uiGroup(d, *optics, "focusField", "Focus & Field");
+  auto *detail = uiGroup(d, *optics, "detail", "Detail Transfer");
+  auto *chromatic = uiGroup(d, *optics, "chromatic", "Chromatic Aberration");
+  auto *anamorphic = uiGroup(d, *optics, "anamorphic", "Anamorphic");
   geometry->setParent(*opticsSection);
   fieldShape->setParent(*opticsSection);
   focus->setParent(*opticsSection);
@@ -1444,32 +1637,32 @@ void LensDebaserPluginFactory::describeInContext(OFX::ImageEffectDescriptor &d,
   chromatic->setParent(*opticsSection);
   anamorphic->setParent(*opticsSection);
   auto *aperture =
-      addGroup(d, *pupil, "aperture", "Aperture & Bokeh", true);
-  auto *vignette = addGroup(d, *pupil, "vignette", "Vignette");
-  auto *imageCircle = addGroup(d, *pupil, "imageCircle", "Image Circle");
+      uiGroup(d, *pupil, "aperture", "Aperture & Bokeh", true);
+  auto *vignette = uiGroup(d, *pupil, "vignette", "Vignette");
+  auto *imageCircle = uiGroup(d, *pupil, "imageCircle", "Image Circle");
   aperture->setParent(*pupilSection);
   vignette->setParent(*pupilSection);
   imageCircle->setParent(*pupilSection);
-  auto *bloom = addGroup(d, *light, "bloom", "Bloom");
-  auto *glareHalo = addGroup(d, *light, "glareHalo", "Glare & Halo");
-  auto *transmissionGroup = addGroup(d, *light, "transmission", "Transmission");
+  auto *bloom = uiGroup(d, *light, "bloom", "Bloom");
+  auto *glareHalo = uiGroup(d, *light, "glareHalo", "Glare & Halo");
+  auto *transmissionGroup = uiGroup(d, *light, "transmission", "Transmission");
   auto *highlightResponse =
-      addGroup(d, *light, "highlightResponse", "Highlight Response");
+      uiGroup(d, *light, "highlightResponse", "Highlight Response");
   bloom->setParent(*lightSection);
   glareHalo->setParent(*lightSection);
   transmissionGroup->setParent(*lightSection);
   highlightResponse->setParent(*lightSection);
-  auto *offAxis = addGroup(d, *advanced, "offAxis", "Off-Axis Character");
+  auto *offAxis = uiGroup(d, *advanced, "offAxis", "Off-Axis Character");
   offAxis->setParent(*advancedSection);
-  auto *variation = addGroup(d, *advanced, "variation", "Variation");
+  auto *variation = uiGroup(d, *advanced, "variation", "Variation");
   variation->setParent(*advancedSection);
-  auto *frontWear = addGroup(d, *advanced, "frontWear", "Front Element Wear");
+  auto *frontWear = uiGroup(d, *advanced, "frontWear", "Front Element Wear");
   frontWear->setParent(*advancedSection);
-  auto *lensDirt = addGroup(d, *advanced, "lensDirt", "Internal Element Contamination");
+  auto *lensDirt = uiGroup(d, *advanced, "lensDirt", "Internal Element Contamination");
   lensDirt->setParent(*advancedSection);
-  auto *refractive = addGroup(d, *optics, "refractive", "Refractive Irregularity");
+  auto *refractive = uiGroup(d, *optics, "refractive", "Refractive Irregularity");
   refractive->setParent(*opticsSection);
-  auto *prism = addGroup(d, *optics, "prism", "Prism Refraction");
+  auto *prism = uiGroup(d, *optics, "prism", "Prism Refraction");
   prism->setParent(*opticsSection);
   auto *prismMode = d.defineChoiceParam("prismDistribution");
   prismMode->setLabels("Prism Distribution", "Prism Distribution",
@@ -1483,7 +1676,7 @@ void LensDebaserPluginFactory::describeInContext(OFX::ImageEffectDescriptor &d,
       "one-sided wedge. Bilateral, Radial and Inverse modes use Field Shape.");
   prismMode->setParent(*prism);
   optics->addChild(*prismMode);
-  auto *depthGroup = addGroup(d, *advanced, "depthGroup", "Depth Input");
+  auto *depthGroup = uiGroup(d, *advanced, "depthGroup", "Depth Input");
   depthGroup->setParent(*advancedSection);
   auto *dm = d.defineChoiceParam("depthMode");
   dm->setLabels("Depth Interpretation", "Depth Interpretation",
@@ -1499,6 +1692,20 @@ void LensDebaserPluginFactory::describeInContext(OFX::ImageEffectDescriptor &d,
       "occlusion. Depth-Free preserves the local approximation.");
   dm->setParent(*depthGroup);
   advanced->addChild(*dm);
+#if defined(LDB_PROJECTION_RESOLVE_CANDIDATE) || defined(LDB_ENABLE_PROJECTION)
+  auto *projectionGroup=uiGroup(d,*optics,"projectionGroup","Projection",true);
+  projectionGroup->setParent(*opticsSection);
+  auto *projection=d.defineChoiceParam("projectionModel");
+  projection->setLabels("Projection","Projection","Projection");
+  for(auto *option:{"Off","Equidistant","Stereographic"})projection->appendOption(option);
+  projection->setDefault(0);projection->setParent(*projectionGroup);optics->addChild(*projection);
+  projection->setHint("Ideal wide-angle mapping. Off preserves the existing lens treatment.");
+  auto *framing=d.defineChoiceParam("projectionFraming");
+  framing->setLabels("Framing","Framing","Framing");
+  for(auto *option:{"Full frame","Balanced","Centre scale"})framing->appendOption(option);
+  framing->setDefault(1);framing->setParent(*projectionGroup);optics->addChild(*framing);
+  framing->setHint("Full frame changes centre scale; Balanced shares the tradeoff; Centre scale can stretch unavailable source boundaries.");
+#endif
   auto *center = d.defineDouble2DParam("opticalCenter");
   center->setLabels("Optical Center", "Optical Center", "Optical Center");
   center->setDimensionLabels("X", "Y");
@@ -1519,6 +1726,12 @@ void LensDebaserPluginFactory::describeInContext(OFX::ImageEffectDescriptor &d,
     std::string id = s.id;
     OFX::GroupParamDescriptor *g = geometry;
     OFX::PageParamDescriptor *p = optics;
+#if defined(LDB_PROJECTION_RESOLVE_CANDIDATE) || defined(LDB_ENABLE_PROJECTION)
+    if(id.rfind("projection",0)==0) {
+      g=projectionGroup;
+      p=optics;
+    } else
+#endif
     if (id.rfind("capture", 0) == 0) {
       g = capture;
       p = setup;
@@ -1679,6 +1892,29 @@ void LensDebaserPluginFactory::describeInContext(OFX::ImageEffectDescriptor &d,
            .55, 1);
   addColor("anamorphicFlareGhostColor", "Ghost Color", *anamorphic, *optics,
            .55, .25, 1);
+#if defined(LDB_PROJECTION_RESOLVE_CANDIDATE) || defined(LDB_ENABLE_PROJECTION)
+  // Descriptor presentation and page order come from one complete inventory.
+  for(const auto& group : LDBControlLayout::groups)
+    if(group.parent[0])layoutGroups.at(group.id)->setParent(*layoutGroups.at(group.parent));
+  for(const auto& control : LDBControlLayout::controls) {
+    auto* descriptor=d.getParamDescriptor(control.id);
+    descriptor->setParent(*layoutGroups.at(control.group));
+    descriptor->setLabels(control.label,control.label,control.label);
+    if(control.hint[0])descriptor->setHint(control.hint);
+  }
+  framing->resetOptions();
+  for(auto* label:{"Fill Frame","Balanced","Preserve Centre Scale"})framing->appendOption(label);
+  page->getPropertySet().propReset(kOfxParamPropPageChild);
+  std::function<void(const std::string&)> appendGroup = [&](const std::string& id) {
+    page->addChild(*layoutGroups.at(id));
+    for(const auto& control:LDBControlLayout::controls)
+      if(id==control.group)page->addChild(*d.getParamDescriptor(control.id));
+    for(const auto& child:LDBControlLayout::groups)
+      if(id==child.parent)appendGroup(child.id);
+  };
+  for(const auto& group:LDBControlLayout::groups)
+    if(!group.parent[0])appendGroup(group.id);
+#endif
 }
 OFX::ImageEffect *
 LensDebaserPluginFactory::createInstance(OfxImageEffectHandle h,

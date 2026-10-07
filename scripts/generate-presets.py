@@ -8,7 +8,7 @@ from lens_profiles import cooke_focal_calibrations, reference_lens_families
 
 ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / "presets"
-CURRENT_PRESET_TAG = "v1.69"
+CURRENT_PRESET_TAG = "v1.70"
 TIERS = (("1-Subtle", 0.35), ("2-Medium", 0.65), ("3-Caricature", 1.0))
 GENERATED_PRESETS = set()
 
@@ -908,6 +908,29 @@ def validate_library():
     for path in (OUT / "tests").glob("v*.ldbpreset"):
         assert path.name.startswith(f"{CURRENT_PRESET_TAG}-"), \
             f"superseded build preset left active: {path.name}"
+
+def merge_approved_library():
+    import json, importlib.util
+    approved = json.loads((OUT / 'approved-1.70.json').read_text())
+    for name, content in approved['files'].items():
+        path = OUT / name
+        path.parent.mkdir(parents=True, exist_ok=True)
+        if not path.exists() or path.read_text() != content:
+            path.write_text(content)
+    spec = importlib.util.spec_from_file_location('validator', ROOT / 'scripts/validate-preset.py')
+    validator = importlib.util.module_from_spec(spec); spec.loader.exec_module(validator)
+    schema = json.loads((ROOT / 'preset-authoring/Lens-Debaser-Preset-Schema.json').read_text())
+    for folder, count in approved['counts'].items():
+        paths = list((OUT / folder).glob('*.ldbpreset'))
+        assert len(paths) == count
+        for path in paths:
+            errors, _ = validator.validate(path, schema)
+            assert not errors, (path, errors)
+    print('Merged approved1.70 library:132 presets; unchanged files preserved.')
+
+if (OUT / 'approved-1.70.json').exists():
+    merge_approved_library()
+    raise SystemExit(0)
 
 purge_numbered_conflict_copies()
 archive_factory_snapshot("v1.55")

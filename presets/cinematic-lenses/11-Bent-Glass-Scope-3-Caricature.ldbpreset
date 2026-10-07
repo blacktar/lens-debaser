@@ -31,6 +31,6 @@ refractiveIrregularity=0.42
 refractiveRotation=9
 refractiveScale=1.75
 refractiveSeed=1958
-responseFieldFalloff=1.54
+responseFieldFalloff=1.5
 responseFieldOnset=0.15
 tangentialSmear=1.05

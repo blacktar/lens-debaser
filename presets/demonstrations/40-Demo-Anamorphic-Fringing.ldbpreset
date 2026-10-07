@@ -1,0 +1,7 @@
+LensDebaserPreset=2
+# Family: 40-Demo-Anamorphic-Fringing
+# Strength: Educational
+# Horizontal colour separation on high-contrast edges demonstrates Anamorphic Fringing; distortion stays the same while you adjust it.
+anamorphicAberration=0.9
+anamorphicDistortion=0.034
+anamorphicSqueeze=2

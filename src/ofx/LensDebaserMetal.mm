@@ -9,6 +9,10 @@
 #include <unordered_map>
 #include "LDBOpticsEngine.h"
 #include "LensDebaserMetal.h"
+#ifdef LDB_RESOLVE_PARAMETER_AUDIT
+#include <filesystem>
+#include <fstream>
+#endif
 
 namespace {
 std::mutex gEngineMutex;
@@ -44,7 +48,16 @@ void RunLensDebaserMetal(void* commandQueue, int width, int height,
         std::lock_guard<std::mutex> lock(gEngineMutex);
         void* key = static_cast<void*>(queue.device);
         auto& cached = gEngines[key];
-        if (!cached) cached = std::make_shared<LDBOpticsEngine>(queue.device, metallibURL());
+        if (!cached) {
+            NSURL* libraryURL=metallibURL();
+#ifdef LDB_RESOLVE_PARAMETER_AUDIT
+            std::filesystem::path auditRoot=LDB_RESOLVE_AUDIT_OUTPUT;
+            std::filesystem::create_directories(auditRoot);
+            std::ofstream provenance(auditRoot/"actual-metal-library-path.txt",std::ios::app);
+            provenance<<(libraryURL.path.UTF8String ?: "(unresolved)")<<"\n";
+#endif
+            cached = std::make_shared<LDBOpticsEngine>(queue.device, libraryURL);
+        }
         engine = cached;
     }
     if (!engine->valid()) throw std::runtime_error(engine->errorMessage());

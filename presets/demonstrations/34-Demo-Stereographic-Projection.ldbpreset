@@ -1,0 +1,6 @@
+LensDebaserPreset=2
+# 1.70 review: Gentler stereographic at matched 45%, 55 degrees, Balanced; compare with clean source.
+projectionModel=2
+projectionAmount=45
+projectionFieldAngle=55
+projectionFraming=1

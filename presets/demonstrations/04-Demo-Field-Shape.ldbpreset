@@ -1,4 +1,5 @@
 LensDebaserPreset=2
+# Current-engine proposal: Demonstrate Geometric Swirl in the existing Shared Field demo; keep it distinct from pupil swirl.
 # Family: Demo-Field-Shape
 # Strength: Educational
 # Clear focus and chromatic dependencies make Field Center, Aspect, Rotation, Onset and Falloff visible.
@@ -13,3 +14,4 @@ lateralCABlue=-1.25
 lateralCARed=1
 responseFieldFalloff=1.24
 responseFieldOnset=0.18
+swirl=0.18

@@ -1,0 +1,15 @@
+LensDebaserPreset=2
+# Family: 44-Demo-Depth-Range-And-Focus
+# Strength: Educational
+# Connect a Near Black depth map; Input Near and Input Far select its usable depth range while Focus Depth positions the sharp region.
+apertureRadius=11
+apertureResponse=0.5
+depthEdgeSoftness=0.55
+depthFar=0.85
+depthFocus=0.5
+depthMode=2
+depthNear=0.15
+responseDefocusFalloff=0.4
+responseDefocusOnset=0.07
+responseScatterEdgeProtection=1
+sphericalHalo=0.24

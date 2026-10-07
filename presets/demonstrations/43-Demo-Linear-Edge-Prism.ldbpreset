@@ -1,0 +1,10 @@
+LensDebaserPreset=2
+# Family: 43-Demo-Linear-Edge-Prism
+# Strength: Educational
+# A diagonal edge of the image refracts and separates colour; Edge Bias moves its boundary and Transition Width softens it.
+prismAmount=0.72
+prismDirection=-35
+prismDispersion=0.58
+prismDistribution=0
+prismEdgeBias=0.38
+prismSoftness=0.48

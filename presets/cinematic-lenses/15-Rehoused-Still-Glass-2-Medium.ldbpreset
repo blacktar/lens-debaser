@@ -1,4 +1,5 @@
 LensDebaserPreset=2
+# Current-engine proposal: Remove dormant pupil variation without enabling new blur.
 # Family: Rehoused-Still-Glass
 # Strength: Medium
 # Decentered rehoused stills-lens character; edges and neutral surfaces reveal stable asymmetry.
@@ -19,7 +20,7 @@ refractiveEdgeBias=0.62
 refractiveIrregularity=0.18
 refractiveScale=2.5
 refractiveSeed=13579
-responseFieldFalloff=1.64
+responseFieldFalloff=1.5
 responseFieldOnset=0.22
 transmissionB=0.84
 transmissionColorAmount=0.14
@@ -28,6 +29,6 @@ transmissionR=1
 variationAmount=0.65
 variationChromaticAsymmetry=0.75
 variationFieldAsymmetry=0.6
-variationPupilIrregularity=0.18
+variationPupilIrregularity=0
 variationSeed=13579
 variationTransmissionUnevenness=0.2

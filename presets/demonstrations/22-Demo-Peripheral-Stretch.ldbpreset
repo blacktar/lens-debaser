@@ -4,5 +4,5 @@ LensDebaserPreset=2
 # A grid clearly exposes radial magnification growing gradually toward the perimeter.
 geometryFieldAmount=0.82
 peripheralStretch=0.32
-responseFieldFalloff=1.58
+responseFieldFalloff=1.5
 responseFieldOnset=0.24

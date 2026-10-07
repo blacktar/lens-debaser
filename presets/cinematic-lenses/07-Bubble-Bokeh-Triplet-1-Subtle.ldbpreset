@@ -1,4 +1,5 @@
 LensDebaserPreset=2
+# Current-engine proposal: Give the subtle bubble-bokeh tier its missing restrained rim contribution.
 # Family: Bubble-Bokeh-Triplet
 # Strength: Subtle
 # Firm round defocus highlights; isolated bright points reveal the soap-bubble footprint.
@@ -11,6 +12,7 @@ cornerSharpnessLoss=0.28
 fieldCurvature=0.26
 longitudinalCA=0.1
 microContrast=-0.06
-responseFieldFalloff=1.58
+responseFieldFalloff=1.5
 responseFieldOnset=0.24
 sphericalHalo=0.12
+apertureRimWeight=0.12

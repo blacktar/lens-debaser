@@ -1,0 +1,15 @@
+LensDebaserPreset=2
+# Family: 45-Demo-Depth-Edge-Protection
+# Strength: Educational
+# Connect a Near Black depth map with a clear foreground boundary; reduced Depth Edge Protection lets defocused light cross that boundary.
+apertureRadius=11
+apertureResponse=0.5
+depthEdgeSoftness=0.55
+depthFar=0.85
+depthFocus=0.5
+depthMode=2
+depthNear=0.15
+responseDefocusFalloff=0.4
+responseDefocusOnset=0.07
+responseScatterEdgeProtection=0.15
+sphericalHalo=0.24

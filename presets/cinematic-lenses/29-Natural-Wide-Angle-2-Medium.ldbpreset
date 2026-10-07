@@ -1,0 +1,35 @@
+LensDebaserPreset=2
+# Family: Natural-Wide-Angle
+# Strength: Medium
+# Immersive wide glass with a protected central focus region, progressive pupil defocus and astigmatic edge softness, broad refractive pockets and spectral edge separation.
+apertureCatEye=0.28
+apertureRadius=11
+apertureResponse=1
+apertureSoftness=0.18
+astigmatism=0.3
+chromaticFieldFalloff=0.7
+chromaticFieldOnset=0.32
+cornerSharpnessLoss=0.7
+effectSize=0
+fieldCenterX=0.5
+fieldCenterY=0.5
+fieldCurvature=0.45
+lateralCABlue=-1
+lateralCARed=0.75
+microContrast=-0.025
+opticalCenterX=0.47
+opticalCenterY=0.52
+projectionAmount=50
+projectionFieldAngle=65
+projectionFraming=1
+projectionModel=1
+refractiveAnisotropy=0.3
+refractiveDispersion=0.38
+refractiveEdgeBias=0.9
+refractiveIrregularity=0.22
+refractiveRotation=12
+refractiveScale=2.6
+refractiveSeed=29071
+responseFieldFalloff=0.7
+responseFieldOnset=0.32
+swirl=0.06

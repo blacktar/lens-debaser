@@ -466,6 +466,94 @@ static float2 prismOffsetAt(float2 uv, constant LDBOpticsParameters& p) {
 
 static float2 distortCoordinate(float2 uv, constant LDBOpticsParameters& p,
                                 thread float2& refractiveOffset) {
+#if defined(LDB_EXPERIMENT_WIDE_PROJECTION) || defined(LDB_ENABLE_PROJECTION)
+    // Experiment-only inverse projection. The reserved parameters are inert in
+    // released builds: V4_3 is blend, V4_4 selects the ideal model (1..4),
+    // V4_5 is the shared half-diagonal field angle in degrees, and V4_7 blends
+    // from full-frame preservation to centre-scale preservation. Normalising
+    // all models at the same angle makes their density behaviour comparable.
+    float projectionBlend=clamp(p.reservedV4_3,0.0f,1.0f);
+    int projectionModel=int(round(p.reservedV4_4));
+    if(projectionBlend>1e-6f&&projectionModel>=1&&projectionModel<=4
+#if defined(LDB_EXPERIMENT_PROJECTION_ANGLE_LIMITS) || defined(LDB_ENABLE_PROJECTION)
+       &&p.reservedV4_5>0.0f
+#endif
+       ) {
+        float aspect=max(p.imageSize.x/max(p.imageSize.y,1.0f),1e-4f);
+        float2 projectionQ=(uv-p.opticalCenter)*float2(aspect,1.0f);
+        float diagonalRadius=.5f*length(float2(aspect,1.0f));
+        float outputRadius=length(projectionQ);
+        float normalizedRadius=outputRadius/max(diagonalRadius,1e-5f);
+#if defined(LDB_EXPERIMENT_PROJECTION_ANGLE_LIMITS) || defined(LDB_ENABLE_PROJECTION)
+        // Separate limits experiment: preserve the completed 35..82 degree pass.
+        float maxAngle=clamp(p.reservedV4_5,0.0f,89.0f)*(M_PI_F/180.0f);
+#else
+        float maxAngle=clamp(p.reservedV4_5,35.0f,82.0f)*(M_PI_F/180.0f);
+#endif
+        float theta=0.0f;
+        float projectionRadiusAtMax=maxAngle;
+        if(projectionModel==1) { // equidistant: r=f*theta
+            theta=normalizedRadius*maxAngle;
+        } else if(projectionModel==2) { // equisolid angle: r=2f*sin(theta/2)
+            projectionRadiusAtMax=2.0f*sin(maxAngle*.5f);
+            theta=2.0f*asin(clamp(normalizedRadius*projectionRadiusAtMax*.5f,
+                                  0.0f,.9999f));
+        } else if(projectionModel==3) { // stereographic: r=2f*tan(theta/2)
+            projectionRadiusAtMax=2.0f*tan(maxAngle*.5f);
+            theta=2.0f*atan(normalizedRadius*projectionRadiusAtMax*.5f);
+        } else { // orthographic: r=f*sin(theta)
+            projectionRadiusAtMax=sin(maxAngle);
+            theta=asin(clamp(normalizedRadius*projectionRadiusAtMax,0.0f,.9999f));
+        }
+        bool boundarySafe=p.reservedV4_7>1.5f;
+        float framing=boundarySafe?1.0f:clamp(p.reservedV4_7,0.0f,1.0f);
+        // Every ideal projection has unit slope at the optical axis, but its
+        // radius at the common field angle differs. Using that model-specific
+        // radius is what genuinely preserves centre scale. It also prevents
+        // one model from appearing stronger merely because it inherited the
+        // equidistant normalisation constant.
+        float radialNormalization=mix(tan(maxAngle),projectionRadiusAtMax,framing);
+#if defined(LDB_EXPERIMENT_PROJECTION_ANGLE_LIMITS) || defined(LDB_ENABLE_PROJECTION)
+        // Zero angle has the identity limit. Test through 89 degrees without
+        // the previous 88 degree cap hiding high-angle behavior.
+        float perspectiveRadius=maxAngle<=1e-6f?normalizedRadius:
+#if defined(LDB_PROJECTION_RESOLVE_CANDIDATE) || defined(LDB_ENABLE_PROJECTION)
+            // A displaced optical axis can put a corner beyond the nominal
+            // half-diagonal angle. Keep inverse perspective below its pole.
+            tan(min(theta,89.9f*(M_PI_F/180.0f)))/max(radialNormalization,1e-12f);
+#else
+            tan(theta)/max(radialNormalization,1e-12f);
+#endif
+#else
+        float perspectiveRadius=tan(min(theta,88.0f*(M_PI_F/180.0f)))/
+                                max(radialNormalization,1e-5f);
+#endif
+        float radialScale=normalizedRadius>1e-6f?
+            perspectiveRadius/normalizedRadius:1.0f;
+        float2 projected=p.opticalCenter+
+            projectionQ*radialScale/float2(aspect,1.0f);
+        float2 candidate=mix(uv,projected,projectionBlend);
+        if(boundarySafe) {
+            // Preserve centre scale through most of the frame, then smoothly
+            // reduce only the final displacement as it approaches unavailable
+            // source pixels. This avoids clamped streaks without imposing the
+            // global magnification of full-frame fitting.
+            float2 delta=candidate-uv;
+            float safeT=1.0f;
+            if(delta.x>1e-7f)safeT=min(safeT,(.998f-uv.x)/delta.x);
+            if(delta.x<-1e-7f)safeT=min(safeT,(uv.x-.002f)/(-delta.x));
+            if(delta.y>1e-7f)safeT=min(safeT,(.998f-uv.y)/delta.y);
+            if(delta.y<-1e-7f)safeT=min(safeT,(uv.y-.002f)/(-delta.y));
+            safeT=clamp(safeT,0.0f,1.0f);
+            float nearestEdge=min(min(candidate.x,1.0f-candidate.x),
+                                  min(candidate.y,1.0f-candidate.y));
+            float boundaryInfluence=1.0f-smoothstep(-.01f,.08f,nearestEdge);
+            float taperedLimit=safeT*(.94f+.06f*safeT);
+            candidate=uv+delta*mix(1.0f,taperedLimit,boundaryInfluence);
+        }
+        uv=candidate;
+    }
+#endif
     float2 originalQ = uv - p.opticalCenter;
     float2 q = originalQ;
     // Squeeze describes an elliptical lens field, not a second image desqueeze.
@@ -714,7 +802,11 @@ kernel void ldbOpticsMain(device const float4* source [[buffer(0)]],
     float tangentWidth = fieldBlur + fieldEnvelope * tangentCharacter;
     float characterMix = fieldEnvelope * (abs(astigmatism) * 0.60f
                        + radialSmear * 0.45f + tangentSmear * 0.45f);
-    float focusMix = clamp(fieldBlur * 0.32f + characterMix, 0.0f, 1.0f);
+    float focusBlur=fieldBlur;
+#if defined(LDB_RESOLUTION_RELATIVE_CANDIDATE) || defined(LDB_ENABLE_FRAME_RELATIVE)
+    if(!(p.processingFlags & (1u<<30)))focusBlur/=hostPixelScale; // Preserve normalized strength; only footprint scales.
+#endif
+    float focusMix = clamp(focusBlur * 0.32f + characterMix, 0.0f, 1.0f);
     float4 optical;
 #if defined(LDB_EXPERIMENT_CONTINUOUS_FIELD_PSF)
     // Experimental A/B path: radialWidth and tangentWidth already collapse to
@@ -745,8 +837,20 @@ kernel void ldbOpticsMain(device const float4* source [[buffer(0)]],
     // plane supplies both near/far selection and defocus strength.
     float axialStrength = clamp(p.longitudinalCA, 0.0f, 2.0f);
     if (axialStrength > 0.0f) {
-        float axialRadius = clamp(p.longitudinalCARadius, 0.5f, 12.0f);
-        float innerRadius = max(0.5f, axialRadius * 0.42f);
+        float axialRadius = clamp(p.longitudinalCARadius, 0.5f
+#if defined(LDB_RESOLUTION_RELATIVE_CANDIDATE) || defined(LDB_ENABLE_FRAME_RELATIVE)
+ *((p.processingFlags & (1u<<30))?1.0f:hostPixelScale)
+#endif
+ , 12.0f
+#if defined(LDB_RESOLUTION_RELATIVE_CANDIDATE) || defined(LDB_ENABLE_FRAME_RELATIVE)
+ *((p.processingFlags & (1u<<30))?1.0f:hostPixelScale)
+#endif
+ );
+        float innerRadius = max(0.5f
+#if defined(LDB_RESOLUTION_RELATIVE_CANDIDATE) || defined(LDB_ENABLE_FRAME_RELATIVE)
+ *((p.processingFlags & (1u<<30))?1.0f:hostPixelScale)
+#endif
+ , axialRadius * 0.42f);
         float3 innerBlur=smoothIsotropicBlur(source,basePixel,innerRadius,width,height);
         float3 outerBlur=smoothIsotropicBlur(source,basePixel,axialRadius,width,height);
         constexpr float3 lumaWeights = float3(0.272229f, 0.674082f, 0.053689f);
@@ -787,7 +891,15 @@ kernel void ldbOpticsMain(device const float4* source [[buffer(0)]],
     // sagittal and tangential response. Signed controls permit enhancement or loss.
     if (p.microContrast != 0.0f || p.fineDetail != 0.0f || p.detailEdgeFalloff != 0.0f
         || p.sagittalDetail != 0.0f || p.tangentialDetail != 0.0f) {
-        float scale = clamp(p.detailScale, 0.25f, 8.0f);
+        float scale = clamp(p.detailScale, 0.25f
+#if defined(LDB_RESOLUTION_RELATIVE_CANDIDATE) || defined(LDB_ENABLE_FRAME_RELATIVE)
+ *((p.processingFlags & (1u<<30))?1.0f:hostPixelScale)
+#endif
+ , 8.0f
+#if defined(LDB_RESOLUTION_RELATIVE_CANDIDATE) || defined(LDB_ENABLE_FRAME_RELATIVE)
+ *((p.processingFlags & (1u<<30))?1.0f:hostPixelScale)
+#endif
+ );
         float4 fineRadialBase = (sampleBilinear(source, basePixel + radial * scale, width, height)
                                + sampleBilinear(source, basePixel - radial * scale, width, height)) * 0.5f;
         float4 fineTangentBase = (sampleBilinear(source, basePixel + tangent * scale, width, height)
@@ -1195,7 +1307,11 @@ kernel void ldbBlurAperture(device const float4* source [[buffer(0)]],
         // Each low-discrepancy point represents a finite pupil area. Reconstruct
         // that area at a radius derived from sample density, instead of leaving
         // the points visible or applying a fixed blur that fails at large radii.
-        float reconstructionRadius=clamp(scatter.radiusX*0.16f,0.75f,4.0f);
+        float aperturePixelScale=1.0f;
+#if defined(LDB_RESOLUTION_RELATIVE_CANDIDATE) || defined(LDB_ENABLE_FRAME_RELATIVE)
+    aperturePixelScale=(p.processingFlags & (1u<<30))?1.0f:max(p.renderPixelScale,0.0001f);
+#endif
+    float reconstructionRadius=clamp(scatter.radiusX*0.16f,0.75f*aperturePixelScale,4.0f*aperturePixelScale);
 #if defined(LDB_EXPERIMENT_CONTINUOUS_FIELD_PSF)
         if(p.depthMode==0u) {
             float2 uv=(float2(gid)+0.5f)/scatter.imageSize;
@@ -1228,14 +1344,20 @@ kernel void ldbBlurAperture(device const float4* source [[buffer(0)]],
                 return;
             }
         }
-        float sigma=max(reconstructionRadius*0.52f,0.55f);
+        float referenceReconstructionRadius=reconstructionRadius/aperturePixelScale;
+        float sigma=max(referenceReconstructionRadius*0.52f,0.55f);
         float4 smoothed=0.0f;
         float weightSum=0.0f;
         for(int tap=-4;tap<=4;++tap) {
-            if(abs(float(tap))>reconstructionRadius+0.5f) continue;
+            if(abs(float(tap))>referenceReconstructionRadius+0.5f) continue;
             float weight=exp(-0.5f*float(tap*tap)/(sigma*sigma));
             int2 offset=scatter.scale==1u?int2(tap,0):int2(0,tap);
-            float4 tapSample=sampleInteger(source,int2(gid)+offset,width,height);
+            float4 tapSample;
+#if defined(LDB_RESOLUTION_RELATIVE_CANDIDATE) || defined(LDB_ENABLE_FRAME_RELATIVE)
+            tapSample=sampleBilinear(source,float2(gid)+float2(offset)*aperturePixelScale,width,height);
+#else
+            tapSample=sampleInteger(source,int2(gid)+offset,width,height);
+#endif
             if(p.depthMode>0u)
                 weight*=depthSampleAgreement(targetDepth,normalizedDepth(tapSample,p),p);
             smoothed+=tapSample*weight;
@@ -1284,7 +1406,11 @@ kernel void ldbBlurAperture(device const float4* source [[buffer(0)]],
     float rimWeight=clamp(p.apertureRimWeight,-1.0f,1.0f);
     float2 apertureX=normalize(float2(scatter.axisX,scatter.axisY)+float2(1e-6f,0.0f));
     float2 apertureY=float2(-apertureX.y,apertureX.x);
-    float reconstructionRadius=clamp(scatter.radiusX*0.16f,0.75f,4.0f);
+    float aperturePixelScale=1.0f;
+#if defined(LDB_RESOLUTION_RELATIVE_CANDIDATE) || defined(LDB_ENABLE_FRAME_RELATIVE)
+    aperturePixelScale=(p.processingFlags & (1u<<30))?1.0f:max(p.renderPixelScale,0.0001f);
+#endif
+    float reconstructionRadius=clamp(scatter.radiusX*0.16f,0.75f*aperturePixelScale,4.0f*aperturePixelScale);
     float radius=max(scatter.radiusX-min(reconstructionRadius*0.65f,scatter.radiusX*0.15f),0.0f);
 #if defined(LDB_EXPERIMENT_CONTINUOUS_FIELD_PSF)
     if(p.depthMode==0u) {

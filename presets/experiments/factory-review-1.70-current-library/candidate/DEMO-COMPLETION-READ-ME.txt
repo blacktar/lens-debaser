@@ -1,0 +1,15 @@
+New current-version demos39–45
+
+39 Vintage Caricature: adjust the Look bias with Look Amount active.
+40 Anamorphic Fringing: inspect high-contrast edges; adjust the fringing amount.
+41 Tangential Optical Drift: compare against Radial using the same aperture.
+42 Directed Optical Drift: rotate Drift Angle.
+43 Linear Edge Prism: adjust Edge Bias and Transition Width; Linear Edge enables both.
+44 Depth Range and Focus: connect a Near Black depth map; adjust Input Near/Far and Focus Depth.
+45 Depth Edge Protection: use a clear foreground/background depth boundary; compare Protection0.15 with1.
+
+Load these .ldbpreset files through normal Lens Debaser1.70. No new binary is needed.
+These are review candidates, not visually accepted release presets.
+Effect Size and Effect Blend are intentionally not given demo presets.
+Depth44/45 need an actual Depth Map second input; ordinary colour footage alone cannot validate them.
+All existing presets remain in place. Public factory folders are unchanged.

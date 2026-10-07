@@ -1,0 +1,13 @@
+LensDebaserPreset=2
+# Family: 41-Demo-Tangential-Optical-Drift
+# Strength: Educational
+# Peripheral defocus leans around Field Center instead of outward; change Drift Amount or switch between Radial and Tangential.
+apertureCatEye=0.28
+apertureRadius=11.5
+apertureResponse=0.52
+apertureShape=0
+apertureSoftness=0.3
+opticalDriftAmount=0.64
+opticalDriftMode=1
+responseFieldFalloff=1.18
+responseFieldOnset=0.14

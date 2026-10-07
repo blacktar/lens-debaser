@@ -1,7 +1,7 @@
 {
   "title": "Lens Debaser AI Preset Authoring Schema",
   "schema_version": 1,
-  "target_plugin_version": "1.69",
+  "target_plugin_version": "1.70",
   "preset_format": 2,
   "header": "LensDebaserPreset=2",
   "syntax": {
@@ -16,8 +16,8 @@
   },
   "controls": {
     "anamorphicAberration": {
-      "label": "Aberration",
-      "group": "Anamorphic",
+      "label": "Anamorphic Fringing",
+      "group": "Chromatic Aberration",
       "type": "number",
       "default": 0.0,
       "minimum": -2.0,
@@ -26,8 +26,8 @@
       "description": "Independent signed horizontal chromatic separation."
     },
     "anamorphicDistortion": {
-      "label": "Distortion",
-      "group": "Anamorphic",
+      "label": "Cylindrical Distortion",
+      "group": "Anamorphic Geometry",
       "type": "number",
       "default": 0.0,
       "minimum": -0.25,
@@ -37,7 +37,7 @@
     },
     "anamorphicFlareAmount": {
       "label": "Flare Amount",
-      "group": "Anamorphic",
+      "group": "Anamorphic Flare",
       "type": "number",
       "default": 0.0,
       "minimum": 0.0,
@@ -47,7 +47,7 @@
     },
     "anamorphicFlareAsymmetry": {
       "label": "Flare Asymmetry",
-      "group": "Anamorphic",
+      "group": "Streak Shape",
       "type": "number",
       "default": 0.0,
       "minimum": -1.0,
@@ -66,7 +66,7 @@
     },
     "anamorphicFlareBandAmount": {
       "label": "Flare Bands",
-      "group": "Anamorphic",
+      "group": "Streak Shape",
       "type": "number",
       "default": 0.0,
       "minimum": 0.0,
@@ -76,7 +76,7 @@
     },
     "anamorphicFlareBandSeparation": {
       "label": "Band Separation",
-      "group": "Anamorphic",
+      "group": "Streak Shape",
       "type": "number",
       "default": 48.0,
       "minimum": 0.0,
@@ -86,7 +86,7 @@
     },
     "anamorphicFlareCoreAmount": {
       "label": "Flare Core",
-      "group": "Anamorphic",
+      "group": "Streak Shape",
       "type": "number",
       "default": 0.0,
       "minimum": 0.0,
@@ -104,8 +104,8 @@
       "step": 0.001
     },
     "anamorphicFlareGhostAmount": {
-      "label": "Ghost Amount",
-      "group": "Anamorphic",
+      "label": "Reflection Amount",
+      "group": "Reflections",
       "type": "number",
       "default": 0.0,
       "minimum": 0.0,
@@ -123,8 +123,8 @@
       "step": 0.001
     },
     "anamorphicFlareGhostCount": {
-      "label": "Ghost Paths",
-      "group": "Anamorphic",
+      "label": "Reflection Paths",
+      "group": "Reflections",
       "type": "integer",
       "default": 1,
       "minimum": 1,
@@ -133,8 +133,8 @@
       "description": "Number of bounded analytic internal-reflection paths."
     },
     "anamorphicFlareGhostEnergyDecay": {
-      "label": "Ghost Energy Decay",
-      "group": "Anamorphic",
+      "label": "Reflection Energy Decay",
+      "group": "Reflections",
       "type": "number",
       "default": 0.62,
       "minimum": 0.15,
@@ -152,8 +152,8 @@
       "step": 0.001
     },
     "anamorphicFlareGhostPosition": {
-      "label": "Ghost Position",
-      "group": "Anamorphic",
+      "label": "Reflection Position",
+      "group": "Reflections",
       "type": "number",
       "default": -0.72,
       "minimum": -2.0,
@@ -171,8 +171,8 @@
       "step": 0.001
     },
     "anamorphicFlareGhostScale": {
-      "label": "Ghost Scale",
-      "group": "Anamorphic",
+      "label": "Reflection Scale",
+      "group": "Reflections",
       "type": "number",
       "default": 1.0,
       "minimum": 0.25,
@@ -181,8 +181,8 @@
       "description": "Scales the filled elliptical reflection primitive."
     },
     "anamorphicFlareGhostScaleDecay": {
-      "label": "Ghost Size Decay",
-      "group": "Anamorphic",
+      "label": "Reflection Size Decay",
+      "group": "Reflections",
       "type": "number",
       "default": 0.82,
       "minimum": 0.35,
@@ -191,8 +191,8 @@
       "description": "Relative size retained by each successive reflection path."
     },
     "anamorphicFlareGhostSpacing": {
-      "label": "Ghost Spacing",
-      "group": "Anamorphic",
+      "label": "Reflection Spacing (px)",
+      "group": "Reflections",
       "type": "number",
       "default": 90.0,
       "minimum": 0.0,
@@ -211,7 +211,7 @@
     },
     "anamorphicFlareRadius": {
       "label": "Flare Radius",
-      "group": "Anamorphic",
+      "group": "Streak Shape",
       "type": "number",
       "default": 80.0,
       "minimum": 0.0,
@@ -221,7 +221,7 @@
     },
     "anamorphicFlareSecondaryAmount": {
       "label": "Secondary Streak",
-      "group": "Anamorphic",
+      "group": "Streak Shape",
       "type": "number",
       "default": 0.0,
       "minimum": 0.0,
@@ -231,7 +231,7 @@
     },
     "anamorphicFlareSecondaryOffset": {
       "label": "Secondary Offset",
-      "group": "Anamorphic",
+      "group": "Streak Shape",
       "type": "number",
       "default": 180.0,
       "minimum": -800.0,
@@ -241,7 +241,7 @@
     },
     "anamorphicFlareThickness": {
       "label": "Flare Thickness",
-      "group": "Anamorphic",
+      "group": "Streak Shape",
       "type": "number",
       "default": 1.0,
       "minimum": 0.1,
@@ -251,7 +251,7 @@
     },
     "anamorphicFlareThreshold": {
       "label": "Flare Threshold",
-      "group": "Anamorphic",
+      "group": "Anamorphic Flare",
       "type": "number",
       "default": 1.0,
       "minimum": 0.0,
@@ -260,8 +260,8 @@
       "description": "Scene-linear highlight threshold for Anamorphic Flare."
     },
     "anamorphicSqueeze": {
-      "label": "Anamorphic Field",
-      "group": "Anamorphic",
+      "label": "Anamorphic Field Aspect",
+      "group": "Anamorphic Geometry",
       "type": "number",
       "default": 1.0,
       "minimum": 0.25,
@@ -340,7 +340,7 @@
       "description": "Displaces the off-axis pupil along the radial field direction."
     },
     "apertureRadius": {
-      "label": "Response Radius",
+      "label": "Aperture Radius (px)",
       "group": "Aperture & Bokeh",
       "type": "number",
       "default": 6.0,
@@ -350,7 +350,7 @@
       "description": "Spatial size of the aperture response in pixels."
     },
     "apertureResponse": {
-      "label": "Aperture Response",
+      "label": "Aperture Amount",
       "group": "Aperture & Bokeh",
       "type": "number",
       "default": 0.0,
@@ -370,7 +370,7 @@
       "description": "Moves bokeh energy between a soft centre and a brighter pupil rim."
     },
     "apertureRotation": {
-      "label": "Aperture Rotation",
+      "label": "Aperture Rotation (°)",
       "group": "Aperture & Bokeh",
       "type": "number",
       "default": 0.0,
@@ -404,7 +404,7 @@
     },
     "astigmatism": {
       "label": "Astigmatism",
-      "group": "Focus & Field",
+      "group": "Field Focus & Smear",
       "type": "number",
       "default": 0.0,
       "minimum": -2.0,
@@ -453,8 +453,8 @@
       "description": "Scene-linear extraction threshold."
     },
     "captureAperture": {
-      "label": "Aperture",
-      "group": "Capture",
+      "label": "Aperture (f-number)",
+      "group": "Capture Context",
       "type": "number",
       "default": 2.8,
       "minimum": 0.7,
@@ -464,7 +464,7 @@
     },
     "captureFocalLength": {
       "label": "Focal Length (mm)",
-      "group": "Capture",
+      "group": "Capture Context",
       "type": "number",
       "default": 50.0,
       "minimum": 8.0,
@@ -474,7 +474,7 @@
     },
     "captureFocusDistance": {
       "label": "Focus Distance (cm)",
-      "group": "Capture",
+      "group": "Capture Context",
       "type": "integer",
       "default": 300,
       "minimum": 1,
@@ -484,7 +484,7 @@
     },
     "captureGate": {
       "label": "Gate / Capture Format",
-      "group": "Capture",
+      "group": "Capture Context",
       "type": "choice",
       "default": 0,
       "minimum": 0,
@@ -507,7 +507,7 @@
     },
     "captureInfluence": {
       "label": "Capture Influence",
-      "group": "Capture",
+      "group": "Capture Context",
       "type": "number",
       "default": 0.0,
       "minimum": 0.0,
@@ -516,7 +516,7 @@
       "description": "Blends Capture mapping from no influence to full influence."
     },
     "chromaticFieldFalloff": {
-      "label": "Chromatic Falloff",
+      "label": "Chromatic Transition Width",
       "group": "Chromatic Aberration",
       "type": "number",
       "default": 1.0,
@@ -567,7 +567,7 @@
     },
     "coma": {
       "label": "Coma",
-      "group": "Off-Axis Character",
+      "group": "Coma",
       "type": "number",
       "default": 0.0,
       "minimum": -2.0,
@@ -577,7 +577,7 @@
     },
     "comaThreshold": {
       "label": "Coma Threshold",
-      "group": "Off-Axis Character",
+      "group": "Coma",
       "type": "number",
       "default": 0.6,
       "minimum": 0.0,
@@ -586,8 +586,8 @@
       "description": "Scene-linear highlight level at which coma begins."
     },
     "cornerSharpnessLoss": {
-      "label": "Corner Detail Loss",
-      "group": "Focus & Field",
+      "label": "Edge Focus Loss",
+      "group": "Field Focus & Smear",
       "type": "number",
       "default": 0.0,
       "minimum": 0.0,
@@ -617,7 +617,7 @@
     },
     "depthEdgeSoftness": {
       "label": "Depth Edge Softness",
-      "group": "Depth Input",
+      "group": "Depth & Focus",
       "type": "number",
       "default": 0.5,
       "minimum": 0.0,
@@ -627,7 +627,7 @@
     },
     "depthFar": {
       "label": "Input Far",
-      "group": "Depth Input",
+      "group": "Depth & Focus",
       "type": "number",
       "default": 1.0,
       "minimum": 0.0,
@@ -637,7 +637,7 @@
     },
     "depthFocus": {
       "label": "Focus Depth",
-      "group": "Depth Input",
+      "group": "Depth & Focus",
       "type": "number",
       "default": 0.5,
       "minimum": 0.0,
@@ -647,7 +647,7 @@
     },
     "depthMode": {
       "label": "Depth Interpretation",
-      "group": "Depth Input",
+      "group": "Depth & Focus",
       "type": "choice",
       "default": 0,
       "minimum": 0,
@@ -663,7 +663,7 @@
     },
     "depthNear": {
       "label": "Input Near",
-      "group": "Depth Input",
+      "group": "Depth & Focus",
       "type": "number",
       "default": 0.0,
       "minimum": 0.0,
@@ -672,7 +672,7 @@
       "description": "Input-map value remapped to the normalized near endpoint."
     },
     "detailEdgeFalloff": {
-      "label": "Edge Falloff",
+      "label": "Edge Detail Loss",
       "group": "Detail Transfer",
       "type": "number",
       "default": 0.0,
@@ -693,7 +693,7 @@
     },
     "diffractionRayAmount": {
       "label": "Vertical Rays",
-      "group": "Geometry",
+      "group": "Diffraction Rays",
       "type": "number",
       "default": 0.0,
       "minimum": 0.0,
@@ -703,7 +703,7 @@
     },
     "diffractionRayLength": {
       "label": "Ray Length",
-      "group": "Geometry",
+      "group": "Diffraction Rays",
       "type": "number",
       "default": 180.0,
       "minimum": 0.0,
@@ -713,7 +713,7 @@
     },
     "distortionK1": {
       "label": "Primary Distortion",
-      "group": "Geometry",
+      "group": "Distortion",
       "type": "number",
       "default": 0.0,
       "minimum": -0.25,
@@ -723,7 +723,7 @@
     },
     "distortionK2": {
       "label": "Secondary Distortion",
-      "group": "Geometry",
+      "group": "Distortion",
       "type": "number",
       "default": 0.0,
       "minimum": -1.0,
@@ -732,14 +732,26 @@
       "description": "Higher-order edge distortion."
     },
     "effectBlend": {
-      "label": "Blend",
-      "group": "Blend",
+      "label": "Effect Blend",
+      "group": "Output",
       "type": "number",
       "default": 1.0,
       "minimum": 0.0,
       "maximum": 1.0,
       "step": 0.001,
       "description": "Final dry/wet blend in increments of 0.001."
+    },
+    "effectSize": {
+      "label": "Effect Size",
+      "group": "Input & Diagnostics",
+      "type": "choice",
+      "default": 0,
+      "minimum": 0,
+      "maximum": 1,
+      "choices": {
+        "0": "Frame Relative",
+        "1": "Fixed Pixels"
+      }
     },
     "farFocusB": {
       "label": "Far-Focus Color B",
@@ -770,7 +782,7 @@
     },
     "fieldAspect": {
       "label": "Field Aspect",
-      "group": "Field Shape",
+      "group": "Shared Field",
       "type": "number",
       "default": 1.0,
       "minimum": 0.25,
@@ -798,7 +810,7 @@
     },
     "fieldCurvature": {
       "label": "Field Curvature",
-      "group": "Focus & Field",
+      "group": "Field Focus & Smear",
       "type": "number",
       "default": 0.0,
       "minimum": 0.0,
@@ -807,8 +819,8 @@
       "description": "Curved off-axis focus response."
     },
     "fieldRotation": {
-      "label": "Field Rotation",
-      "group": "Field Shape",
+      "label": "Field Rotation (°)",
+      "group": "Shared Field",
       "type": "number",
       "default": 0.0,
       "minimum": -180.0,
@@ -837,14 +849,14 @@
       "description": "Broad forward scatter from accumulated micro-abrasion and polishing haze."
     },
     "geometryFieldAmount": {
-      "label": "Field-Gated Geometry",
-      "group": "Geometry",
+      "label": "Geometry Field Mix",
+      "group": "Distortion",
       "type": "number",
       "default": 0.0,
       "minimum": 0.0,
       "maximum": 1.0,
       "step": 0.001,
-      "description": "Confines geometry progressively to the shaped Field Onset and Falloff; zero preserves the established full-field mapping."
+      "description": "Blends conventional distortion into the Shared Field envelope. Zero leaves distortion global. Does not gate projection."
     },
     "glareB": {
       "label": "Glare Color B",
@@ -945,7 +957,7 @@
     },
     "internalDirtAmount": {
       "label": "Internal Dirt Amount",
-      "group": "Internal Element Contamination",
+      "group": "Internal Contamination",
       "type": "number",
       "default": 0.0,
       "minimum": 0.0,
@@ -955,7 +967,7 @@
     },
     "internalDirtComplexity": {
       "label": "Cloud Complexity",
-      "group": "Internal Element Contamination",
+      "group": "Internal Contamination",
       "type": "number",
       "default": 0.5,
       "minimum": 0.0,
@@ -965,7 +977,7 @@
     },
     "internalDirtScale": {
       "label": "Internal Dirt Size",
-      "group": "Internal Element Contamination",
+      "group": "Internal Contamination",
       "type": "number",
       "default": 1.0,
       "minimum": 0.25,
@@ -975,7 +987,7 @@
     },
     "internalDirtScatter": {
       "label": "Internal Scatter",
-      "group": "Internal Element Contamination",
+      "group": "Internal Contamination",
       "type": "number",
       "default": 0.5,
       "minimum": 0.0,
@@ -985,7 +997,7 @@
     },
     "internalDirtSeed": {
       "label": "Internal Dirt Seed",
-      "group": "Internal Element Contamination",
+      "group": "Internal Contamination",
       "type": "integer",
       "default": 0,
       "minimum": 0,
@@ -995,7 +1007,7 @@
     },
     "internalDirtSmear": {
       "label": "Internal Smear",
-      "group": "Internal Element Contamination",
+      "group": "Internal Contamination",
       "type": "number",
       "default": 0.0,
       "minimum": 0.0,
@@ -1005,7 +1017,7 @@
     },
     "internalDirtSoftness": {
       "label": "Cloud Softness",
-      "group": "Internal Element Contamination",
+      "group": "Internal Contamination",
       "type": "number",
       "default": 0.5,
       "minimum": 0.0,
@@ -1044,7 +1056,7 @@
       "description": "Near/far focus color separation around local focus transitions."
     },
     "longitudinalCARadius": {
-      "label": "Longitudinal Radius",
+      "label": "Longitudinal Radius (px)",
       "group": "Chromatic Aberration",
       "type": "number",
       "default": 4.0,
@@ -1055,7 +1067,7 @@
     },
     "lookAnamorphicBias": {
       "label": "Classic 2x Anamorphic Bias",
-      "group": "Look",
+      "group": "Look Macros",
       "type": "number",
       "default": 0.0,
       "minimum": 0.0,
@@ -1065,7 +1077,7 @@
     },
     "lookCharacter": {
       "label": "Character",
-      "group": "Look",
+      "group": "Look Macros",
       "type": "number",
       "default": 0.0,
       "minimum": 0.0,
@@ -1075,7 +1087,7 @@
     },
     "lookExoticBias": {
       "label": "Exotic Bias",
-      "group": "Look",
+      "group": "Look Macros",
       "type": "number",
       "default": 0.0,
       "minimum": 0.0,
@@ -1084,18 +1096,18 @@
       "description": "Biases the visible direct model toward asymmetric and anamorphic character."
     },
     "lookInfluence": {
-      "label": "Look Influence",
-      "group": "Look",
+      "label": "Look Amount",
+      "group": "Look Macros",
       "type": "number",
       "default": 0.0,
       "minimum": 0.0,
       "maximum": 1.0,
       "step": 0.001,
-      "description": "Blends all Look macro contributions to zero."
+      "description": "Overall amount of the coordinated Look macro contributions. Zero removes those contributions."
     },
     "lookVintageBias": {
       "label": "Vintage Bias",
-      "group": "Look",
+      "group": "Look Macros",
       "type": "number",
       "default": 0.0,
       "minimum": 0.0,
@@ -1105,7 +1117,7 @@
     },
     "lookVintageCaricatureBias": {
       "label": "Vintage Caricature",
-      "group": "Look",
+      "group": "Look Macros",
       "type": "number",
       "default": 0.0,
       "minimum": 0.0,
@@ -1124,8 +1136,8 @@
       "description": "Medium-frequency texture transfer."
     },
     "moustacheK3": {
-      "label": "Moustache",
-      "group": "Geometry",
+      "label": "Moustache Distortion",
+      "group": "Distortion",
       "type": "number",
       "default": 0.0,
       "minimum": -1.0,
@@ -1179,7 +1191,7 @@
       "step": 0.001
     },
     "opticalDriftAmount": {
-      "label": "Optical Drift",
+      "label": "Drift Amount",
       "group": "Aperture & Bokeh",
       "type": "number",
       "default": 0.0,
@@ -1189,7 +1201,7 @@
       "description": "Moves the energy centre of growing defocus without shifting the sharp image; sign reverses the selected direction."
     },
     "opticalDriftAngle": {
-      "label": "Drift Angle",
+      "label": "Drift Angle (°)",
       "group": "Aperture & Bokeh",
       "type": "number",
       "default": 0.0,
@@ -1213,7 +1225,7 @@
     },
     "peripheralStretch": {
       "label": "Peripheral Stretch",
-      "group": "Geometry",
+      "group": "Distortion",
       "type": "number",
       "default": 0.0,
       "minimum": -2.0,
@@ -1223,7 +1235,7 @@
     },
     "peripheralWarp": {
       "label": "Peripheral Warp",
-      "group": "Geometry",
+      "group": "Distortion",
       "type": "number",
       "default": 0.0,
       "minimum": -2.0,
@@ -1262,7 +1274,7 @@
       "description": "Wavelength separation along the coherent prism displacement."
     },
     "prismDistribution": {
-      "label": "Prism Distribution",
+      "label": "Distribution",
       "group": "Prism Refraction",
       "type": "choice",
       "default": 0,
@@ -1287,7 +1299,7 @@
       "description": "Moves the prism transition toward the selected edge."
     },
     "prismSoftness": {
-      "label": "Prism Softness",
+      "label": "Transition Width",
       "group": "Prism Refraction",
       "type": "number",
       "default": 0.3,
@@ -1296,9 +1308,56 @@
       "step": 0.001,
       "description": "Width of the smooth transition into the refracted region."
     },
+    "projectionAmount": {
+      "label": "Amount (%)",
+      "group": "Projection",
+      "type": "number",
+      "default": 0.0,
+      "minimum": 0.0,
+      "maximum": 100.0,
+      "step": 0.1,
+      "description": "Blends ideal projection geometry. Zero preserves the existing lens treatment."
+    },
+    "projectionFieldAngle": {
+      "label": "Field Angle (half-diagonal °)",
+      "group": "Projection",
+      "type": "number",
+      "default": 55.0,
+      "minimum": 0.0,
+      "maximum": 89.0,
+      "step": 0.1,
+      "description": "Angle from the optical axis to a frame corner, in degrees (half the diagonal field of view). Zero disables projection. Near 89° some framings magnify heavily. Independent of Shared Field controls."
+    },
+    "projectionFraming": {
+      "label": "Framing",
+      "group": "Projection",
+      "type": "choice",
+      "default": 1,
+      "minimum": 0,
+      "maximum": 2,
+      "choices": {
+        "0": "Fill Frame",
+        "1": "Balanced",
+        "2": "Preserve Centre Scale"
+      },
+      "description": "Fill Frame magnifies to keep the frame filled; Balanced trades magnification against edge coverage; Preserve Centre Scale maintains central scale and may stretch source boundaries."
+    },
+    "projectionModel": {
+      "label": "Model",
+      "group": "Projection",
+      "type": "choice",
+      "default": 0,
+      "minimum": 0,
+      "maximum": 2,
+      "choices": {
+        "0": "Off",
+        "1": "Equidistant",
+        "2": "Stereographic"
+      }
+    },
     "radialSmear": {
       "label": "Radial Smear",
-      "group": "Focus & Field",
+      "group": "Field Focus & Smear",
       "type": "number",
       "default": 0.0,
       "minimum": 0.0,
@@ -1308,7 +1367,7 @@
     },
     "refractiveAnisotropy": {
       "label": "Directionality",
-      "group": "Refractive Irregularity",
+      "group": "Glass Irregularity",
       "type": "number",
       "default": 0.0,
       "minimum": 0.0,
@@ -1318,7 +1377,7 @@
     },
     "refractiveDispersion": {
       "label": "Irregular Dispersion",
-      "group": "Refractive Irregularity",
+      "group": "Glass Irregularity",
       "type": "number",
       "default": 0.0,
       "minimum": 0.0,
@@ -1328,7 +1387,7 @@
     },
     "refractiveEdgeBias": {
       "label": "Edge Bias",
-      "group": "Refractive Irregularity",
+      "group": "Glass Irregularity",
       "type": "number",
       "default": 0.0,
       "minimum": 0.0,
@@ -1338,7 +1397,7 @@
     },
     "refractiveIrregularity": {
       "label": "Irregularity Amount",
-      "group": "Refractive Irregularity",
+      "group": "Glass Irregularity",
       "type": "number",
       "default": 0.0,
       "minimum": 0.0,
@@ -1348,7 +1407,7 @@
     },
     "refractiveRotation": {
       "label": "Direction",
-      "group": "Refractive Irregularity",
+      "group": "Glass Irregularity",
       "type": "number",
       "default": 0.0,
       "minimum": -180.0,
@@ -1358,7 +1417,7 @@
     },
     "refractiveScale": {
       "label": "Irregularity Scale",
-      "group": "Refractive Irregularity",
+      "group": "Glass Irregularity",
       "type": "number",
       "default": 1.0,
       "minimum": 0.25,
@@ -1368,7 +1427,7 @@
     },
     "refractiveSeed": {
       "label": "Irregularity Seed",
-      "group": "Refractive Irregularity",
+      "group": "Glass Irregularity",
       "type": "integer",
       "default": 0,
       "minimum": 0,
@@ -1377,18 +1436,18 @@
       "description": "Whole-number selector for a stable refractive field."
     },
     "responseDefocusFalloff": {
-      "label": "Defocus Falloff",
-      "group": "Depth Input",
+      "label": "Full Defocus Distance",
+      "group": "Depth & Focus",
       "type": "number",
       "default": 0.36,
       "minimum": 0.0,
       "maximum": 1.0,
       "step": 0.001,
-      "description": "Depth distance where active defocus responses reach full strength."
+      "description": "Normalized depth distance from Focus Depth at which defocus reaches full strength. This is an endpoint, not a transition width."
     },
     "responseDefocusOnset": {
       "label": "Defocus Onset",
-      "group": "Depth Input",
+      "group": "Depth & Focus",
       "type": "number",
       "default": 0.018,
       "minimum": 0.0,
@@ -1397,8 +1456,8 @@
       "description": "Depth distance where active defocus responses begin."
     },
     "responseFieldFalloff": {
-      "label": "Field Falloff",
-      "group": "Field Shape",
+      "label": "Field Transition Width",
+      "group": "Shared Field",
       "type": "number",
       "default": 1.0,
       "minimum": 0.0,
@@ -1408,7 +1467,7 @@
     },
     "responseFieldOnset": {
       "label": "Field Onset",
-      "group": "Field Shape",
+      "group": "Shared Field",
       "type": "number",
       "default": 0.0,
       "minimum": 0.0,
@@ -1417,18 +1476,18 @@
       "description": "Normalized radius where active off-axis responses begin."
     },
     "responseHighlightKnee": {
-      "label": "Highlight Knee",
-      "group": "Highlight Response",
+      "label": "Threshold Softness",
+      "group": "Scatter Threshold Softness",
       "type": "number",
       "default": 0.0,
       "minimum": 0.0,
       "maximum": 4.0,
       "step": 0.001,
-      "description": "Softens highlight eligibility around active scatter thresholds."
+      "description": "Softens extraction around the thresholds of active bloom, glare, halo, coma and flare. Does not soften final-image highlight tone."
     },
     "responseScatterEdgeProtection": {
       "label": "Depth Edge Protection",
-      "group": "Depth Input",
+      "group": "Depth & Focus",
       "type": "number",
       "default": 1.0,
       "minimum": 0.0,
@@ -1477,14 +1536,14 @@
       "description": "Smooth highlight halo approximating spherical aberration."
     },
     "swirl": {
-      "label": "Swirl",
-      "group": "Field Shape",
+      "label": "Geometric Swirl",
+      "group": "Shared Field",
       "type": "number",
       "default": 0.0,
       "minimum": -2.0,
       "maximum": 2.0,
       "step": 0.001,
-      "description": "Rotational field mapping toward the edges."
+      "description": "Rotates image coordinates around Optical Center; independent of Bokeh Swirl."
     },
     "tangentialDetail": {
       "label": "Tangential Detail",
@@ -1498,7 +1557,7 @@
     },
     "tangentialSmear": {
       "label": "Tangential Smear",
-      "group": "Focus & Field",
+      "group": "Field Focus & Smear",
       "type": "number",
       "default": 0.0,
       "minimum": 0.0,
@@ -1516,7 +1575,7 @@
       "step": 0.001
     },
     "transmissionColorAmount": {
-      "label": "Transmission Amount",
+      "label": "Color Amount",
       "group": "Transmission",
       "type": "number",
       "default": 0.0,
@@ -1536,7 +1595,7 @@
       "description": "Signed scene-linear contrast around 18 percent grey."
     },
     "transmissionDensity": {
-      "label": "Transmission Density",
+      "label": "Density (stops)",
       "group": "Transmission",
       "type": "number",
       "default": 0.0,
@@ -1575,7 +1634,7 @@
     },
     "variationAmount": {
       "label": "Variation Amount",
-      "group": "Variation",
+      "group": "Lens Variation",
       "type": "number",
       "default": 0.0,
       "minimum": 0.0,
@@ -1585,7 +1644,7 @@
     },
     "variationChromaticAsymmetry": {
       "label": "Chromatic Asymmetry",
-      "group": "Variation",
+      "group": "Lens Variation",
       "type": "number",
       "default": 0.0,
       "minimum": -2.0,
@@ -1595,7 +1654,7 @@
     },
     "variationFieldAsymmetry": {
       "label": "Field Asymmetry",
-      "group": "Variation",
+      "group": "Lens Variation",
       "type": "number",
       "default": 0.0,
       "minimum": -1.0,
@@ -1605,7 +1664,7 @@
     },
     "variationPupilIrregularity": {
       "label": "Pupil Irregularity",
-      "group": "Variation",
+      "group": "Lens Variation",
       "type": "number",
       "default": 0.0,
       "minimum": -1.0,
@@ -1615,7 +1674,7 @@
     },
     "variationSeed": {
       "label": "Variation Seed",
-      "group": "Variation",
+      "group": "Lens Variation",
       "type": "integer",
       "default": 0,
       "minimum": 0,
@@ -1625,7 +1684,7 @@
     },
     "variationTransmissionUnevenness": {
       "label": "Transmission Unevenness",
-      "group": "Variation",
+      "group": "Lens Variation",
       "type": "number",
       "default": 0.0,
       "minimum": -1.0,

@@ -1,0 +1,48 @@
+# Separate build products; do not invoke normal release/deploy targets.
+include Makefile
+.DEFAULT_GOAL := projection-candidate
+PC_DIR := build/experiments/projection-resolve-candidate
+PC_FLAGS := -DLDB_PROJECTION_RESOLVE_CANDIDATE=1
+PC_METAL_FLAGS := $(PC_FLAGS) -DLDB_EXPERIMENT_WIDE_PROJECTION=1 -DLDB_EXPERIMENT_PROJECTION_ANGLE_LIMITS=1
+PC_INCLUDES := -Iinclude -Isrc/ofx -I"$(OFX_INCLUDE)" -I"$(OFX_SUPPORT_INCLUDE)"
+PC_BUNDLE := $(PC_DIR)/LensDebaserProjectionTest.ofx.bundle
+PC_OBJECTS := $(PC_DIR)/LensDebaserPlugin.o $(PC_DIR)/LensDebaserMetal.o $(PC_DIR)/LDBOpticsEngine.o
+.PHONY: projection-candidate
+projection-candidate: $(PC_BUNDLE)/Contents/MacOS/LensDebaserProjectionTest.ofx $(PC_DIR)/ldb-projection-candidate-tests $(PC_DIR)/ldb-optics-tests $(PC_DIR)/ldb-optics-benchmark $(PC_DIR)/ldb-guide-examples
+	xattr -cr "$(PC_BUNDLE)"
+	codesign --verify --deep --strict "$(PC_BUNDLE)"
+$(PC_DIR):
+	mkdir -p $@
+$(PC_DIR)/LDBOptics.air: src/metal/LDBOptics.metal include/LDBOpticsParameters.h | $(PC_DIR)
+	$(METAL) -c $< -o $@ -std=metal3.1 $(PC_METAL_FLAGS) -Iinclude -isysroot $(SDKROOT) -fmodules-cache-path=$(CURDIR)/$(BUILD)/module-cache
+$(PC_DIR)/LDBOptics.metallib: $(PC_DIR)/LDBOptics.air
+	$(METALLIB) $< -o $@
+$(PC_DIR)/LensDebaserPlugin.o: src/ofx/LensDebaserPlugin.cpp src/ofx/LensDebaserPlugin.h include/LDBOpticsParameters.h include/LDBProjectionCandidateParameters.h include/LDBControlLayout.h | $(PC_DIR)
+	$(CXX) -std=c++20 -arch arm64 -fvisibility=hidden $(PC_FLAGS) $(PC_INCLUDES) -c $< -o $@
+$(PC_DIR)/LensDebaserMetal.o: src/ofx/LensDebaserMetal.mm src/ofx/LensDebaserMetal.h | $(PC_DIR)
+	$(CXX) -std=c++20 -arch arm64 -fvisibility=hidden $(PC_FLAGS) $(PC_INCLUDES) -c $< -o $@
+$(PC_DIR)/LDBOpticsEngine.o: src/engine/LDBOpticsEngine.mm include/LDBOpticsEngine.h include/LDBOpticsParameters.h include/LDBProjectionCandidateParameters.h | $(PC_DIR)
+	$(CXX) -std=c++20 -fobjc-arc -arch arm64 -fvisibility=hidden $(PC_FLAGS) $(PC_INCLUDES) -c $< -o $@
+$(PC_BUNDLE)/Contents/MacOS/LensDebaserProjectionTest.ofx: $(PC_OBJECTS) $(OFX_SUPPORT_OBJECTS) $(PC_DIR)/LDBOptics.metallib scripts/stage-projection-candidate.py scripts/Makefile.projection-candidate resources/Info.plist resources/ldb.png $(wildcard presets/experiments/projection-resolve-candidate/*.ldbpreset)
+	mkdir -p "$(PC_BUNDLE)/Contents/MacOS"
+	$(CXX) -arch arm64 -bundle -fvisibility=hidden $(PC_OBJECTS) $(OFX_SUPPORT_OBJECTS) -o "$@" -framework Foundation -framework Metal -framework AppKit
+	/usr/bin/python3 scripts/stage-projection-candidate.py "$(PC_DIR)"
+	xattr -cr "$(PC_BUNDLE)"
+	codesign --force --deep --sign - "$(PC_BUNDLE)"
+	xattr -cr "$(PC_BUNDLE)"
+	codesign --verify --deep --strict "$(PC_BUNDLE)"
+$(PC_DIR)/ldb-projection-candidate-tests: tests/ProjectionCandidateTests.mm $(PC_DIR)/LDBOpticsEngine.o include/LDBProjectionCandidateParameters.h | $(PC_DIR)
+	$(CXX) -std=c++20 -fobjc-arc -arch arm64 $(PC_FLAGS) -Iinclude $< $(PC_DIR)/LDBOpticsEngine.o -o $@ -framework Foundation -framework Metal
+$(PC_DIR)/ldb-optics-tests: tests/MetalEngineTests.mm $(PC_DIR)/LDBOpticsEngine.o | $(PC_DIR)
+	$(CXX) -std=c++20 -fobjc-arc -arch arm64 $(PC_FLAGS) -Iinclude $< $(PC_DIR)/LDBOpticsEngine.o -o $@ -framework Foundation -framework Metal
+$(PC_DIR)/ldb-optics-benchmark: tests/MetalBenchmark.mm $(PC_DIR)/LDBOpticsEngine.o | $(PC_DIR)
+	$(CXX) -std=c++20 -fobjc-arc -arch arm64 $(PC_FLAGS) -Iinclude $< $(PC_DIR)/LDBOpticsEngine.o -o $@ -framework Foundation -framework Metal
+$(PC_DIR)/ldb-guide-examples: tests/GuideExamples.mm tests/VisualValidation.mm $(PC_DIR)/LDBOpticsEngine.o include/LDBProjectionCandidateParameters.h | $(PC_DIR)
+	$(CXX) -std=c++20 -fobjc-arc -arch arm64 $(PC_FLAGS) -Iinclude -Itests $< $(PC_DIR)/LDBOpticsEngine.o -o $@ -framework Foundation -framework Metal -framework CoreGraphics -framework ImageIO
+
+.PHONY: projection-control-layout-check
+projection-control-layout-check: $(PC_DIR)/ldb-control-layout-tests
+	/usr/bin/python3 scripts/check-control-layout.py
+	$(PC_DIR)/ldb-control-layout-tests
+$(PC_DIR)/ldb-control-layout-tests: tests/ControlLayoutTests.cpp include/LDBControlLayout.h | $(PC_DIR)
+	$(CXX) -std=c++20 -arch arm64 -Iinclude $< -o $@

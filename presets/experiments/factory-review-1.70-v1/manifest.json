@@ -1,0 +1,1582 @@
+{
+  "baseline": "1.69 / 4bd0dd1",
+  "original_count": 107,
+  "candidate_count": 115,
+  "range_revision_count": 59,
+  "rows": [
+    {
+      "id": "cinematic-lenses--01-Golden-Portrait-Prime-1-Subtle",
+      "label": "01-Golden-Portrait-Prime-1-Subtle",
+      "family": "01-Golden-Portrait-Prime",
+      "decision": "revise ranges",
+      "rationale": "Normalize out-of-range authored values to current control bounds; compare against exact released recipe before acceptance. Keep restrained finishing intent.",
+      "changes": {
+        "responseFieldFalloff": 1.5
+      },
+      "baseline": "presets/experiments/factory-review-1.70-v1/baseline/cinematic-lenses/01-Golden-Portrait-Prime-1-Subtle.ldbpreset",
+      "candidate": "presets/experiments/factory-review-1.70-v1/candidate/cinematic-lenses/01-Golden-Portrait-Prime-1-Subtle.ldbpreset",
+      "status": "awaiting evidence / user acceptance",
+      "warnings": []
+    },
+    {
+      "id": "cinematic-lenses--01-Golden-Portrait-Prime-2-Medium",
+      "label": "01-Golden-Portrait-Prime-2-Medium",
+      "family": "01-Golden-Portrait-Prime",
+      "decision": "revise ranges",
+      "rationale": "Normalize out-of-range authored values to current control bounds; compare against exact released recipe before acceptance. Keep usable starting-point intent.",
+      "changes": {
+        "responseFieldFalloff": 1.5
+      },
+      "baseline": "presets/experiments/factory-review-1.70-v1/baseline/cinematic-lenses/01-Golden-Portrait-Prime-2-Medium.ldbpreset",
+      "candidate": "presets/experiments/factory-review-1.70-v1/candidate/cinematic-lenses/01-Golden-Portrait-Prime-2-Medium.ldbpreset",
+      "status": "awaiting evidence / user acceptance",
+      "warnings": []
+    },
+    {
+      "id": "cinematic-lenses--01-Golden-Portrait-Prime-3-Caricature",
+      "label": "01-Golden-Portrait-Prime-3-Caricature",
+      "family": "01-Golden-Portrait-Prime",
+      "decision": "revise ranges",
+      "rationale": "Normalize out-of-range authored values to current control bounds; compare against exact released recipe before acceptance. Retain explicitly exaggerated variant; judge as a creative extreme.",
+      "changes": {
+        "responseFieldFalloff": 1.5
+      },
+      "baseline": "presets/experiments/factory-review-1.70-v1/baseline/cinematic-lenses/01-Golden-Portrait-Prime-3-Caricature.ldbpreset",
+      "candidate": "presets/experiments/factory-review-1.70-v1/candidate/cinematic-lenses/01-Golden-Portrait-Prime-3-Caricature.ldbpreset",
+      "status": "awaiting evidence / user acceptance",
+      "warnings": []
+    },
+    {
+      "id": "cinematic-lenses--02-Silver-Contrast-Prime-1-Subtle",
+      "label": "02-Silver-Contrast-Prime-1-Subtle",
+      "family": "02-Silver-Contrast-Prime",
+      "decision": "revise ranges",
+      "rationale": "Normalize out-of-range authored values to current control bounds; compare against exact released recipe before acceptance. Keep restrained finishing intent.",
+      "changes": {
+        "responseFieldFalloff": 1.5
+      },
+      "baseline": "presets/experiments/factory-review-1.70-v1/baseline/cinematic-lenses/02-Silver-Contrast-Prime-1-Subtle.ldbpreset",
+      "candidate": "presets/experiments/factory-review-1.70-v1/candidate/cinematic-lenses/02-Silver-Contrast-Prime-1-Subtle.ldbpreset",
+      "status": "awaiting evidence / user acceptance",
+      "warnings": []
+    },
+    {
+      "id": "cinematic-lenses--02-Silver-Contrast-Prime-2-Medium",
+      "label": "02-Silver-Contrast-Prime-2-Medium",
+      "family": "02-Silver-Contrast-Prime",
+      "decision": "revise ranges",
+      "rationale": "Normalize out-of-range authored values to current control bounds; compare against exact released recipe before acceptance. Keep usable starting-point intent.",
+      "changes": {
+        "responseFieldFalloff": 1.5
+      },
+      "baseline": "presets/experiments/factory-review-1.70-v1/baseline/cinematic-lenses/02-Silver-Contrast-Prime-2-Medium.ldbpreset",
+      "candidate": "presets/experiments/factory-review-1.70-v1/candidate/cinematic-lenses/02-Silver-Contrast-Prime-2-Medium.ldbpreset",
+      "status": "awaiting evidence / user acceptance",
+      "warnings": []
+    },
+    {
+      "id": "cinematic-lenses--02-Silver-Contrast-Prime-3-Caricature",
+      "label": "02-Silver-Contrast-Prime-3-Caricature",
+      "family": "02-Silver-Contrast-Prime",
+      "decision": "revise ranges",
+      "rationale": "Normalize out-of-range authored values to current control bounds; compare against exact released recipe before acceptance. Retain explicitly exaggerated variant; judge as a creative extreme.",
+      "changes": {
+        "responseFieldFalloff": 1.5
+      },
+      "baseline": "presets/experiments/factory-review-1.70-v1/baseline/cinematic-lenses/02-Silver-Contrast-Prime-3-Caricature.ldbpreset",
+      "candidate": "presets/experiments/factory-review-1.70-v1/candidate/cinematic-lenses/02-Silver-Contrast-Prime-3-Caricature.ldbpreset",
+      "status": "awaiting evidence / user acceptance",
+      "warnings": []
+    },
+    {
+      "id": "cinematic-lenses--03-Uncoated-Newsreel-1-Subtle",
+      "label": "03-Uncoated-Newsreel-1-Subtle",
+      "family": "03-Uncoated-Newsreel",
+      "decision": "revise ranges",
+      "rationale": "Normalize out-of-range authored values to current control bounds; compare against exact released recipe before acceptance. Keep restrained finishing intent.",
+      "changes": {
+        "responseFieldFalloff": 1.5
+      },
+      "baseline": "presets/experiments/factory-review-1.70-v1/baseline/cinematic-lenses/03-Uncoated-Newsreel-1-Subtle.ldbpreset",
+      "candidate": "presets/experiments/factory-review-1.70-v1/candidate/cinematic-lenses/03-Uncoated-Newsreel-1-Subtle.ldbpreset",
+      "status": "awaiting evidence / user acceptance",
+      "warnings": []
+    },
+    {
+      "id": "cinematic-lenses--03-Uncoated-Newsreel-2-Medium",
+      "label": "03-Uncoated-Newsreel-2-Medium",
+      "family": "03-Uncoated-Newsreel",
+      "decision": "revise ranges",
+      "rationale": "Normalize out-of-range authored values to current control bounds; compare against exact released recipe before acceptance. Keep usable starting-point intent.",
+      "changes": {
+        "responseFieldFalloff": 1.5
+      },
+      "baseline": "presets/experiments/factory-review-1.70-v1/baseline/cinematic-lenses/03-Uncoated-Newsreel-2-Medium.ldbpreset",
+      "candidate": "presets/experiments/factory-review-1.70-v1/candidate/cinematic-lenses/03-Uncoated-Newsreel-2-Medium.ldbpreset",
+      "status": "awaiting evidence / user acceptance",
+      "warnings": []
+    },
+    {
+      "id": "cinematic-lenses--03-Uncoated-Newsreel-3-Caricature",
+      "label": "03-Uncoated-Newsreel-3-Caricature",
+      "family": "03-Uncoated-Newsreel",
+      "decision": "revise ranges",
+      "rationale": "Normalize out-of-range authored values to current control bounds; compare against exact released recipe before acceptance. Retain explicitly exaggerated variant; judge as a creative extreme.",
+      "changes": {
+        "responseFieldFalloff": 1.5
+      },
+      "baseline": "presets/experiments/factory-review-1.70-v1/baseline/cinematic-lenses/03-Uncoated-Newsreel-3-Caricature.ldbpreset",
+      "candidate": "presets/experiments/factory-review-1.70-v1/candidate/cinematic-lenses/03-Uncoated-Newsreel-3-Caricature.ldbpreset",
+      "status": "awaiting evidence / user acceptance",
+      "warnings": []
+    },
+    {
+      "id": "cinematic-lenses--04-Breathing-Documentary-Zoom-1-Subtle",
+      "label": "04-Breathing-Documentary-Zoom-1-Subtle",
+      "family": "04-Breathing-Documentary-Zoom",
+      "decision": "revise ranges",
+      "rationale": "Normalize out-of-range authored values to current control bounds; compare against exact released recipe before acceptance. Keep restrained finishing intent.",
+      "changes": {
+        "responseFieldFalloff": 1.5
+      },
+      "baseline": "presets/experiments/factory-review-1.70-v1/baseline/cinematic-lenses/04-Breathing-Documentary-Zoom-1-Subtle.ldbpreset",
+      "candidate": "presets/experiments/factory-review-1.70-v1/candidate/cinematic-lenses/04-Breathing-Documentary-Zoom-1-Subtle.ldbpreset",
+      "status": "awaiting evidence / user acceptance",
+      "warnings": []
+    },
+    {
+      "id": "cinematic-lenses--04-Breathing-Documentary-Zoom-2-Medium",
+      "label": "04-Breathing-Documentary-Zoom-2-Medium",
+      "family": "04-Breathing-Documentary-Zoom",
+      "decision": "revise ranges",
+      "rationale": "Normalize out-of-range authored values to current control bounds; compare against exact released recipe before acceptance. Keep usable starting-point intent.",
+      "changes": {
+        "responseFieldFalloff": 1.5
+      },
+      "baseline": "presets/experiments/factory-review-1.70-v1/baseline/cinematic-lenses/04-Breathing-Documentary-Zoom-2-Medium.ldbpreset",
+      "candidate": "presets/experiments/factory-review-1.70-v1/candidate/cinematic-lenses/04-Breathing-Documentary-Zoom-2-Medium.ldbpreset",
+      "status": "awaiting evidence / user acceptance",
+      "warnings": []
+    },
+    {
+      "id": "cinematic-lenses--04-Breathing-Documentary-Zoom-3-Caricature",
+      "label": "04-Breathing-Documentary-Zoom-3-Caricature",
+      "family": "04-Breathing-Documentary-Zoom",
+      "decision": "revise ranges",
+      "rationale": "Normalize out-of-range authored values to current control bounds; compare against exact released recipe before acceptance. Retain explicitly exaggerated variant; judge as a creative extreme.",
+      "changes": {
+        "responseFieldFalloff": 1.5
+      },
+      "baseline": "presets/experiments/factory-review-1.70-v1/baseline/cinematic-lenses/04-Breathing-Documentary-Zoom-3-Caricature.ldbpreset",
+      "candidate": "presets/experiments/factory-review-1.70-v1/candidate/cinematic-lenses/04-Breathing-Documentary-Zoom-3-Caricature.ldbpreset",
+      "status": "awaiting evidence / user acceptance",
+      "warnings": []
+    },
+    {
+      "id": "cinematic-lenses--05-Rotating-Bokeh-Portrait-1-Subtle",
+      "label": "05-Rotating-Bokeh-Portrait-1-Subtle",
+      "family": "05-Rotating-Bokeh-Portrait",
+      "decision": "revise ranges",
+      "rationale": "Normalize out-of-range authored values to current control bounds; compare against exact released recipe before acceptance. Keep restrained finishing intent.",
+      "changes": {
+        "responseFieldFalloff": 1.5
+      },
+      "baseline": "presets/experiments/factory-review-1.70-v1/baseline/cinematic-lenses/05-Rotating-Bokeh-Portrait-1-Subtle.ldbpreset",
+      "candidate": "presets/experiments/factory-review-1.70-v1/candidate/cinematic-lenses/05-Rotating-Bokeh-Portrait-1-Subtle.ldbpreset",
+      "status": "awaiting evidence / user acceptance",
+      "warnings": []
+    },
+    {
+      "id": "cinematic-lenses--05-Rotating-Bokeh-Portrait-2-Medium",
+      "label": "05-Rotating-Bokeh-Portrait-2-Medium",
+      "family": "05-Rotating-Bokeh-Portrait",
+      "decision": "revise ranges",
+      "rationale": "Normalize out-of-range authored values to current control bounds; compare against exact released recipe before acceptance. Keep usable starting-point intent.",
+      "changes": {
+        "responseFieldFalloff": 1.5
+      },
+      "baseline": "presets/experiments/factory-review-1.70-v1/baseline/cinematic-lenses/05-Rotating-Bokeh-Portrait-2-Medium.ldbpreset",
+      "candidate": "presets/experiments/factory-review-1.70-v1/candidate/cinematic-lenses/05-Rotating-Bokeh-Portrait-2-Medium.ldbpreset",
+      "status": "awaiting evidence / user acceptance",
+      "warnings": []
+    },
+    {
+      "id": "cinematic-lenses--05-Rotating-Bokeh-Portrait-3-Caricature",
+      "label": "05-Rotating-Bokeh-Portrait-3-Caricature",
+      "family": "05-Rotating-Bokeh-Portrait",
+      "decision": "revise ranges",
+      "rationale": "Normalize out-of-range authored values to current control bounds; compare against exact released recipe before acceptance. Retain explicitly exaggerated variant; judge as a creative extreme.",
+      "changes": {
+        "responseFieldFalloff": 1.5
+      },
+      "baseline": "presets/experiments/factory-review-1.70-v1/baseline/cinematic-lenses/05-Rotating-Bokeh-Portrait-3-Caricature.ldbpreset",
+      "candidate": "presets/experiments/factory-review-1.70-v1/candidate/cinematic-lenses/05-Rotating-Bokeh-Portrait-3-Caricature.ldbpreset",
+      "status": "awaiting evidence / user acceptance",
+      "warnings": []
+    },
+    {
+      "id": "cinematic-lenses--06-Petzval-Oval-Portrait-1-Subtle",
+      "label": "06-Petzval-Oval-Portrait-1-Subtle",
+      "family": "06-Petzval-Oval-Portrait",
+      "decision": "revise ranges",
+      "rationale": "Normalize out-of-range authored values to current control bounds; compare against exact released recipe before acceptance. Keep restrained finishing intent.",
+      "changes": {
+        "responseFieldFalloff": 1.5
+      },
+      "baseline": "presets/experiments/factory-review-1.70-v1/baseline/cinematic-lenses/06-Petzval-Oval-Portrait-1-Subtle.ldbpreset",
+      "candidate": "presets/experiments/factory-review-1.70-v1/candidate/cinematic-lenses/06-Petzval-Oval-Portrait-1-Subtle.ldbpreset",
+      "status": "awaiting evidence / user acceptance",
+      "warnings": []
+    },
+    {
+      "id": "cinematic-lenses--06-Petzval-Oval-Portrait-2-Medium",
+      "label": "06-Petzval-Oval-Portrait-2-Medium",
+      "family": "06-Petzval-Oval-Portrait",
+      "decision": "revise ranges",
+      "rationale": "Normalize out-of-range authored values to current control bounds; compare against exact released recipe before acceptance. Keep usable starting-point intent.",
+      "changes": {
+        "responseFieldFalloff": 1.5
+      },
+      "baseline": "presets/experiments/factory-review-1.70-v1/baseline/cinematic-lenses/06-Petzval-Oval-Portrait-2-Medium.ldbpreset",
+      "candidate": "presets/experiments/factory-review-1.70-v1/candidate/cinematic-lenses/06-Petzval-Oval-Portrait-2-Medium.ldbpreset",
+      "status": "awaiting evidence / user acceptance",
+      "warnings": []
+    },
+    {
+      "id": "cinematic-lenses--06-Petzval-Oval-Portrait-3-Caricature",
+      "label": "06-Petzval-Oval-Portrait-3-Caricature",
+      "family": "06-Petzval-Oval-Portrait",
+      "decision": "revise ranges",
+      "rationale": "Normalize out-of-range authored values to current control bounds; compare against exact released recipe before acceptance. Retain explicitly exaggerated variant; judge as a creative extreme.",
+      "changes": {
+        "responseFieldFalloff": 1.5
+      },
+      "baseline": "presets/experiments/factory-review-1.70-v1/baseline/cinematic-lenses/06-Petzval-Oval-Portrait-3-Caricature.ldbpreset",
+      "candidate": "presets/experiments/factory-review-1.70-v1/candidate/cinematic-lenses/06-Petzval-Oval-Portrait-3-Caricature.ldbpreset",
+      "status": "awaiting evidence / user acceptance",
+      "warnings": []
+    },
+    {
+      "id": "cinematic-lenses--07-Bubble-Bokeh-Triplet-1-Subtle",
+      "label": "07-Bubble-Bokeh-Triplet-1-Subtle",
+      "family": "07-Bubble-Bokeh-Triplet",
+      "decision": "revise ranges",
+      "rationale": "Normalize out-of-range authored values to current control bounds; compare against exact released recipe before acceptance. Keep restrained finishing intent.",
+      "changes": {
+        "responseFieldFalloff": 1.5
+      },
+      "baseline": "presets/experiments/factory-review-1.70-v1/baseline/cinematic-lenses/07-Bubble-Bokeh-Triplet-1-Subtle.ldbpreset",
+      "candidate": "presets/experiments/factory-review-1.70-v1/candidate/cinematic-lenses/07-Bubble-Bokeh-Triplet-1-Subtle.ldbpreset",
+      "status": "awaiting evidence / user acceptance",
+      "warnings": []
+    },
+    {
+      "id": "cinematic-lenses--07-Bubble-Bokeh-Triplet-2-Medium",
+      "label": "07-Bubble-Bokeh-Triplet-2-Medium",
+      "family": "07-Bubble-Bokeh-Triplet",
+      "decision": "revise ranges",
+      "rationale": "Normalize out-of-range authored values to current control bounds; compare against exact released recipe before acceptance. Keep usable starting-point intent.",
+      "changes": {
+        "responseFieldFalloff": 1.5
+      },
+      "baseline": "presets/experiments/factory-review-1.70-v1/baseline/cinematic-lenses/07-Bubble-Bokeh-Triplet-2-Medium.ldbpreset",
+      "candidate": "presets/experiments/factory-review-1.70-v1/candidate/cinematic-lenses/07-Bubble-Bokeh-Triplet-2-Medium.ldbpreset",
+      "status": "awaiting evidence / user acceptance",
+      "warnings": []
+    },
+    {
+      "id": "cinematic-lenses--07-Bubble-Bokeh-Triplet-3-Caricature",
+      "label": "07-Bubble-Bokeh-Triplet-3-Caricature",
+      "family": "07-Bubble-Bokeh-Triplet",
+      "decision": "revise ranges",
+      "rationale": "Normalize out-of-range authored values to current control bounds; compare against exact released recipe before acceptance. Retain explicitly exaggerated variant; judge as a creative extreme.",
+      "changes": {
+        "responseFieldFalloff": 1.5
+      },
+      "baseline": "presets/experiments/factory-review-1.70-v1/baseline/cinematic-lenses/07-Bubble-Bokeh-Triplet-3-Caricature.ldbpreset",
+      "candidate": "presets/experiments/factory-review-1.70-v1/candidate/cinematic-lenses/07-Bubble-Bokeh-Triplet-3-Caricature.ldbpreset",
+      "status": "awaiting evidence / user acceptance",
+      "warnings": []
+    },
+    {
+      "id": "cinematic-lenses--08-Pearlescent-Diffusion-1-Subtle",
+      "label": "08-Pearlescent-Diffusion-1-Subtle",
+      "family": "08-Pearlescent-Diffusion",
+      "decision": "revise ranges",
+      "rationale": "Normalize out-of-range authored values to current control bounds; compare against exact released recipe before acceptance. Keep restrained finishing intent.",
+      "changes": {
+        "responseFieldFalloff": 1.5
+      },
+      "baseline": "presets/experiments/factory-review-1.70-v1/baseline/cinematic-lenses/08-Pearlescent-Diffusion-1-Subtle.ldbpreset",
+      "candidate": "presets/experiments/factory-review-1.70-v1/candidate/cinematic-lenses/08-Pearlescent-Diffusion-1-Subtle.ldbpreset",
+      "status": "awaiting evidence / user acceptance",
+      "warnings": []
+    },
+    {
+      "id": "cinematic-lenses--08-Pearlescent-Diffusion-2-Medium",
+      "label": "08-Pearlescent-Diffusion-2-Medium",
+      "family": "08-Pearlescent-Diffusion",
+      "decision": "revise ranges",
+      "rationale": "Normalize out-of-range authored values to current control bounds; compare against exact released recipe before acceptance. Keep usable starting-point intent.",
+      "changes": {
+        "responseFieldFalloff": 1.5
+      },
+      "baseline": "presets/experiments/factory-review-1.70-v1/baseline/cinematic-lenses/08-Pearlescent-Diffusion-2-Medium.ldbpreset",
+      "candidate": "presets/experiments/factory-review-1.70-v1/candidate/cinematic-lenses/08-Pearlescent-Diffusion-2-Medium.ldbpreset",
+      "status": "awaiting evidence / user acceptance",
+      "warnings": []
+    },
+    {
+      "id": "cinematic-lenses--08-Pearlescent-Diffusion-3-Caricature",
+      "label": "08-Pearlescent-Diffusion-3-Caricature",
+      "family": "08-Pearlescent-Diffusion",
+      "decision": "revise ranges",
+      "rationale": "Normalize out-of-range authored values to current control bounds; compare against exact released recipe before acceptance. Retain explicitly exaggerated variant; judge as a creative extreme.",
+      "changes": {
+        "responseFieldFalloff": 1.5
+      },
+      "baseline": "presets/experiments/factory-review-1.70-v1/baseline/cinematic-lenses/08-Pearlescent-Diffusion-3-Caricature.ldbpreset",
+      "candidate": "presets/experiments/factory-review-1.70-v1/candidate/cinematic-lenses/08-Pearlescent-Diffusion-3-Caricature.ldbpreset",
+      "status": "awaiting evidence / user acceptance",
+      "warnings": []
+    },
+    {
+      "id": "cinematic-lenses--09-Electric-Blue-Scope-1-Subtle",
+      "label": "09-Electric-Blue-Scope-1-Subtle",
+      "family": "09-Electric-Blue-Scope",
+      "decision": "revise ranges",
+      "rationale": "Normalize out-of-range authored values to current control bounds; compare against exact released recipe before acceptance. Keep restrained finishing intent.",
+      "changes": {
+        "responseFieldFalloff": 1.5
+      },
+      "baseline": "presets/experiments/factory-review-1.70-v1/baseline/cinematic-lenses/09-Electric-Blue-Scope-1-Subtle.ldbpreset",
+      "candidate": "presets/experiments/factory-review-1.70-v1/candidate/cinematic-lenses/09-Electric-Blue-Scope-1-Subtle.ldbpreset",
+      "status": "awaiting evidence / user acceptance",
+      "warnings": []
+    },
+    {
+      "id": "cinematic-lenses--09-Electric-Blue-Scope-2-Medium",
+      "label": "09-Electric-Blue-Scope-2-Medium",
+      "family": "09-Electric-Blue-Scope",
+      "decision": "revise ranges",
+      "rationale": "Normalize out-of-range authored values to current control bounds; compare against exact released recipe before acceptance. Keep usable starting-point intent.",
+      "changes": {
+        "responseFieldFalloff": 1.5
+      },
+      "baseline": "presets/experiments/factory-review-1.70-v1/baseline/cinematic-lenses/09-Electric-Blue-Scope-2-Medium.ldbpreset",
+      "candidate": "presets/experiments/factory-review-1.70-v1/candidate/cinematic-lenses/09-Electric-Blue-Scope-2-Medium.ldbpreset",
+      "status": "awaiting evidence / user acceptance",
+      "warnings": []
+    },
+    {
+      "id": "cinematic-lenses--09-Electric-Blue-Scope-3-Caricature",
+      "label": "09-Electric-Blue-Scope-3-Caricature",
+      "family": "09-Electric-Blue-Scope",
+      "decision": "revise ranges",
+      "rationale": "Normalize out-of-range authored values to current control bounds; compare against exact released recipe before acceptance. Retain explicitly exaggerated variant; judge as a creative extreme.",
+      "changes": {
+        "anamorphicFlareAmount": 2.0,
+        "responseFieldFalloff": 1.5
+      },
+      "baseline": "presets/experiments/factory-review-1.70-v1/baseline/cinematic-lenses/09-Electric-Blue-Scope-3-Caricature.ldbpreset",
+      "candidate": "presets/experiments/factory-review-1.70-v1/candidate/cinematic-lenses/09-Electric-Blue-Scope-3-Caricature.ldbpreset",
+      "status": "awaiting evidence / user acceptance",
+      "warnings": []
+    },
+    {
+      "id": "cinematic-lenses--10-Honeyed-Compact-Scope-1-Subtle",
+      "label": "10-Honeyed-Compact-Scope-1-Subtle",
+      "family": "10-Honeyed-Compact-Scope",
+      "decision": "revise ranges",
+      "rationale": "Normalize out-of-range authored values to current control bounds; compare against exact released recipe before acceptance. Keep restrained finishing intent.",
+      "changes": {
+        "responseFieldFalloff": 1.5
+      },
+      "baseline": "presets/experiments/factory-review-1.70-v1/baseline/cinematic-lenses/10-Honeyed-Compact-Scope-1-Subtle.ldbpreset",
+      "candidate": "presets/experiments/factory-review-1.70-v1/candidate/cinematic-lenses/10-Honeyed-Compact-Scope-1-Subtle.ldbpreset",
+      "status": "awaiting evidence / user acceptance",
+      "warnings": []
+    },
+    {
+      "id": "cinematic-lenses--10-Honeyed-Compact-Scope-2-Medium",
+      "label": "10-Honeyed-Compact-Scope-2-Medium",
+      "family": "10-Honeyed-Compact-Scope",
+      "decision": "revise ranges",
+      "rationale": "Normalize out-of-range authored values to current control bounds; compare against exact released recipe before acceptance. Keep usable starting-point intent.",
+      "changes": {
+        "responseFieldFalloff": 1.5
+      },
+      "baseline": "presets/experiments/factory-review-1.70-v1/baseline/cinematic-lenses/10-Honeyed-Compact-Scope-2-Medium.ldbpreset",
+      "candidate": "presets/experiments/factory-review-1.70-v1/candidate/cinematic-lenses/10-Honeyed-Compact-Scope-2-Medium.ldbpreset",
+      "status": "awaiting evidence / user acceptance",
+      "warnings": []
+    },
+    {
+      "id": "cinematic-lenses--10-Honeyed-Compact-Scope-3-Caricature",
+      "label": "10-Honeyed-Compact-Scope-3-Caricature",
+      "family": "10-Honeyed-Compact-Scope",
+      "decision": "revise ranges",
+      "rationale": "Normalize out-of-range authored values to current control bounds; compare against exact released recipe before acceptance. Retain explicitly exaggerated variant; judge as a creative extreme.",
+      "changes": {
+        "responseFieldFalloff": 1.5
+      },
+      "baseline": "presets/experiments/factory-review-1.70-v1/baseline/cinematic-lenses/10-Honeyed-Compact-Scope-3-Caricature.ldbpreset",
+      "candidate": "presets/experiments/factory-review-1.70-v1/candidate/cinematic-lenses/10-Honeyed-Compact-Scope-3-Caricature.ldbpreset",
+      "status": "awaiting evidence / user acceptance",
+      "warnings": []
+    },
+    {
+      "id": "cinematic-lenses--11-Bent-Glass-Scope-1-Subtle",
+      "label": "11-Bent-Glass-Scope-1-Subtle",
+      "family": "11-Bent-Glass-Scope",
+      "decision": "revise ranges",
+      "rationale": "Normalize out-of-range authored values to current control bounds; compare against exact released recipe before acceptance. Keep restrained finishing intent.",
+      "changes": {
+        "responseFieldFalloff": 1.5
+      },
+      "baseline": "presets/experiments/factory-review-1.70-v1/baseline/cinematic-lenses/11-Bent-Glass-Scope-1-Subtle.ldbpreset",
+      "candidate": "presets/experiments/factory-review-1.70-v1/candidate/cinematic-lenses/11-Bent-Glass-Scope-1-Subtle.ldbpreset",
+      "status": "awaiting evidence / user acceptance",
+      "warnings": []
+    },
+    {
+      "id": "cinematic-lenses--11-Bent-Glass-Scope-2-Medium",
+      "label": "11-Bent-Glass-Scope-2-Medium",
+      "family": "11-Bent-Glass-Scope",
+      "decision": "revise ranges",
+      "rationale": "Normalize out-of-range authored values to current control bounds; compare against exact released recipe before acceptance. Keep usable starting-point intent.",
+      "changes": {
+        "responseFieldFalloff": 1.5
+      },
+      "baseline": "presets/experiments/factory-review-1.70-v1/baseline/cinematic-lenses/11-Bent-Glass-Scope-2-Medium.ldbpreset",
+      "candidate": "presets/experiments/factory-review-1.70-v1/candidate/cinematic-lenses/11-Bent-Glass-Scope-2-Medium.ldbpreset",
+      "status": "awaiting evidence / user acceptance",
+      "warnings": []
+    },
+    {
+      "id": "cinematic-lenses--11-Bent-Glass-Scope-3-Caricature",
+      "label": "11-Bent-Glass-Scope-3-Caricature",
+      "family": "11-Bent-Glass-Scope",
+      "decision": "revise ranges",
+      "rationale": "Normalize out-of-range authored values to current control bounds; compare against exact released recipe before acceptance. Retain explicitly exaggerated variant; judge as a creative extreme.",
+      "changes": {
+        "responseFieldFalloff": 1.5
+      },
+      "baseline": "presets/experiments/factory-review-1.70-v1/baseline/cinematic-lenses/11-Bent-Glass-Scope-3-Caricature.ldbpreset",
+      "candidate": "presets/experiments/factory-review-1.70-v1/candidate/cinematic-lenses/11-Bent-Glass-Scope-3-Caricature.ldbpreset",
+      "status": "awaiting evidence / user acceptance",
+      "warnings": []
+    },
+    {
+      "id": "cinematic-lenses--12-Neon-Radiance-Prime-1-Subtle",
+      "label": "12-Neon-Radiance-Prime-1-Subtle",
+      "family": "12-Neon-Radiance-Prime",
+      "decision": "keep pending compatibility review",
+      "rationale": "Retain established character; no projection added merely because the engine supports it. Keep restrained finishing intent.",
+      "changes": {},
+      "baseline": "presets/experiments/factory-review-1.70-v1/baseline/cinematic-lenses/12-Neon-Radiance-Prime-1-Subtle.ldbpreset",
+      "candidate": "presets/experiments/factory-review-1.70-v1/candidate/cinematic-lenses/12-Neon-Radiance-Prime-1-Subtle.ldbpreset",
+      "status": "awaiting evidence / user acceptance",
+      "warnings": []
+    },
+    {
+      "id": "cinematic-lenses--12-Neon-Radiance-Prime-2-Medium",
+      "label": "12-Neon-Radiance-Prime-2-Medium",
+      "family": "12-Neon-Radiance-Prime",
+      "decision": "keep pending compatibility review",
+      "rationale": "Retain established character; no projection added merely because the engine supports it. Keep usable starting-point intent.",
+      "changes": {},
+      "baseline": "presets/experiments/factory-review-1.70-v1/baseline/cinematic-lenses/12-Neon-Radiance-Prime-2-Medium.ldbpreset",
+      "candidate": "presets/experiments/factory-review-1.70-v1/candidate/cinematic-lenses/12-Neon-Radiance-Prime-2-Medium.ldbpreset",
+      "status": "awaiting evidence / user acceptance",
+      "warnings": []
+    },
+    {
+      "id": "cinematic-lenses--12-Neon-Radiance-Prime-3-Caricature",
+      "label": "12-Neon-Radiance-Prime-3-Caricature",
+      "family": "12-Neon-Radiance-Prime",
+      "decision": "revise ranges",
+      "rationale": "Normalize out-of-range authored values to current control bounds; compare against exact released recipe before acceptance. Retain explicitly exaggerated variant; judge as a creative extreme.",
+      "changes": {
+        "anamorphicFlareAmount": 2.0
+      },
+      "baseline": "presets/experiments/factory-review-1.70-v1/baseline/cinematic-lenses/12-Neon-Radiance-Prime-3-Caricature.ldbpreset",
+      "candidate": "presets/experiments/factory-review-1.70-v1/candidate/cinematic-lenses/12-Neon-Radiance-Prime-3-Caricature.ldbpreset",
+      "status": "awaiting evidence / user acceptance",
+      "warnings": []
+    },
+    {
+      "id": "cinematic-lenses--13-Nocturnal-Cat-Eye-1-Subtle",
+      "label": "13-Nocturnal-Cat-Eye-1-Subtle",
+      "family": "13-Nocturnal-Cat-Eye",
+      "decision": "revise ranges",
+      "rationale": "Normalize out-of-range authored values to current control bounds; compare against exact released recipe before acceptance. Keep restrained finishing intent.",
+      "changes": {
+        "responseFieldFalloff": 1.5
+      },
+      "baseline": "presets/experiments/factory-review-1.70-v1/baseline/cinematic-lenses/13-Nocturnal-Cat-Eye-1-Subtle.ldbpreset",
+      "candidate": "presets/experiments/factory-review-1.70-v1/candidate/cinematic-lenses/13-Nocturnal-Cat-Eye-1-Subtle.ldbpreset",
+      "status": "awaiting evidence / user acceptance",
+      "warnings": []
+    },
+    {
+      "id": "cinematic-lenses--13-Nocturnal-Cat-Eye-2-Medium",
+      "label": "13-Nocturnal-Cat-Eye-2-Medium",
+      "family": "13-Nocturnal-Cat-Eye",
+      "decision": "revise ranges",
+      "rationale": "Normalize out-of-range authored values to current control bounds; compare against exact released recipe before acceptance. Keep usable starting-point intent.",
+      "changes": {
+        "responseFieldFalloff": 1.5
+      },
+      "baseline": "presets/experiments/factory-review-1.70-v1/baseline/cinematic-lenses/13-Nocturnal-Cat-Eye-2-Medium.ldbpreset",
+      "candidate": "presets/experiments/factory-review-1.70-v1/candidate/cinematic-lenses/13-Nocturnal-Cat-Eye-2-Medium.ldbpreset",
+      "status": "awaiting evidence / user acceptance",
+      "warnings": []
+    },
+    {
+      "id": "cinematic-lenses--13-Nocturnal-Cat-Eye-3-Caricature",
+      "label": "13-Nocturnal-Cat-Eye-3-Caricature",
+      "family": "13-Nocturnal-Cat-Eye",
+      "decision": "revise ranges",
+      "rationale": "Normalize out-of-range authored values to current control bounds; compare against exact released recipe before acceptance. Retain explicitly exaggerated variant; judge as a creative extreme.",
+      "changes": {
+        "responseFieldFalloff": 1.5
+      },
+      "baseline": "presets/experiments/factory-review-1.70-v1/baseline/cinematic-lenses/13-Nocturnal-Cat-Eye-3-Caricature.ldbpreset",
+      "candidate": "presets/experiments/factory-review-1.70-v1/candidate/cinematic-lenses/13-Nocturnal-Cat-Eye-3-Caricature.ldbpreset",
+      "status": "awaiting evidence / user acceptance",
+      "warnings": []
+    },
+    {
+      "id": "cinematic-lenses--14-Stressed-Ultra-Wide-1-Subtle",
+      "label": "14-Stressed-Ultra-Wide-1-Subtle",
+      "family": "14-Stressed-Ultra-Wide",
+      "decision": "revise ranges",
+      "rationale": "Normalize out-of-range authored values to current control bounds; compare against exact released recipe before acceptance. Keep restrained finishing intent.",
+      "changes": {
+        "responseFieldFalloff": 1.5
+      },
+      "baseline": "presets/experiments/factory-review-1.70-v1/baseline/cinematic-lenses/14-Stressed-Ultra-Wide-1-Subtle.ldbpreset",
+      "candidate": "presets/experiments/factory-review-1.70-v1/candidate/cinematic-lenses/14-Stressed-Ultra-Wide-1-Subtle.ldbpreset",
+      "status": "awaiting evidence / user acceptance",
+      "warnings": []
+    },
+    {
+      "id": "cinematic-lenses--14-Stressed-Ultra-Wide-2-Medium",
+      "label": "14-Stressed-Ultra-Wide-2-Medium",
+      "family": "14-Stressed-Ultra-Wide",
+      "decision": "revise ranges",
+      "rationale": "Normalize out-of-range authored values to current control bounds; compare against exact released recipe before acceptance. Keep usable starting-point intent.",
+      "changes": {
+        "responseFieldFalloff": 1.5
+      },
+      "baseline": "presets/experiments/factory-review-1.70-v1/baseline/cinematic-lenses/14-Stressed-Ultra-Wide-2-Medium.ldbpreset",
+      "candidate": "presets/experiments/factory-review-1.70-v1/candidate/cinematic-lenses/14-Stressed-Ultra-Wide-2-Medium.ldbpreset",
+      "status": "awaiting evidence / user acceptance",
+      "warnings": []
+    },
+    {
+      "id": "cinematic-lenses--14-Stressed-Ultra-Wide-3-Caricature",
+      "label": "14-Stressed-Ultra-Wide-3-Caricature",
+      "family": "14-Stressed-Ultra-Wide",
+      "decision": "revise ranges",
+      "rationale": "Normalize out-of-range authored values to current control bounds; compare against exact released recipe before acceptance. Retain explicitly exaggerated variant; judge as a creative extreme.",
+      "changes": {
+        "responseFieldFalloff": 1.5
+      },
+      "baseline": "presets/experiments/factory-review-1.70-v1/baseline/cinematic-lenses/14-Stressed-Ultra-Wide-3-Caricature.ldbpreset",
+      "candidate": "presets/experiments/factory-review-1.70-v1/candidate/cinematic-lenses/14-Stressed-Ultra-Wide-3-Caricature.ldbpreset",
+      "status": "awaiting evidence / user acceptance",
+      "warnings": []
+    },
+    {
+      "id": "cinematic-lenses--15-Rehoused-Still-Glass-1-Subtle",
+      "label": "15-Rehoused-Still-Glass-1-Subtle",
+      "family": "15-Rehoused-Still-Glass",
+      "decision": "revise ranges",
+      "rationale": "Normalize out-of-range authored values to current control bounds; compare against exact released recipe before acceptance. Keep restrained finishing intent.",
+      "changes": {
+        "responseFieldFalloff": 1.5
+      },
+      "baseline": "presets/experiments/factory-review-1.70-v1/baseline/cinematic-lenses/15-Rehoused-Still-Glass-1-Subtle.ldbpreset",
+      "candidate": "presets/experiments/factory-review-1.70-v1/candidate/cinematic-lenses/15-Rehoused-Still-Glass-1-Subtle.ldbpreset",
+      "status": "awaiting evidence / user acceptance",
+      "warnings": []
+    },
+    {
+      "id": "cinematic-lenses--15-Rehoused-Still-Glass-2-Medium",
+      "label": "15-Rehoused-Still-Glass-2-Medium",
+      "family": "15-Rehoused-Still-Glass",
+      "decision": "revise ranges",
+      "rationale": "Normalize out-of-range authored values to current control bounds; compare against exact released recipe before acceptance. Keep usable starting-point intent.",
+      "changes": {
+        "responseFieldFalloff": 1.5
+      },
+      "baseline": "presets/experiments/factory-review-1.70-v1/baseline/cinematic-lenses/15-Rehoused-Still-Glass-2-Medium.ldbpreset",
+      "candidate": "presets/experiments/factory-review-1.70-v1/candidate/cinematic-lenses/15-Rehoused-Still-Glass-2-Medium.ldbpreset",
+      "status": "awaiting evidence / user acceptance",
+      "warnings": []
+    },
+    {
+      "id": "cinematic-lenses--15-Rehoused-Still-Glass-3-Caricature",
+      "label": "15-Rehoused-Still-Glass-3-Caricature",
+      "family": "15-Rehoused-Still-Glass",
+      "decision": "revise ranges",
+      "rationale": "Normalize out-of-range authored values to current control bounds; compare against exact released recipe before acceptance. Retain explicitly exaggerated variant; judge as a creative extreme.",
+      "changes": {
+        "responseFieldFalloff": 1.5
+      },
+      "baseline": "presets/experiments/factory-review-1.70-v1/baseline/cinematic-lenses/15-Rehoused-Still-Glass-3-Caricature.ldbpreset",
+      "candidate": "presets/experiments/factory-review-1.70-v1/candidate/cinematic-lenses/15-Rehoused-Still-Glass-3-Caricature.ldbpreset",
+      "status": "awaiting evidence / user acceptance",
+      "warnings": []
+    },
+    {
+      "id": "cinematic-lenses--16-C-Mount-CCTV-1-Subtle",
+      "label": "16-C-Mount-CCTV-1-Subtle",
+      "family": "16-C-Mount-CCTV",
+      "decision": "keep pending compatibility review",
+      "rationale": "Retain established character; no projection added merely because the engine supports it. Keep restrained finishing intent.",
+      "changes": {},
+      "baseline": "presets/experiments/factory-review-1.70-v1/baseline/cinematic-lenses/16-C-Mount-CCTV-1-Subtle.ldbpreset",
+      "candidate": "presets/experiments/factory-review-1.70-v1/candidate/cinematic-lenses/16-C-Mount-CCTV-1-Subtle.ldbpreset",
+      "status": "awaiting evidence / user acceptance",
+      "warnings": []
+    },
+    {
+      "id": "cinematic-lenses--16-C-Mount-CCTV-2-Medium",
+      "label": "16-C-Mount-CCTV-2-Medium",
+      "family": "16-C-Mount-CCTV",
+      "decision": "keep pending compatibility review",
+      "rationale": "Retain established character; no projection added merely because the engine supports it. Keep usable starting-point intent.",
+      "changes": {},
+      "baseline": "presets/experiments/factory-review-1.70-v1/baseline/cinematic-lenses/16-C-Mount-CCTV-2-Medium.ldbpreset",
+      "candidate": "presets/experiments/factory-review-1.70-v1/candidate/cinematic-lenses/16-C-Mount-CCTV-2-Medium.ldbpreset",
+      "status": "awaiting evidence / user acceptance",
+      "warnings": []
+    },
+    {
+      "id": "cinematic-lenses--16-C-Mount-CCTV-3-Caricature",
+      "label": "16-C-Mount-CCTV-3-Caricature",
+      "family": "16-C-Mount-CCTV",
+      "decision": "keep pending compatibility review",
+      "rationale": "Retain established character; no projection added merely because the engine supports it. Retain explicitly exaggerated variant; judge as a creative extreme.",
+      "changes": {},
+      "baseline": "presets/experiments/factory-review-1.70-v1/baseline/cinematic-lenses/16-C-Mount-CCTV-3-Caricature.ldbpreset",
+      "candidate": "presets/experiments/factory-review-1.70-v1/candidate/cinematic-lenses/16-C-Mount-CCTV-3-Caricature.ldbpreset",
+      "status": "awaiting evidence / user acceptance",
+      "warnings": []
+    },
+    {
+      "id": "cinematic-lenses--17-Close-Focus-Macro-1-Subtle",
+      "label": "17-Close-Focus-Macro-1-Subtle",
+      "family": "17-Close-Focus-Macro",
+      "decision": "revise ranges",
+      "rationale": "Normalize out-of-range authored values to current control bounds; compare against exact released recipe before acceptance. Keep restrained finishing intent.",
+      "changes": {
+        "responseFieldFalloff": 1.5
+      },
+      "baseline": "presets/experiments/factory-review-1.70-v1/baseline/cinematic-lenses/17-Close-Focus-Macro-1-Subtle.ldbpreset",
+      "candidate": "presets/experiments/factory-review-1.70-v1/candidate/cinematic-lenses/17-Close-Focus-Macro-1-Subtle.ldbpreset",
+      "status": "awaiting evidence / user acceptance",
+      "warnings": []
+    },
+    {
+      "id": "cinematic-lenses--17-Close-Focus-Macro-2-Medium",
+      "label": "17-Close-Focus-Macro-2-Medium",
+      "family": "17-Close-Focus-Macro",
+      "decision": "revise ranges",
+      "rationale": "Normalize out-of-range authored values to current control bounds; compare against exact released recipe before acceptance. Keep usable starting-point intent.",
+      "changes": {
+        "responseFieldFalloff": 1.5
+      },
+      "baseline": "presets/experiments/factory-review-1.70-v1/baseline/cinematic-lenses/17-Close-Focus-Macro-2-Medium.ldbpreset",
+      "candidate": "presets/experiments/factory-review-1.70-v1/candidate/cinematic-lenses/17-Close-Focus-Macro-2-Medium.ldbpreset",
+      "status": "awaiting evidence / user acceptance",
+      "warnings": []
+    },
+    {
+      "id": "cinematic-lenses--17-Close-Focus-Macro-3-Caricature",
+      "label": "17-Close-Focus-Macro-3-Caricature",
+      "family": "17-Close-Focus-Macro",
+      "decision": "revise ranges",
+      "rationale": "Normalize out-of-range authored values to current control bounds; compare against exact released recipe before acceptance. Retain explicitly exaggerated variant; judge as a creative extreme.",
+      "changes": {
+        "responseFieldFalloff": 1.5
+      },
+      "baseline": "presets/experiments/factory-review-1.70-v1/baseline/cinematic-lenses/17-Close-Focus-Macro-3-Caricature.ldbpreset",
+      "candidate": "presets/experiments/factory-review-1.70-v1/candidate/cinematic-lenses/17-Close-Focus-Macro-3-Caricature.ldbpreset",
+      "status": "awaiting evidence / user acceptance",
+      "warnings": []
+    },
+    {
+      "id": "cinematic-lenses--18-Microscope-Objective-1-Subtle",
+      "label": "18-Microscope-Objective-1-Subtle",
+      "family": "18-Microscope-Objective",
+      "decision": "revise ranges",
+      "rationale": "Normalize out-of-range authored values to current control bounds; compare against exact released recipe before acceptance. Keep restrained finishing intent.",
+      "changes": {
+        "refractiveSeed": 65535,
+        "responseFieldFalloff": 1.5,
+        "variationSeed": 65535
+      },
+      "baseline": "presets/experiments/factory-review-1.70-v1/baseline/cinematic-lenses/18-Microscope-Objective-1-Subtle.ldbpreset",
+      "candidate": "presets/experiments/factory-review-1.70-v1/candidate/cinematic-lenses/18-Microscope-Objective-1-Subtle.ldbpreset",
+      "status": "awaiting evidence / user acceptance",
+      "warnings": []
+    },
+    {
+      "id": "cinematic-lenses--18-Microscope-Objective-2-Medium",
+      "label": "18-Microscope-Objective-2-Medium",
+      "family": "18-Microscope-Objective",
+      "decision": "revise ranges",
+      "rationale": "Normalize out-of-range authored values to current control bounds; compare against exact released recipe before acceptance. Keep usable starting-point intent.",
+      "changes": {
+        "refractiveSeed": 65535,
+        "variationSeed": 65535
+      },
+      "baseline": "presets/experiments/factory-review-1.70-v1/baseline/cinematic-lenses/18-Microscope-Objective-2-Medium.ldbpreset",
+      "candidate": "presets/experiments/factory-review-1.70-v1/candidate/cinematic-lenses/18-Microscope-Objective-2-Medium.ldbpreset",
+      "status": "awaiting evidence / user acceptance",
+      "warnings": []
+    },
+    {
+      "id": "cinematic-lenses--18-Microscope-Objective-3-Caricature",
+      "label": "18-Microscope-Objective-3-Caricature",
+      "family": "18-Microscope-Objective",
+      "decision": "revise ranges",
+      "rationale": "Normalize out-of-range authored values to current control bounds; compare against exact released recipe before acceptance. Retain explicitly exaggerated variant; judge as a creative extreme.",
+      "changes": {
+        "refractiveSeed": 65535,
+        "variationSeed": 65535
+      },
+      "baseline": "presets/experiments/factory-review-1.70-v1/baseline/cinematic-lenses/18-Microscope-Objective-3-Caricature.ldbpreset",
+      "candidate": "presets/experiments/factory-review-1.70-v1/candidate/cinematic-lenses/18-Microscope-Objective-3-Caricature.ldbpreset",
+      "status": "awaiting evidence / user acceptance",
+      "warnings": []
+    },
+    {
+      "id": "cinematic-lenses--19-Tilted-Freelens-1-Subtle",
+      "label": "19-Tilted-Freelens-1-Subtle",
+      "family": "19-Tilted-Freelens",
+      "decision": "keep pending compatibility review",
+      "rationale": "Retain established character; no projection added merely because the engine supports it. Keep restrained finishing intent.",
+      "changes": {},
+      "baseline": "presets/experiments/factory-review-1.70-v1/baseline/cinematic-lenses/19-Tilted-Freelens-1-Subtle.ldbpreset",
+      "candidate": "presets/experiments/factory-review-1.70-v1/candidate/cinematic-lenses/19-Tilted-Freelens-1-Subtle.ldbpreset",
+      "status": "awaiting evidence / user acceptance",
+      "warnings": []
+    },
+    {
+      "id": "cinematic-lenses--19-Tilted-Freelens-2-Medium",
+      "label": "19-Tilted-Freelens-2-Medium",
+      "family": "19-Tilted-Freelens",
+      "decision": "keep pending compatibility review",
+      "rationale": "Retain established character; no projection added merely because the engine supports it. Keep usable starting-point intent.",
+      "changes": {},
+      "baseline": "presets/experiments/factory-review-1.70-v1/baseline/cinematic-lenses/19-Tilted-Freelens-2-Medium.ldbpreset",
+      "candidate": "presets/experiments/factory-review-1.70-v1/candidate/cinematic-lenses/19-Tilted-Freelens-2-Medium.ldbpreset",
+      "status": "awaiting evidence / user acceptance",
+      "warnings": []
+    },
+    {
+      "id": "cinematic-lenses--19-Tilted-Freelens-3-Caricature",
+      "label": "19-Tilted-Freelens-3-Caricature",
+      "family": "19-Tilted-Freelens",
+      "decision": "keep pending compatibility review",
+      "rationale": "Retain established character; no projection added merely because the engine supports it. Retain explicitly exaggerated variant; judge as a creative extreme.",
+      "changes": {},
+      "baseline": "presets/experiments/factory-review-1.70-v1/baseline/cinematic-lenses/19-Tilted-Freelens-3-Caricature.ldbpreset",
+      "candidate": "presets/experiments/factory-review-1.70-v1/candidate/cinematic-lenses/19-Tilted-Freelens-3-Caricature.ldbpreset",
+      "status": "awaiting evidence / user acceptance",
+      "warnings": []
+    },
+    {
+      "id": "cinematic-lenses--20-Improvised-Projector-Lens-1-Subtle",
+      "label": "20-Improvised-Projector-Lens-1-Subtle",
+      "family": "20-Improvised-Projector-Lens",
+      "decision": "keep pending compatibility review",
+      "rationale": "Retain established character; no projection added merely because the engine supports it. Keep restrained finishing intent.",
+      "changes": {},
+      "baseline": "presets/experiments/factory-review-1.70-v1/baseline/cinematic-lenses/20-Improvised-Projector-Lens-1-Subtle.ldbpreset",
+      "candidate": "presets/experiments/factory-review-1.70-v1/candidate/cinematic-lenses/20-Improvised-Projector-Lens-1-Subtle.ldbpreset",
+      "status": "awaiting evidence / user acceptance",
+      "warnings": []
+    },
+    {
+      "id": "cinematic-lenses--20-Improvised-Projector-Lens-2-Medium",
+      "label": "20-Improvised-Projector-Lens-2-Medium",
+      "family": "20-Improvised-Projector-Lens",
+      "decision": "keep pending compatibility review",
+      "rationale": "Retain established character; no projection added merely because the engine supports it. Keep usable starting-point intent.",
+      "changes": {},
+      "baseline": "presets/experiments/factory-review-1.70-v1/baseline/cinematic-lenses/20-Improvised-Projector-Lens-2-Medium.ldbpreset",
+      "candidate": "presets/experiments/factory-review-1.70-v1/candidate/cinematic-lenses/20-Improvised-Projector-Lens-2-Medium.ldbpreset",
+      "status": "awaiting evidence / user acceptance",
+      "warnings": []
+    },
+    {
+      "id": "cinematic-lenses--20-Improvised-Projector-Lens-3-Caricature",
+      "label": "20-Improvised-Projector-Lens-3-Caricature",
+      "family": "20-Improvised-Projector-Lens",
+      "decision": "keep pending compatibility review",
+      "rationale": "Retain established character; no projection added merely because the engine supports it. Retain explicitly exaggerated variant; judge as a creative extreme.",
+      "changes": {},
+      "baseline": "presets/experiments/factory-review-1.70-v1/baseline/cinematic-lenses/20-Improvised-Projector-Lens-3-Caricature.ldbpreset",
+      "candidate": "presets/experiments/factory-review-1.70-v1/candidate/cinematic-lenses/20-Improvised-Projector-Lens-3-Caricature.ldbpreset",
+      "status": "awaiting evidence / user acceptance",
+      "warnings": []
+    },
+    {
+      "id": "cinematic-lenses--21-Bodycam-Edge-Stress",
+      "label": "21-Bodycam-Edge-Stress",
+      "family": "21-Bodycam-Edge-Stress",
+      "decision": "revise ranges",
+      "rationale": "Normalize out-of-range authored values to current control bounds; compare against exact released recipe before acceptance. Keep usable starting-point intent.",
+      "changes": {
+        "damageSeed": 65535,
+        "refractiveSeed": 65535
+      },
+      "baseline": "presets/experiments/factory-review-1.70-v1/baseline/cinematic-lenses/21-Bodycam-Edge-Stress.ldbpreset",
+      "candidate": "presets/experiments/factory-review-1.70-v1/candidate/cinematic-lenses/21-Bodycam-Edge-Stress.ldbpreset",
+      "status": "awaiting evidence / user acceptance",
+      "warnings": []
+    },
+    {
+      "id": "cinematic-lenses--22-Hawk-V-Lite-Vintage-74-1-Subtle",
+      "label": "22-Hawk-V-Lite-Vintage-74-1-Subtle",
+      "family": "22-Hawk-V-Lite-Vintage-74",
+      "decision": "revise ranges",
+      "rationale": "Normalize out-of-range authored values to current control bounds; compare against exact released recipe before acceptance. Keep restrained finishing intent.",
+      "changes": {
+        "responseFieldFalloff": 1.5
+      },
+      "baseline": "presets/experiments/factory-review-1.70-v1/baseline/cinematic-lenses/22-Hawk-V-Lite-Vintage-74-1-Subtle.ldbpreset",
+      "candidate": "presets/experiments/factory-review-1.70-v1/candidate/cinematic-lenses/22-Hawk-V-Lite-Vintage-74-1-Subtle.ldbpreset",
+      "status": "awaiting evidence / user acceptance",
+      "warnings": []
+    },
+    {
+      "id": "cinematic-lenses--22-Hawk-V-Lite-Vintage-74-2-Medium",
+      "label": "22-Hawk-V-Lite-Vintage-74-2-Medium",
+      "family": "22-Hawk-V-Lite-Vintage-74",
+      "decision": "revise ranges",
+      "rationale": "Normalize out-of-range authored values to current control bounds; compare against exact released recipe before acceptance. Keep usable starting-point intent.",
+      "changes": {
+        "responseFieldFalloff": 1.5
+      },
+      "baseline": "presets/experiments/factory-review-1.70-v1/baseline/cinematic-lenses/22-Hawk-V-Lite-Vintage-74-2-Medium.ldbpreset",
+      "candidate": "presets/experiments/factory-review-1.70-v1/candidate/cinematic-lenses/22-Hawk-V-Lite-Vintage-74-2-Medium.ldbpreset",
+      "status": "awaiting evidence / user acceptance",
+      "warnings": []
+    },
+    {
+      "id": "cinematic-lenses--22-Hawk-V-Lite-Vintage-74-3-Caricature",
+      "label": "22-Hawk-V-Lite-Vintage-74-3-Caricature",
+      "family": "22-Hawk-V-Lite-Vintage-74",
+      "decision": "revise ranges",
+      "rationale": "Normalize out-of-range authored values to current control bounds; compare against exact released recipe before acceptance. Retain explicitly exaggerated variant; judge as a creative extreme.",
+      "changes": {
+        "responseFieldFalloff": 1.5
+      },
+      "baseline": "presets/experiments/factory-review-1.70-v1/baseline/cinematic-lenses/22-Hawk-V-Lite-Vintage-74-3-Caricature.ldbpreset",
+      "candidate": "presets/experiments/factory-review-1.70-v1/candidate/cinematic-lenses/22-Hawk-V-Lite-Vintage-74-3-Caricature.ldbpreset",
+      "status": "awaiting evidence / user acceptance",
+      "warnings": []
+    },
+    {
+      "id": "cinematic-lenses--23-Cooke-Anamorphic-i-Special-Flare-1-Subtle",
+      "label": "23-Cooke-Anamorphic-i-Special-Flare-1-Subtle",
+      "family": "23-Cooke-Anamorphic-i-Special-Flare",
+      "decision": "revise ranges",
+      "rationale": "Normalize out-of-range authored values to current control bounds; compare against exact released recipe before acceptance. Keep restrained finishing intent.",
+      "changes": {
+        "anamorphicFlareThickness": 0.1
+      },
+      "baseline": "presets/experiments/factory-review-1.70-v1/baseline/cinematic-lenses/23-Cooke-Anamorphic-i-Special-Flare-1-Subtle.ldbpreset",
+      "candidate": "presets/experiments/factory-review-1.70-v1/candidate/cinematic-lenses/23-Cooke-Anamorphic-i-Special-Flare-1-Subtle.ldbpreset",
+      "status": "awaiting evidence / user acceptance",
+      "warnings": []
+    },
+    {
+      "id": "cinematic-lenses--23-Cooke-Anamorphic-i-Special-Flare-2-Medium",
+      "label": "23-Cooke-Anamorphic-i-Special-Flare-2-Medium",
+      "family": "23-Cooke-Anamorphic-i-Special-Flare",
+      "decision": "revise ranges",
+      "rationale": "Normalize out-of-range authored values to current control bounds; compare against exact released recipe before acceptance. Keep usable starting-point intent.",
+      "changes": {
+        "anamorphicFlareThickness": 0.1
+      },
+      "baseline": "presets/experiments/factory-review-1.70-v1/baseline/cinematic-lenses/23-Cooke-Anamorphic-i-Special-Flare-2-Medium.ldbpreset",
+      "candidate": "presets/experiments/factory-review-1.70-v1/candidate/cinematic-lenses/23-Cooke-Anamorphic-i-Special-Flare-2-Medium.ldbpreset",
+      "status": "awaiting evidence / user acceptance",
+      "warnings": []
+    },
+    {
+      "id": "cinematic-lenses--23-Cooke-Anamorphic-i-Special-Flare-3-Caricature",
+      "label": "23-Cooke-Anamorphic-i-Special-Flare-3-Caricature",
+      "family": "23-Cooke-Anamorphic-i-Special-Flare",
+      "decision": "revise ranges",
+      "rationale": "Normalize out-of-range authored values to current control bounds; compare against exact released recipe before acceptance. Retain explicitly exaggerated variant; judge as a creative extreme.",
+      "changes": {
+        "anamorphicFlareThickness": 0.1
+      },
+      "baseline": "presets/experiments/factory-review-1.70-v1/baseline/cinematic-lenses/23-Cooke-Anamorphic-i-Special-Flare-3-Caricature.ldbpreset",
+      "candidate": "presets/experiments/factory-review-1.70-v1/candidate/cinematic-lenses/23-Cooke-Anamorphic-i-Special-Flare-3-Caricature.ldbpreset",
+      "status": "awaiting evidence / user acceptance",
+      "warnings": []
+    },
+    {
+      "id": "cinematic-lenses--24-Decentered-Dream-Glass-1-Subtle",
+      "label": "24-Decentered-Dream-Glass-1-Subtle",
+      "family": "24-Decentered-Dream-Glass",
+      "decision": "keep pending compatibility review",
+      "rationale": "Retain established character; no projection added merely because the engine supports it. Keep restrained finishing intent.",
+      "changes": {},
+      "baseline": "presets/experiments/factory-review-1.70-v1/baseline/cinematic-lenses/24-Decentered-Dream-Glass-1-Subtle.ldbpreset",
+      "candidate": "presets/experiments/factory-review-1.70-v1/candidate/cinematic-lenses/24-Decentered-Dream-Glass-1-Subtle.ldbpreset",
+      "status": "awaiting evidence / user acceptance",
+      "warnings": []
+    },
+    {
+      "id": "cinematic-lenses--24-Decentered-Dream-Glass-2-Medium",
+      "label": "24-Decentered-Dream-Glass-2-Medium",
+      "family": "24-Decentered-Dream-Glass",
+      "decision": "keep pending compatibility review",
+      "rationale": "Retain established character; no projection added merely because the engine supports it. Keep usable starting-point intent.",
+      "changes": {},
+      "baseline": "presets/experiments/factory-review-1.70-v1/baseline/cinematic-lenses/24-Decentered-Dream-Glass-2-Medium.ldbpreset",
+      "candidate": "presets/experiments/factory-review-1.70-v1/candidate/cinematic-lenses/24-Decentered-Dream-Glass-2-Medium.ldbpreset",
+      "status": "awaiting evidence / user acceptance",
+      "warnings": []
+    },
+    {
+      "id": "cinematic-lenses--24-Decentered-Dream-Glass-3-Caricature",
+      "label": "24-Decentered-Dream-Glass-3-Caricature",
+      "family": "24-Decentered-Dream-Glass",
+      "decision": "keep pending compatibility review",
+      "rationale": "Retain established character; no projection added merely because the engine supports it. Retain explicitly exaggerated variant; judge as a creative extreme.",
+      "changes": {},
+      "baseline": "presets/experiments/factory-review-1.70-v1/baseline/cinematic-lenses/24-Decentered-Dream-Glass-3-Caricature.ldbpreset",
+      "candidate": "presets/experiments/factory-review-1.70-v1/candidate/cinematic-lenses/24-Decentered-Dream-Glass-3-Caricature.ldbpreset",
+      "status": "awaiting evidence / user acceptance",
+      "warnings": []
+    },
+    {
+      "id": "cinematic-lenses--25-Edge-Prism-Glass-1-Subtle",
+      "label": "25-Edge-Prism-Glass-1-Subtle",
+      "family": "25-Edge-Prism-Glass",
+      "decision": "keep pending compatibility review",
+      "rationale": "Retain established character; no projection added merely because the engine supports it. Keep restrained finishing intent.",
+      "changes": {},
+      "baseline": "presets/experiments/factory-review-1.70-v1/baseline/cinematic-lenses/25-Edge-Prism-Glass-1-Subtle.ldbpreset",
+      "candidate": "presets/experiments/factory-review-1.70-v1/candidate/cinematic-lenses/25-Edge-Prism-Glass-1-Subtle.ldbpreset",
+      "status": "awaiting evidence / user acceptance",
+      "warnings": []
+    },
+    {
+      "id": "cinematic-lenses--25-Edge-Prism-Glass-2-Medium",
+      "label": "25-Edge-Prism-Glass-2-Medium",
+      "family": "25-Edge-Prism-Glass",
+      "decision": "keep pending compatibility review",
+      "rationale": "Retain established character; no projection added merely because the engine supports it. Keep usable starting-point intent.",
+      "changes": {},
+      "baseline": "presets/experiments/factory-review-1.70-v1/baseline/cinematic-lenses/25-Edge-Prism-Glass-2-Medium.ldbpreset",
+      "candidate": "presets/experiments/factory-review-1.70-v1/candidate/cinematic-lenses/25-Edge-Prism-Glass-2-Medium.ldbpreset",
+      "status": "awaiting evidence / user acceptance",
+      "warnings": []
+    },
+    {
+      "id": "cinematic-lenses--25-Edge-Prism-Glass-3-Caricature",
+      "label": "25-Edge-Prism-Glass-3-Caricature",
+      "family": "25-Edge-Prism-Glass",
+      "decision": "keep pending compatibility review",
+      "rationale": "Retain established character; no projection added merely because the engine supports it. Retain explicitly exaggerated variant; judge as a creative extreme.",
+      "changes": {},
+      "baseline": "presets/experiments/factory-review-1.70-v1/baseline/cinematic-lenses/25-Edge-Prism-Glass-3-Caricature.ldbpreset",
+      "candidate": "presets/experiments/factory-review-1.70-v1/candidate/cinematic-lenses/25-Edge-Prism-Glass-3-Caricature.ldbpreset",
+      "status": "awaiting evidence / user acceptance",
+      "warnings": []
+    },
+    {
+      "id": "cinematic-lenses--26-Internal-Field-Edge-FX",
+      "label": "26-Internal-Field-Edge-FX",
+      "family": "26-Internal-Field-Edge-FX",
+      "decision": "remove dormant setting",
+      "rationale": "Preserve the passed compound treatment; remove its inactive Prism Distribution setting rather than introduce a new Prism effect.",
+      "changes": {
+        "prismDistribution": 0
+      },
+      "baseline": "presets/experiments/factory-review-1.70-v1/baseline/cinematic-lenses/26-Internal-Field-Edge-FX.ldbpreset",
+      "candidate": "presets/experiments/factory-review-1.70-v1/candidate/cinematic-lenses/26-Internal-Field-Edge-FX.ldbpreset",
+      "status": "awaiting evidence / user acceptance",
+      "warnings": []
+    },
+    {
+      "id": "cinematic-lenses--27-Decentered-Drift-Prime",
+      "label": "27-Decentered-Drift-Prime",
+      "family": "27-Decentered-Drift-Prime",
+      "decision": "keep pending compatibility review",
+      "rationale": "Retain established character; no projection added merely because the engine supports it. Keep usable starting-point intent.",
+      "changes": {},
+      "baseline": "presets/experiments/factory-review-1.70-v1/baseline/cinematic-lenses/27-Decentered-Drift-Prime.ldbpreset",
+      "candidate": "presets/experiments/factory-review-1.70-v1/candidate/cinematic-lenses/27-Decentered-Drift-Prime.ldbpreset",
+      "status": "awaiting evidence / user acceptance",
+      "warnings": []
+    },
+    {
+      "id": "cinematic-lenses--28-Spectral-Radial-Drift",
+      "label": "28-Spectral-Radial-Drift",
+      "family": "28-Spectral-Radial-Drift",
+      "decision": "keep pending compatibility review",
+      "rationale": "Retain established character; no projection added merely because the engine supports it. Keep usable starting-point intent.",
+      "changes": {},
+      "baseline": "presets/experiments/factory-review-1.70-v1/baseline/cinematic-lenses/28-Spectral-Radial-Drift.ldbpreset",
+      "candidate": "presets/experiments/factory-review-1.70-v1/candidate/cinematic-lenses/28-Spectral-Radial-Drift.ldbpreset",
+      "status": "awaiting evidence / user acceptance",
+      "warnings": []
+    },
+    {
+      "id": "demonstrations--01-Demo-Capture",
+      "label": "01-Demo-Capture",
+      "family": "01-Demo-Capture",
+      "decision": "keep pending compatibility review",
+      "rationale": "Retain established character; no projection added merely because the engine supports it. Educational scope reviewed against the current UI; existing stable control keys retained.",
+      "changes": {},
+      "baseline": "presets/experiments/factory-review-1.70-v1/baseline/demonstrations/01-Demo-Capture.ldbpreset",
+      "candidate": "presets/experiments/factory-review-1.70-v1/candidate/demonstrations/01-Demo-Capture.ldbpreset",
+      "status": "awaiting evidence / user acceptance",
+      "warnings": []
+    },
+    {
+      "id": "demonstrations--02-Demo-Look",
+      "label": "02-Demo-Look",
+      "family": "02-Demo-Look",
+      "decision": "keep pending compatibility review",
+      "rationale": "Retain established character; no projection added merely because the engine supports it. Educational scope reviewed against the current UI; existing stable control keys retained.",
+      "changes": {},
+      "baseline": "presets/experiments/factory-review-1.70-v1/baseline/demonstrations/02-Demo-Look.ldbpreset",
+      "candidate": "presets/experiments/factory-review-1.70-v1/candidate/demonstrations/02-Demo-Look.ldbpreset",
+      "status": "awaiting evidence / user acceptance",
+      "warnings": []
+    },
+    {
+      "id": "demonstrations--03-Demo-Field-Gated-Geometry",
+      "label": "03-Demo-Field-Gated-Geometry",
+      "family": "03-Demo-Field-Gated-Geometry",
+      "decision": "revise ranges",
+      "rationale": "Normalize out-of-range authored values to current control bounds; compare against exact released recipe before acceptance. Educational scope reviewed against the current UI; existing stable control keys retained.",
+      "changes": {
+        "responseFieldFalloff": 1.5
+      },
+      "baseline": "presets/experiments/factory-review-1.70-v1/baseline/demonstrations/03-Demo-Field-Gated-Geometry.ldbpreset",
+      "candidate": "presets/experiments/factory-review-1.70-v1/candidate/demonstrations/03-Demo-Field-Gated-Geometry.ldbpreset",
+      "status": "awaiting evidence / user acceptance",
+      "warnings": []
+    },
+    {
+      "id": "demonstrations--04-Demo-Field-Shape",
+      "label": "04-Demo-Field-Shape",
+      "family": "04-Demo-Field-Shape",
+      "decision": "keep pending compatibility review",
+      "rationale": "Retain established character; no projection added merely because the engine supports it. Educational scope reviewed against the current UI; existing stable control keys retained.",
+      "changes": {},
+      "baseline": "presets/experiments/factory-review-1.70-v1/baseline/demonstrations/04-Demo-Field-Shape.ldbpreset",
+      "candidate": "presets/experiments/factory-review-1.70-v1/candidate/demonstrations/04-Demo-Field-Shape.ldbpreset",
+      "status": "awaiting evidence / user acceptance",
+      "warnings": []
+    },
+    {
+      "id": "demonstrations--05-Demo-Focus-And-Field",
+      "label": "05-Demo-Focus-And-Field",
+      "family": "05-Demo-Focus-And-Field",
+      "decision": "keep pending compatibility review",
+      "rationale": "Retain established character; no projection added merely because the engine supports it. Educational scope reviewed against the current UI; existing stable control keys retained.",
+      "changes": {},
+      "baseline": "presets/experiments/factory-review-1.70-v1/baseline/demonstrations/05-Demo-Focus-And-Field.ldbpreset",
+      "candidate": "presets/experiments/factory-review-1.70-v1/candidate/demonstrations/05-Demo-Focus-And-Field.ldbpreset",
+      "status": "awaiting evidence / user acceptance",
+      "warnings": []
+    },
+    {
+      "id": "demonstrations--06-Demo-Detail-Transfer",
+      "label": "06-Demo-Detail-Transfer",
+      "family": "06-Demo-Detail-Transfer",
+      "decision": "keep pending compatibility review",
+      "rationale": "Retain established character; no projection added merely because the engine supports it. Educational scope reviewed against the current UI; existing stable control keys retained.",
+      "changes": {},
+      "baseline": "presets/experiments/factory-review-1.70-v1/baseline/demonstrations/06-Demo-Detail-Transfer.ldbpreset",
+      "candidate": "presets/experiments/factory-review-1.70-v1/candidate/demonstrations/06-Demo-Detail-Transfer.ldbpreset",
+      "status": "awaiting evidence / user acceptance",
+      "warnings": []
+    },
+    {
+      "id": "demonstrations--07-Demo-Chromatic-Aberration",
+      "label": "07-Demo-Chromatic-Aberration",
+      "family": "07-Demo-Chromatic-Aberration",
+      "decision": "keep pending compatibility review",
+      "rationale": "Retain established character; no projection added merely because the engine supports it. Educational scope reviewed against the current UI; existing stable control keys retained.",
+      "changes": {},
+      "baseline": "presets/experiments/factory-review-1.70-v1/baseline/demonstrations/07-Demo-Chromatic-Aberration.ldbpreset",
+      "candidate": "presets/experiments/factory-review-1.70-v1/candidate/demonstrations/07-Demo-Chromatic-Aberration.ldbpreset",
+      "status": "awaiting evidence / user acceptance",
+      "warnings": []
+    },
+    {
+      "id": "demonstrations--08-Demo-Anamorphic",
+      "label": "08-Demo-Anamorphic",
+      "family": "08-Demo-Anamorphic",
+      "decision": "keep pending compatibility review",
+      "rationale": "Retain established character; no projection added merely because the engine supports it. Educational scope reviewed against the current UI; existing stable control keys retained.",
+      "changes": {},
+      "baseline": "presets/experiments/factory-review-1.70-v1/baseline/demonstrations/08-Demo-Anamorphic.ldbpreset",
+      "candidate": "presets/experiments/factory-review-1.70-v1/candidate/demonstrations/08-Demo-Anamorphic.ldbpreset",
+      "status": "awaiting evidence / user acceptance",
+      "warnings": []
+    },
+    {
+      "id": "demonstrations--09-Demo-Aperture-And-Bokeh",
+      "label": "09-Demo-Aperture-And-Bokeh",
+      "family": "09-Demo-Aperture-And-Bokeh",
+      "decision": "keep pending compatibility review",
+      "rationale": "Retain established character; no projection added merely because the engine supports it. Educational scope reviewed against the current UI; existing stable control keys retained.",
+      "changes": {},
+      "baseline": "presets/experiments/factory-review-1.70-v1/baseline/demonstrations/09-Demo-Aperture-And-Bokeh.ldbpreset",
+      "candidate": "presets/experiments/factory-review-1.70-v1/candidate/demonstrations/09-Demo-Aperture-And-Bokeh.ldbpreset",
+      "status": "awaiting evidence / user acceptance",
+      "warnings": []
+    },
+    {
+      "id": "demonstrations--10-Demo-Vignette",
+      "label": "10-Demo-Vignette",
+      "family": "10-Demo-Vignette",
+      "decision": "keep pending compatibility review",
+      "rationale": "Retain established character; no projection added merely because the engine supports it. Educational scope reviewed against the current UI; existing stable control keys retained.",
+      "changes": {},
+      "baseline": "presets/experiments/factory-review-1.70-v1/baseline/demonstrations/10-Demo-Vignette.ldbpreset",
+      "candidate": "presets/experiments/factory-review-1.70-v1/candidate/demonstrations/10-Demo-Vignette.ldbpreset",
+      "status": "awaiting evidence / user acceptance",
+      "warnings": []
+    },
+    {
+      "id": "demonstrations--11-Demo-Image-Circle",
+      "label": "11-Demo-Image-Circle",
+      "family": "11-Demo-Image-Circle",
+      "decision": "keep pending compatibility review",
+      "rationale": "Retain established character; no projection added merely because the engine supports it. Educational scope reviewed against the current UI; existing stable control keys retained.",
+      "changes": {},
+      "baseline": "presets/experiments/factory-review-1.70-v1/baseline/demonstrations/11-Demo-Image-Circle.ldbpreset",
+      "candidate": "presets/experiments/factory-review-1.70-v1/candidate/demonstrations/11-Demo-Image-Circle.ldbpreset",
+      "status": "awaiting evidence / user acceptance",
+      "warnings": []
+    },
+    {
+      "id": "demonstrations--12-Demo-Bloom",
+      "label": "12-Demo-Bloom",
+      "family": "12-Demo-Bloom",
+      "decision": "keep pending compatibility review",
+      "rationale": "Retain established character; no projection added merely because the engine supports it. Educational scope reviewed against the current UI; existing stable control keys retained.",
+      "changes": {},
+      "baseline": "presets/experiments/factory-review-1.70-v1/baseline/demonstrations/12-Demo-Bloom.ldbpreset",
+      "candidate": "presets/experiments/factory-review-1.70-v1/candidate/demonstrations/12-Demo-Bloom.ldbpreset",
+      "status": "awaiting evidence / user acceptance",
+      "warnings": []
+    },
+    {
+      "id": "demonstrations--13-Demo-Glare-And-Halo",
+      "label": "13-Demo-Glare-And-Halo",
+      "family": "13-Demo-Glare-And-Halo",
+      "decision": "keep pending compatibility review",
+      "rationale": "Retain established character; no projection added merely because the engine supports it. Educational scope reviewed against the current UI; existing stable control keys retained.",
+      "changes": {},
+      "baseline": "presets/experiments/factory-review-1.70-v1/baseline/demonstrations/13-Demo-Glare-And-Halo.ldbpreset",
+      "candidate": "presets/experiments/factory-review-1.70-v1/candidate/demonstrations/13-Demo-Glare-And-Halo.ldbpreset",
+      "status": "awaiting evidence / user acceptance",
+      "warnings": []
+    },
+    {
+      "id": "demonstrations--14-Demo-Transmission",
+      "label": "14-Demo-Transmission",
+      "family": "14-Demo-Transmission",
+      "decision": "keep pending compatibility review",
+      "rationale": "Retain established character; no projection added merely because the engine supports it. Educational scope reviewed against the current UI; existing stable control keys retained.",
+      "changes": {},
+      "baseline": "presets/experiments/factory-review-1.70-v1/baseline/demonstrations/14-Demo-Transmission.ldbpreset",
+      "candidate": "presets/experiments/factory-review-1.70-v1/candidate/demonstrations/14-Demo-Transmission.ldbpreset",
+      "status": "awaiting evidence / user acceptance",
+      "warnings": []
+    },
+    {
+      "id": "demonstrations--15-Demo-Highlight-Response",
+      "label": "15-Demo-Highlight-Response",
+      "family": "15-Demo-Highlight-Response",
+      "decision": "keep pending compatibility review",
+      "rationale": "Retain established character; no projection added merely because the engine supports it. Educational scope reviewed against the current UI; existing stable control keys retained.",
+      "changes": {},
+      "baseline": "presets/experiments/factory-review-1.70-v1/baseline/demonstrations/15-Demo-Highlight-Response.ldbpreset",
+      "candidate": "presets/experiments/factory-review-1.70-v1/candidate/demonstrations/15-Demo-Highlight-Response.ldbpreset",
+      "status": "awaiting evidence / user acceptance",
+      "warnings": []
+    },
+    {
+      "id": "demonstrations--16-Demo-Coma",
+      "label": "16-Demo-Coma",
+      "family": "16-Demo-Coma",
+      "decision": "keep pending compatibility review",
+      "rationale": "Retain established character; no projection added merely because the engine supports it. Educational scope reviewed against the current UI; existing stable control keys retained.",
+      "changes": {},
+      "baseline": "presets/experiments/factory-review-1.70-v1/baseline/demonstrations/16-Demo-Coma.ldbpreset",
+      "candidate": "presets/experiments/factory-review-1.70-v1/candidate/demonstrations/16-Demo-Coma.ldbpreset",
+      "status": "awaiting evidence / user acceptance",
+      "warnings": []
+    },
+    {
+      "id": "demonstrations--17-Demo-Variation",
+      "label": "17-Demo-Variation",
+      "family": "17-Demo-Variation",
+      "decision": "keep pending compatibility review",
+      "rationale": "Retain established character; no projection added merely because the engine supports it. Educational scope reviewed against the current UI; existing stable control keys retained.",
+      "changes": {},
+      "baseline": "presets/experiments/factory-review-1.70-v1/baseline/demonstrations/17-Demo-Variation.ldbpreset",
+      "candidate": "presets/experiments/factory-review-1.70-v1/candidate/demonstrations/17-Demo-Variation.ldbpreset",
+      "status": "awaiting evidence / user acceptance",
+      "warnings": []
+    },
+    {
+      "id": "demonstrations--18-Demo-Depth-Input",
+      "label": "18-Demo-Depth-Input",
+      "family": "18-Demo-Depth-Input",
+      "decision": "keep pending compatibility review",
+      "rationale": "Retain established character; no projection added merely because the engine supports it. Educational scope reviewed against the current UI; existing stable control keys retained.",
+      "changes": {},
+      "baseline": "presets/experiments/factory-review-1.70-v1/baseline/demonstrations/18-Demo-Depth-Input.ldbpreset",
+      "candidate": "presets/experiments/factory-review-1.70-v1/candidate/demonstrations/18-Demo-Depth-Input.ldbpreset",
+      "status": "awaiting evidence / user acceptance",
+      "warnings": [
+        "depthMode requires the Depth Map second RGB input in Resolve"
+      ]
+    },
+    {
+      "id": "demonstrations--20-Demo-Front-Element-Wear",
+      "label": "20-Demo-Front-Element-Wear",
+      "family": "20-Demo-Front-Element-Wear",
+      "decision": "keep pending compatibility review",
+      "rationale": "Retain established character; no projection added merely because the engine supports it. Educational scope reviewed against the current UI; existing stable control keys retained.",
+      "changes": {},
+      "baseline": "presets/experiments/factory-review-1.70-v1/baseline/demonstrations/20-Demo-Front-Element-Wear.ldbpreset",
+      "candidate": "presets/experiments/factory-review-1.70-v1/candidate/demonstrations/20-Demo-Front-Element-Wear.ldbpreset",
+      "status": "awaiting evidence / user acceptance",
+      "warnings": []
+    },
+    {
+      "id": "demonstrations--21-Demo-Refractive-Irregularity",
+      "label": "21-Demo-Refractive-Irregularity",
+      "family": "21-Demo-Refractive-Irregularity",
+      "decision": "keep pending compatibility review",
+      "rationale": "Retain established character; no projection added merely because the engine supports it. Educational scope reviewed against the current UI; existing stable control keys retained.",
+      "changes": {},
+      "baseline": "presets/experiments/factory-review-1.70-v1/baseline/demonstrations/21-Demo-Refractive-Irregularity.ldbpreset",
+      "candidate": "presets/experiments/factory-review-1.70-v1/candidate/demonstrations/21-Demo-Refractive-Irregularity.ldbpreset",
+      "status": "awaiting evidence / user acceptance",
+      "warnings": []
+    },
+    {
+      "id": "demonstrations--22-Demo-Peripheral-Stretch",
+      "label": "22-Demo-Peripheral-Stretch",
+      "family": "22-Demo-Peripheral-Stretch",
+      "decision": "revise ranges",
+      "rationale": "Normalize out-of-range authored values to current control bounds; compare against exact released recipe before acceptance. Educational scope reviewed against the current UI; existing stable control keys retained.",
+      "changes": {
+        "responseFieldFalloff": 1.5
+      },
+      "baseline": "presets/experiments/factory-review-1.70-v1/baseline/demonstrations/22-Demo-Peripheral-Stretch.ldbpreset",
+      "candidate": "presets/experiments/factory-review-1.70-v1/candidate/demonstrations/22-Demo-Peripheral-Stretch.ldbpreset",
+      "status": "awaiting evidence / user acceptance",
+      "warnings": []
+    },
+    {
+      "id": "demonstrations--23-Demo-Peripheral-Warp",
+      "label": "23-Demo-Peripheral-Warp",
+      "family": "23-Demo-Peripheral-Warp",
+      "decision": "revise ranges",
+      "rationale": "Normalize out-of-range authored values to current control bounds; compare against exact released recipe before acceptance. Educational scope reviewed against the current UI; existing stable control keys retained.",
+      "changes": {
+        "responseFieldFalloff": 1.5
+      },
+      "baseline": "presets/experiments/factory-review-1.70-v1/baseline/demonstrations/23-Demo-Peripheral-Warp.ldbpreset",
+      "candidate": "presets/experiments/factory-review-1.70-v1/candidate/demonstrations/23-Demo-Peripheral-Warp.ldbpreset",
+      "status": "awaiting evidence / user acceptance",
+      "warnings": []
+    },
+    {
+      "id": "demonstrations--24-Demo-Internal-Element-Contamination",
+      "label": "24-Demo-Internal-Element-Contamination",
+      "family": "24-Demo-Internal-Element-Contamination",
+      "decision": "keep pending compatibility review",
+      "rationale": "Retain established character; no projection added merely because the engine supports it. Educational scope reviewed against the current UI; existing stable control keys retained.",
+      "changes": {},
+      "baseline": "presets/experiments/factory-review-1.70-v1/baseline/demonstrations/24-Demo-Internal-Element-Contamination.ldbpreset",
+      "candidate": "presets/experiments/factory-review-1.70-v1/candidate/demonstrations/24-Demo-Internal-Element-Contamination.ldbpreset",
+      "status": "awaiting evidence / user acceptance",
+      "warnings": []
+    },
+    {
+      "id": "demonstrations--25-Demo-Bokeh-Swirl",
+      "label": "25-Demo-Bokeh-Swirl",
+      "family": "25-Demo-Bokeh-Swirl",
+      "decision": "keep pending compatibility review",
+      "rationale": "Retain established character; no projection added merely because the engine supports it. Educational scope reviewed against the current UI; existing stable control keys retained.",
+      "changes": {},
+      "baseline": "presets/experiments/factory-review-1.70-v1/baseline/demonstrations/25-Demo-Bokeh-Swirl.ldbpreset",
+      "candidate": "presets/experiments/factory-review-1.70-v1/candidate/demonstrations/25-Demo-Bokeh-Swirl.ldbpreset",
+      "status": "awaiting evidence / user acceptance",
+      "warnings": []
+    },
+    {
+      "id": "demonstrations--26-Demo-Petzval-Field",
+      "label": "26-Demo-Petzval-Field",
+      "family": "26-Demo-Petzval-Field",
+      "decision": "keep pending compatibility review",
+      "rationale": "Retain established character; no projection added merely because the engine supports it. Educational scope reviewed against the current UI; existing stable control keys retained.",
+      "changes": {},
+      "baseline": "presets/experiments/factory-review-1.70-v1/baseline/demonstrations/26-Demo-Petzval-Field.ldbpreset",
+      "candidate": "presets/experiments/factory-review-1.70-v1/candidate/demonstrations/26-Demo-Petzval-Field.ldbpreset",
+      "status": "awaiting evidence / user acceptance",
+      "warnings": []
+    },
+    {
+      "id": "demonstrations--27-Demo-Structured-Anamorphic-Flare",
+      "label": "27-Demo-Structured-Anamorphic-Flare",
+      "family": "27-Demo-Structured-Anamorphic-Flare",
+      "decision": "keep pending compatibility review",
+      "rationale": "Retain established character; no projection added merely because the engine supports it. Educational scope reviewed against the current UI; existing stable control keys retained.",
+      "changes": {},
+      "baseline": "presets/experiments/factory-review-1.70-v1/baseline/demonstrations/27-Demo-Structured-Anamorphic-Flare.ldbpreset",
+      "candidate": "presets/experiments/factory-review-1.70-v1/candidate/demonstrations/27-Demo-Structured-Anamorphic-Flare.ldbpreset",
+      "status": "awaiting evidence / user acceptance",
+      "warnings": []
+    },
+    {
+      "id": "demonstrations--28-Demo-Diffraction-Rays",
+      "label": "28-Demo-Diffraction-Rays",
+      "family": "28-Demo-Diffraction-Rays",
+      "decision": "keep pending compatibility review",
+      "rationale": "Retain established character; no projection added merely because the engine supports it. Educational scope reviewed against the current UI; existing stable control keys retained.",
+      "changes": {},
+      "baseline": "presets/experiments/factory-review-1.70-v1/baseline/demonstrations/28-Demo-Diffraction-Rays.ldbpreset",
+      "candidate": "presets/experiments/factory-review-1.70-v1/candidate/demonstrations/28-Demo-Diffraction-Rays.ldbpreset",
+      "status": "awaiting evidence / user acceptance",
+      "warnings": []
+    },
+    {
+      "id": "demonstrations--29-Demo-Pupil-Decenter-Clipping",
+      "label": "29-Demo-Pupil-Decenter-Clipping",
+      "family": "29-Demo-Pupil-Decenter-Clipping",
+      "decision": "keep pending compatibility review",
+      "rationale": "Retain established character; no projection added merely because the engine supports it. Educational scope reviewed against the current UI; existing stable control keys retained.",
+      "changes": {},
+      "baseline": "presets/experiments/factory-review-1.70-v1/baseline/demonstrations/29-Demo-Pupil-Decenter-Clipping.ldbpreset",
+      "candidate": "presets/experiments/factory-review-1.70-v1/candidate/demonstrations/29-Demo-Pupil-Decenter-Clipping.ldbpreset",
+      "status": "awaiting evidence / user acceptance",
+      "warnings": []
+    },
+    {
+      "id": "demonstrations--30-Demo-Bubble-Rim-Bokeh",
+      "label": "30-Demo-Bubble-Rim-Bokeh",
+      "family": "30-Demo-Bubble-Rim-Bokeh",
+      "decision": "keep pending compatibility review",
+      "rationale": "Retain established character; no projection added merely because the engine supports it. Educational scope reviewed against the current UI; existing stable control keys retained.",
+      "changes": {},
+      "baseline": "presets/experiments/factory-review-1.70-v1/baseline/demonstrations/30-Demo-Bubble-Rim-Bokeh.ldbpreset",
+      "candidate": "presets/experiments/factory-review-1.70-v1/candidate/demonstrations/30-Demo-Bubble-Rim-Bokeh.ldbpreset",
+      "status": "awaiting evidence / user acceptance",
+      "warnings": []
+    },
+    {
+      "id": "demonstrations--31-Demo-Prism-Refraction",
+      "label": "31-Demo-Prism-Refraction",
+      "family": "31-Demo-Prism-Refraction",
+      "decision": "keep pending compatibility review",
+      "rationale": "Retain established character; no projection added merely because the engine supports it. Educational scope reviewed against the current UI; existing stable control keys retained.",
+      "changes": {},
+      "baseline": "presets/experiments/factory-review-1.70-v1/baseline/demonstrations/31-Demo-Prism-Refraction.ldbpreset",
+      "candidate": "presets/experiments/factory-review-1.70-v1/candidate/demonstrations/31-Demo-Prism-Refraction.ldbpreset",
+      "status": "awaiting evidence / user acceptance",
+      "warnings": []
+    },
+    {
+      "id": "demonstrations--32-Demo-Optical-Drift",
+      "label": "32-Demo-Optical-Drift",
+      "family": "32-Demo-Optical-Drift",
+      "decision": "keep pending compatibility review",
+      "rationale": "Retain established character; no projection added merely because the engine supports it. Educational scope reviewed against the current UI; existing stable control keys retained.",
+      "changes": {},
+      "baseline": "presets/experiments/factory-review-1.70-v1/baseline/demonstrations/32-Demo-Optical-Drift.ldbpreset",
+      "candidate": "presets/experiments/factory-review-1.70-v1/candidate/demonstrations/32-Demo-Optical-Drift.ldbpreset",
+      "status": "awaiting evidence / user acceptance",
+      "warnings": []
+    },
+    {
+      "id": "demonstrations--33-Demo-Equidistant-Projection",
+      "label": "33-Demo-Equidistant-Projection",
+      "family": "33-Demo-Equidistant-Projection",
+      "decision": "new demonstration",
+      "rationale": "Equidistant at 45%, 55 degrees, Balanced; compare with clean source.",
+      "changes": {
+        "projectionModel": 1,
+        "projectionAmount": 45,
+        "projectionFieldAngle": 55,
+        "projectionFraming": 1
+      },
+      "baseline": "presets/experiments/factory-review-1.70-v1/baseline/demonstrations/33-Demo-Equidistant-Projection.ldbpreset",
+      "candidate": "presets/experiments/factory-review-1.70-v1/candidate/demonstrations/33-Demo-Equidistant-Projection.ldbpreset",
+      "status": "awaiting renders / benchmarks / user acceptance",
+      "warnings": []
+    },
+    {
+      "id": "demonstrations--34-Demo-Stereographic-Projection",
+      "label": "34-Demo-Stereographic-Projection",
+      "family": "34-Demo-Stereographic-Projection",
+      "decision": "new demonstration",
+      "rationale": "Gentler stereographic at matched 45%, 55 degrees, Balanced; compare with clean source.",
+      "changes": {
+        "projectionModel": 2,
+        "projectionAmount": 45,
+        "projectionFieldAngle": 55,
+        "projectionFraming": 1
+      },
+      "baseline": "presets/experiments/factory-review-1.70-v1/baseline/demonstrations/34-Demo-Stereographic-Projection.ldbpreset",
+      "candidate": "presets/experiments/factory-review-1.70-v1/candidate/demonstrations/34-Demo-Stereographic-Projection.ldbpreset",
+      "status": "awaiting renders / benchmarks / user acceptance",
+      "warnings": []
+    },
+    {
+      "id": "demonstrations--35-Demo-Projection-Centre-Scale",
+      "label": "35-Demo-Projection-Centre-Scale",
+      "family": "35-Demo-Projection-Centre-Scale",
+      "decision": "new demonstration",
+      "rationale": "Same Equidistant treatment with Centre scale; inspect central scale and perimeter stretch.",
+      "changes": {
+        "projectionModel": 1,
+        "projectionAmount": 45,
+        "projectionFieldAngle": 55,
+        "projectionFraming": 2
+      },
+      "baseline": "presets/experiments/factory-review-1.70-v1/baseline/demonstrations/35-Demo-Projection-Centre-Scale.ldbpreset",
+      "candidate": "presets/experiments/factory-review-1.70-v1/candidate/demonstrations/35-Demo-Projection-Centre-Scale.ldbpreset",
+      "status": "awaiting renders / benchmarks / user acceptance",
+      "warnings": []
+    },
+    {
+      "id": "demonstrations--36-Demo-Projection-Full-Frame",
+      "label": "36-Demo-Projection-Full-Frame",
+      "family": "36-Demo-Projection-Full-Frame",
+      "decision": "new demonstration",
+      "rationale": "Same Equidistant treatment with Full frame; inspect framing loss and filling of the frame.",
+      "changes": {
+        "projectionModel": 1,
+        "projectionAmount": 45,
+        "projectionFieldAngle": 55,
+        "projectionFraming": 0
+      },
+      "baseline": "presets/experiments/factory-review-1.70-v1/baseline/demonstrations/36-Demo-Projection-Full-Frame.ldbpreset",
+      "candidate": "presets/experiments/factory-review-1.70-v1/candidate/demonstrations/36-Demo-Projection-Full-Frame.ldbpreset",
+      "status": "awaiting renders / benchmarks / user acceptance",
+      "warnings": []
+    },
+    {
+      "id": "cinematic-lenses--29-Balanced-Wide-Street",
+      "label": "29-Balanced-Wide-Street",
+      "family": "29-Balanced-Wide-Street",
+      "decision": "new creative treatment",
+      "rationale": "Restrained equidistant wide character; reduce stacked moustache/peripheral warp so projection carries the geometry. Compare with existing Stressed Ultra Wide Medium.",
+      "changes": {
+        "projectionModel": 1,
+        "projectionAmount": 20,
+        "projectionFieldAngle": 55,
+        "projectionFraming": 1,
+        "distortionK1": -0.008,
+        "distortionK2": 0.035,
+        "moustacheK3": 0.045,
+        "peripheralWarp": 0.06,
+        "peripheralStretch": 0.08,
+        "cornerSharpnessLoss": 0.38,
+        "radialSmear": 0.16
+      },
+      "baseline": "presets/experiments/factory-review-1.70-v1/baseline/cinematic-lenses/29-Balanced-Wide-Street.ldbpreset",
+      "candidate": "presets/experiments/factory-review-1.70-v1/candidate/cinematic-lenses/29-Balanced-Wide-Street.ldbpreset",
+      "status": "awaiting renders / benchmarks / user acceptance",
+      "warnings": []
+    },
+    {
+      "id": "cinematic-lenses--30-Gentle-Stereo-Documentary",
+      "label": "30-Gentle-Stereo-Documentary",
+      "family": "30-Gentle-Stereo-Documentary",
+      "decision": "new creative treatment",
+      "rationale": "Gentle stereographic expansion layered on documentary character; compare with existing Documentary Zoom Medium. Reject if framing cost outweighs the visual benefit.",
+      "changes": {
+        "projectionModel": 2,
+        "projectionAmount": 20,
+        "projectionFieldAngle": 55,
+        "projectionFraming": 1
+      },
+      "baseline": "presets/experiments/factory-review-1.70-v1/baseline/cinematic-lenses/30-Gentle-Stereo-Documentary.ldbpreset",
+      "candidate": "presets/experiments/factory-review-1.70-v1/candidate/cinematic-lenses/30-Gentle-Stereo-Documentary.ldbpreset",
+      "status": "awaiting renders / benchmarks / user acceptance",
+      "warnings": []
+    },
+    {
+      "id": "demonstrations--37-Demo-Projection-Amount",
+      "label": "37-Demo-Projection-Amount",
+      "family": "37-Demo-Projection-Amount",
+      "decision": "new isolated control demonstration",
+      "rationale": "Compare Amount 20% with 45%, holding Equidistant, 55 degrees and Balanced fixed.",
+      "changes": {
+        "projectionAmount": 20
+      },
+      "baseline": "presets/experiments/factory-review-1.70-v1/baseline/demonstrations/37-Demo-Projection-Amount.ldbpreset",
+      "candidate": "presets/experiments/factory-review-1.70-v1/candidate/demonstrations/37-Demo-Projection-Amount.ldbpreset",
+      "baseline_engine": "1.70",
+      "status": "awaiting renders / benchmarks / user acceptance",
+      "warnings": []
+    },
+    {
+      "id": "demonstrations--38-Demo-Projection-Field-Angle",
+      "label": "38-Demo-Projection-Field-Angle",
+      "family": "38-Demo-Projection-Field-Angle",
+      "decision": "new isolated control demonstration",
+      "rationale": "Compare half-diagonal Field Angle 75 degrees with 55 degrees, holding Equidistant, Amount 45% and Balanced fixed; inspect composition loss.",
+      "changes": {
+        "projectionFieldAngle": 75
+      },
+      "baseline": "presets/experiments/factory-review-1.70-v1/baseline/demonstrations/38-Demo-Projection-Field-Angle.ldbpreset",
+      "candidate": "presets/experiments/factory-review-1.70-v1/candidate/demonstrations/38-Demo-Projection-Field-Angle.ldbpreset",
+      "baseline_engine": "1.70",
+      "status": "awaiting renders / benchmarks / user acceptance",
+      "warnings": []
+    }
+  ],
+  "batches": {
+    "first": [
+      "cinematic-lenses--01-Golden-Portrait-Prime-1-Subtle",
+      "cinematic-lenses--09-Electric-Blue-Scope-3-Caricature",
+      "cinematic-lenses--18-Microscope-Objective-1-Subtle",
+      "cinematic-lenses--21-Bodycam-Edge-Stress",
+      "cinematic-lenses--23-Cooke-Anamorphic-i-Special-Flare-1-Subtle",
+      "demonstrations--33-Demo-Equidistant-Projection",
+      "demonstrations--34-Demo-Stereographic-Projection",
+      "demonstrations--35-Demo-Projection-Centre-Scale",
+      "demonstrations--36-Demo-Projection-Full-Frame",
+      "cinematic-lenses--29-Balanced-Wide-Street",
+      "cinematic-lenses--30-Gentle-Stereo-Documentary",
+      "demonstrations--37-Demo-Projection-Amount",
+      "demonstrations--38-Demo-Projection-Field-Angle"
+    ]
+  },
+  "notes": [
+    "Range revisions are proposals, not visual passes.",
+    "960px framing/character comparisons; sharpness decisions require native-resolution follow-up.",
+    "Depth demo requires a real depth-input host check. Still-image tests do not establish motion/export behavior.",
+    "Original factory library, schema and release files are untouched."
+  ]
+}

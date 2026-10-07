@@ -1,0 +1,14 @@
+LensDebaserPreset=2
+# Family: 42-Demo-Directed-Optical-Drift
+# Strength: Educational
+# Peripheral defocus leans in a chosen direction; rotate Drift Angle to see the direction change.
+apertureCatEye=0.28
+apertureRadius=11.5
+apertureResponse=0.52
+apertureShape=0
+apertureSoftness=0.3
+opticalDriftAmount=0.64
+opticalDriftAngle=-35
+opticalDriftMode=2
+responseFieldFalloff=1.18
+responseFieldOnset=0.14
