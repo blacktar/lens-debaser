@@ -31,10 +31,14 @@ def main():
    destination=OUT/f'{slug}-{source}-after.png'
    if source in ('iso','optical') and legacy.returncode==0 and values(legacy.stdout)==values(preset.read_text()) and destination.exists():continue
    jobs[destination.name]=(preset,source)
- # Focused new-feature visuals, two established sources per demonstration.
+ # Optical Drift follows the established five-source, original/applied atlas.
+ drift=next((R/'presets/demonstrations').glob('32-*.ldbpreset'))
+ for source,_ in guide['atlas_sources']:
+  jobs[f'optical-drift-{source}-after.png']=(drift,source)
+ # New-feature visuals use both charts and all three footage sources.
  for number in range(33,44):
   preset=next((R/'presets/demonstrations').glob(f'{number:02d}-*.ldbpreset'))
-  for source in ('iso','milano1'):jobs[f'demo-{preset.stem.lower()}-{source}-after.png']=(preset,source)
+  for source,_ in guide['atlas_sources']:jobs[f'demo-{preset.stem.lower()}-{source}-after.png']=(preset,source)
  manifest={'jobs':[{'output':name,'preset':str(p.relative_to(R)),'source':source} for name,(p,source) in jobs.items()]}
  (WORK/'manifest.json').write_text(json.dumps(manifest,indent=2)+'\n');print(f'Reused accepted footage outputs; {len(jobs)} missing/changed guide assets, no benchmarks.',flush=True)
  if opt.prepare_only:return
