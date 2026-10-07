@@ -301,3 +301,7 @@ User explicitly requests, after the integrated build passes its Resolve check:
 ### Cinematic guide examples (2026-10-07)
 
 User requests every available Subtle, Medium and Caricature member of each cinematic family in the guide, each with both charts and three iPhone images. Treat members as distinct optical interpretations, not merely amplified controls. Reuse approved matching outputs; render only missing pictures. Single-version presets remain signature examples. This supersedes the guide generator’s previous Medium-only selection.
+
+### Glass header deferred until after 1.72 (2026-10-07)
+
+User explicitly defers glass lettering to a separate experiment after this release. No glass runtime, mask or rendering dependency belongs in the 1.72 guide. Retain original Ldb typography, size and placement and the approved Internal Field Edge FX ISO background. Retain the preview intro paragraph order (Because all cameras before the free/source paragraph) and link only Preset Authoring Kit. Any future glass approach must demonstrate visible optical effects and acceptable responsiveness in a separate audition before integration. Complete 1.72 guide renders, review, upload diff and manual publication first.
