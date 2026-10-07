@@ -1,0 +1,12 @@
+# Edge-problem fixture; framing Off initially. Not a factory demo.
+LensDebaserPreset=2
+effectSize=0
+projectionModel=1
+projectionAmount=70
+projectionFieldAngle=75
+projectionFraming=2
+finalFramingMode=0
+finalFramingZoom=100
+finalFramingX=0
+finalFramingY=0
+finalFramingMargin=0

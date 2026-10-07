@@ -1,0 +1,12 @@
+# Edge-problem fixture; framing Off initially. Not a factory demo.
+LensDebaserPreset=2
+effectSize=0
+vignetteMechanical=1
+imageCircleSize=0.85
+imageCircleAspect=1
+imageCircleSoftness=0.08
+finalFramingMode=0
+finalFramingZoom=100
+finalFramingX=0
+finalFramingY=0
+finalFramingMargin=0

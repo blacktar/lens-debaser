@@ -6,3 +6,5 @@ if pgrep -x Resolve >/dev/null; then echo 'Quit Resolve before rendering guide e
 make build/ldb-factory-preset-review
 /usr/bin/python3 scripts/render-guide-1.72.py
 /usr/bin/python3 scripts/render-guide-1.72-depth.py
+
+/usr/bin/python3 scripts/check-guide-1.72.py

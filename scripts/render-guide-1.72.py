@@ -24,7 +24,7 @@ for preset in sorted((r/'presets/cinematic-lenses').glob('*.ldbpreset')):
    available,method=memory.available_memory()
    if available < 1024**3:raise SystemExit(f'Paused before next case: macOS reports less than 1 GiB available ({method}). Completed images retained; rerun to resume.')
    print(f'Rendering {preset.stem} / {source}: one frame, no benchmark',flush=True)
-   env=dict(os.environ,LDB_REVIEW_STANDALONE='1',LDB_REVIEW_SINGLE_RENDER='1',LDB_REVIEW_RENDER_ONLY='1',LDB_REVIEW_BENCHMARK_FRAMES='1',LDB_REVIEW_BENCHMARK_RUNS='1')
+   env=dict({k:v for k,v in os.environ.items() if not k.startswith("LDB_REVIEW_")},LDB_REVIEW_STANDALONE='1',LDB_REVIEW_SINGLE_RENDER='1',LDB_REVIEW_RENDER_ONLY='1',LDB_REVIEW_BENCHMARK_FRAMES='1',LDB_REVIEW_BENCHMARK_RUNS='1')
    with Path(str(prefix)+'-log.txt').open('w') as log:subprocess.run([str(tool),str(lib),str(lib),str(r),str(preset),str(preset),source,str(prefix)],env=env,stdout=log,stderr=subprocess.STDOUT,check=True,timeout=180)
    assert json.loads(audit.read_text())['nonfinite']==0;stamp.write_text(key)
   shutil.copyfile(image,target);rendered+=1
