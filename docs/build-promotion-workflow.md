@@ -305,3 +305,7 @@ User requests every available Subtle, Medium and Caricature member of each cinem
 ### Glass header deferred until after 1.72 (2026-10-07)
 
 User explicitly defers glass lettering to a separate experiment after this release. No glass runtime, mask or rendering dependency belongs in the 1.72 guide. Retain original Ldb typography, size and placement and the approved Internal Field Edge FX ISO background. Retain the preview intro paragraph order (Because all cameras before the free/source paragraph) and link only Preset Authoring Kit. Any future glass approach must demonstrate visible optical effects and acceptable responsiveness in a separate audition before integration. Complete 1.72 guide renders, review, upload diff and manual publication first.
+
+### Next guide revision: GitHub issue tracker (2026-10-07)
+
+User requests a clear link to https://github.com/blacktar/lens-debaser/issues for bug reports, feature requests and related feedback in the next version of the user guide. Update relevant support/reporting text during that revision. Do not alter the already-approved 1.72 upload diff for this deferred change.
