@@ -38,6 +38,30 @@ Liquid Prism, Tilted Miniature and Vortex Glass. Installation copies
 them outside the OFX bundle to
 `~/Library/Application Support/Lens Debaser/Presets`.
 
+## Installing the downloaded release
+
+Unpack the release ZIP, quit Resolve, and open **Install Lens Debaser.command**.
+Approve the administrator-password request, then restart Resolve.
+
+The current release is not yet notarized by Apple. If macOS blocks the
+installer, try opening it once, then go to System Settings > Privacy & Security
+and choose Open Anyway for the installer. Confirm Open and authenticate when
+requested.
+
+Alternatively, for the release you downloaded from the official Lens Debaser
+GitHub repository, open Terminal and run:
+
+    xattr -cr "/path/to/Lens-Debaser-release-folder"
+
+Replace the quoted path with the extracted release folder's actual path; you
+can drag that folder from Finder into Terminal after typing `xattr -cr `.
+Then open “Install Lens Debaser.command” again. You can also target a specific
+installer or plug-in bundle instead of the folder. This removes quarantine and
+other extended attributes only from the specified path; it does not disable
+Gatekeeper system-wide. The installer handles the installed plug-in bundle.
+
+See [Apple’s Open Anyway instructions](https://support.apple.com/en-us/102445).
+
 ## AI-assisted preset authoring
 
 The [Preset Authoring Kit](preset-authoring/AI-PRESET-AUTHORING.md) lets users
