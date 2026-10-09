@@ -138,6 +138,14 @@ Versioned release archives are published as GitHub release assets so users do
 not need Xcode or the Resolve OpenFX SDK. Download the current build from
 [GitHub Releases](https://github.com/blacktar/lens-debaser/releases).
 
+## Release roadmap
+
+Apple Developer ID signing and notarization are planned once Apple reactivates
+Vidar Andersen’s dormant Apple Developer account. The reactivation request has
+been submitted to Apple. After access is restored, the release workflow will
+include Developer ID signing, Apple notarization and verification of the signed
+distribution. The current 1.72 bundle is ad-hoc signed and is not notarized.
+
 ## License, credits and third-party notices
 
 Lens Debaser is licensed under the
