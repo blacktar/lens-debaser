@@ -1,0 +1,11 @@
+header.hero .hero-cta{position:relative;isolation:isolate;border-radius:999px;background:transparent!important;border:1px solid transparent;color:white!important;overflow:hidden;text-shadow:none!important;box-shadow:none!important;padding:1.05em clamp(1.5em, calc(7em - 12vw), 3.5em);max-width:100%;text-align:center;font-size:1.08em;--ag-radius:999px}header.hero .hero-actions{display:flex;flex-wrap:nowrap;gap:12px}header.hero .hero-cta{flex:1 1 0;min-width:0;padding-inline:clamp(.5em,2.5vw,1.5em);display:flex;align-items:center;justify-content:center}.hero-cta .ag-refract{z-index:-1;transition:background-color 160ms ease}header.hero .hero-cta:hover,header.hero .hero-cta:focus-visible{--ag-tint:rgb(255 255 255 / .1)!important;border-color:transparent}header.hero .hero-cta:focus-visible{outline:2px solid #16cbf6;outline-offset:4px}header.hero .hero-cta{transition:transform 100ms ease,border-color 160ms ease;transform-origin:center}header.hero .hero-cta:active{transform:translateY(1px) scale(.98);--ag-tint:rgb(255 255 255 / .1)!important;border-color:transparent}@media(prefers-reduced-motion:reduce){.hero-cta .ag-refract,header.hero .hero-cta{transition:none}}
+
+/* CSS pixels define touch size independently of Retina pixel density. */
+header.hero .hero-cta{font-size:clamp(.875rem,3.8vw,1.08rem);line-height:1.25;min-height:52px;padding-block:.85em}
+header.hero .hero-actions{align-items:stretch;gap:clamp(8px,2vw,12px)}
+@media(max-width:700px) and (orientation:portrait){header.hero:before{background-size:100% 100%,cover;background-position:center,right bottom;opacity:1}}
+
+header.hero .hero-cta:after{content:"";position:absolute;inset:0;border-radius:inherit;background:rgb(0 0 0 / .18);opacity:0;pointer-events:none;transition:opacity 100ms ease}header.hero .hero-cta:active:after{opacity:1}
+
+/* Lettering is painted into the readable backdrop, once it is ready. */
+header.hero.glass-backdrop-ready:after{visibility:hidden}

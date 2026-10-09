@@ -53,7 +53,7 @@ def current_manifest() -> dict[str, dict[str, int | str]]:
         # Finder may create conflict copies such as "image 2.png". They are
         # never referenced by the guide and must not enter an upload delta.
         finder_copy = re.search(r" \d+$", path.stem) is not None
-        if (path.is_file() and path.suffix.lower() in PUBLISHABLE_SUFFIXES
+        if (path.name not in {"iphone.html", "iphone2.html", "iphone3.html"} and path.is_file() and (path.suffix.lower() in PUBLISHABLE_SUFFIXES or path.name in {"glass-buttons.js", "amazing-glass.css", "AMAZING-GLASS-LICENSE.txt"})
                 and not finder_copy):
             files[path.relative_to(GUIDE_ROOT).as_posix()] = file_state(path)
     return files
@@ -93,7 +93,7 @@ def changes() -> tuple[list[str], list[str]]:
         if previous is None:
             changed.append(name)
         elif isinstance(previous, dict):
-            if previous != value:
+            if previous.get("sha256") != value["sha256"]:
                 changed.append(name)
         elif file_digest(GUIDE_ROOT / name) != previous:
             changed.append(name)
