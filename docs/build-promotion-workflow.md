@@ -76,6 +76,37 @@ decoding, motion/export testing and native-resolution playback.
    separately from the pre-deployment test/benchmark/visual acceptance.
 6. Package, commit and push only when the agreed release workflow is complete.
 
+## Required user-guide audit before every release
+
+Before releasing any new version, review and validate the complete user guide
+against the exact candidate being released, even when the guide appears unchanged.
+This is a required release gate, not an optional editorial check.
+
+- Verify control and group names, menu choices, features, ranges and defaults
+  against the release UI, control definitions and implemented behavior. Remove
+  outdated names and descriptions; do not document unfinished experimental code
+  as released functionality.
+- Check that descriptions explain what users will see, what each control changes,
+  relevant limits, prerequisites, disabled states and interactions with other
+  controls. Distinguish effects that add blur or light from those that change
+  geometry, color, focus interpretation or final framing.
+- Use plain language understandable to someone with some cinematography, editing,
+  color-grading, post-production or VFX experience. Do not assume programming,
+  mathematical or engine-development knowledge. Explain necessary optical terms
+  through their visible effect; avoid unexplained jargon and abstract wording.
+- Check the whole guide for consistency: reference text, navigation and hierarchy,
+  UI approximations, examples, preset lists, installation instructions and release
+  notes must describe the same current product. Keep internal development details
+  out of user-facing copy.
+- Validate anchors, links and required visual assets, and inspect the resulting
+  guide. Mechanical coverage or a successful build alone does not establish that
+  the descriptions are accurate or understandable.
+- Correct discrepancies before release and record the audit result and any
+  unresolved items in the release review. Present changed guide content for user
+  acceptance before packaging its upload diff, following the procedure below.
+  Reuse unchanged passed renders; this audit does not authorize unnecessary
+  regeneration.
+
 ## Externally hosted user guide
 
 The user guide is published separately from the downloadable plug-in package.
@@ -309,3 +340,7 @@ User explicitly defers glass lettering to a separate experiment after this relea
 ### Next guide revision: GitHub issue tracker (2026-10-07)
 
 User requests a clear link to https://github.com/blacktar/lens-debaser/issues for bug reports, feature requests and related feedback in the next version of the user guide. Update relevant support/reporting text during that revision. Do not alter the already-approved 1.72 upload diff for this deferred change.
+
+## Ldb letter glass set aside (2026-10-07)
+
+User decides to scratch glass on Ldb letters for now: no appealing setting found after SVG geometry and expanded-range auditions. Retain the isolated experiment and its source for reference; do not integrate letter glass into the guide. Restore approved original decorative lettering. Button glass is a separate experiment and is not implicitly rejected or approved for publication. Published1.72guide remains unchanged.
