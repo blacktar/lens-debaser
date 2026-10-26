@@ -1,0 +1,17 @@
+{
+  "label": "Lens Debaser Preset Copy Test",
+  "base_revision": "30902a7",
+  "optics_sha256": "3104347b68cee626ce68e041d250935bd8a524aaf729ce44ae20f781d21ba5c2",
+  "plugin_sha256": "b40bf850651fa3dfb66a83bdebff49b37b201a6fabe091acfc07fb2d091c8427",
+  "zip_sha256": "0a2f66e7ed5e4a39e6e2674bd89124dad4640e22540acb101f7e153d8021ad4a",
+  "status": "Package and codec checks passed; user confirmed Resolve test passed",
+  "resolve_test": "passed",
+  "resolve_test_date": "2026-10-26",
+  "resolve_test_evidence": "User reported tested, works after installing the full-catalogue preset-copy test; requested scope: all loaded presets survive node copying and Apply Grade from Previous Clip.",
+  "version": "1.73",
+  "build": 173,
+  "release_host_source_sha256": "e59a77069975870242dcb5903dd5e3472a30ccfc8a3bd0671f1e67992ed63097",
+  "resolve_feature_pass": true,
+  "resolve_evidence": "User confirmed tested, works on 2026-10-26 for full-catalogue node copy and previous-clip grade transfer. Stable identity promotion has not yet had an independent installed Resolve test.",
+  "tested_host_source_sha256": "cfafb61af305f3c623d5fbf9c0482c61e39739e948172d95550a38d5b883b180"
+}

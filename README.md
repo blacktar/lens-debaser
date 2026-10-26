@@ -5,7 +5,9 @@ DaVinci Resolve. It models perceptually useful aspects of modern, vintage,
 anamorphic and exotic optics, prioritising pleasing visual approximations and
 interactive performance over scientific lens simulation.
 
-Current development version: **1.72**.
+Current development version: **1.73**.
+
+Version 1.73 preserves the full loaded preset list when copying nodes, applying the previous clip’s grade, and reopening a project. Active selections and manual adjustments are retained. It uses the approved 1.72 optical processing; the flare and Detail Transfer experiments are not included. Build this release with `python3 scripts/release-1.73/prepare.py`, then package with `python3 scripts/notarization/build-installer-1.73.py`.
 
 Version 1.72 (internal build 172, approved RC1 binary) adds Final Framing: Auto Fill Frame with signed Adjust Auto, plus independent Manual Crop. Integrated validation and Resolve checks passed. Existing optical presets remain unchanged; the guide update is awaiting review and manual publication.
 
