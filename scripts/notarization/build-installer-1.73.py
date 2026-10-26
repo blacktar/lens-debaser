@@ -66,8 +66,6 @@ An existing installed plug-in is copied to a dated directory under
 User guide: https://vidarandersen.com/dmz/lens-debaser-ofx/
 Issues: https://github.com/blacktar/lens-debaser/issues
 
-This release adds the tested full preset-list copy fix and preserves the approved
-1.72 optical processing. Experimental Detail Transfer and flare are not included.
 '''
  (shared/'README.txt').write_text(readme)
  (shared/'LICENSE.txt').write_bytes((R/'LICENSE').read_bytes())
@@ -122,7 +120,7 @@ exit 0
  components.write_bytes(plistlib.dumps(config))
  component=work/'LensDebaserPayload.pkg'
  run(['pkgbuild','--root',root,'--install-location','/','--identifier','com.ldb.LensDebaser.pkg','--version','1.73','--ownership','recommended','--component-plist',components,'--scripts',scripts,'--sign',INSTALLER,component])
- ui=work/'ui';ui.mkdir();(ui/'Welcome.txt').write_text('Lens Debaser 1.73 for Apple Silicon\n\nQuit Resolve before continuing. The installer installs the approved plug-in, factory presets and AI Preset Authoring Kit.\n\nAn existing plug-in is backed up. Your personal presets are retained.\n')
+ ui=work/'ui';ui.mkdir();(ui/'Welcome.txt').write_text('Lens Debaser 1.73 for Apple Silicon\n\nQuit Resolve before continuing. The installer installs the plug-in, factory presets and AI Preset Authoring Kit.\n\nAn existing plug-in is backed up. Your personal presets are retained.\n')
  (ui/'ReadMe.txt').write_text(readme)
  distribution=work/'Distribution.xml'
  requirements=work/'requirements.plist';requirements.write_bytes(plistlib.dumps({'arch':['arm64'],'os':[minimum_os]}))

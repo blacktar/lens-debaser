@@ -4,7 +4,7 @@ This release preserves the full loaded preset list when copying a node, applying
 
 For nodes created in older versions, use Load again to capture the complete preset folder. Missing metadata from an older node cannot be recovered automatically.
 
-The isolated full-catalogue test was confirmed working by the user on 26 October 2026. The stable build changes its label, bundle version and host-reported version to 1.73, and uses the normal stable plug-in identifier. The exact 1.72 optical library is retained. Experimental flare and Detail Transfer changes are excluded. Installation of this final stable-identity package has not yet been independently tested in Resolve.
+The isolated full-catalogue test was confirmed working by the user on 26 October 2026. The stable build changes its label, bundle version and host-reported version to 1.73, and uses the normal stable plug-in identifier. The exact 1.72 optical library is retained. Experimental flare and Detail Transfer changes are excluded. The user confirmed installation of the final stable-identity package works on 26 October 2026. Installer revision 20261026_v2 removes development-only README and welcome wording; plug-in behavior is unchanged.
 
 ## Reproducible release build
 

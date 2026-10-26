@@ -13,5 +13,8 @@
   "release_host_source_sha256": "e59a77069975870242dcb5903dd5e3472a30ccfc8a3bd0671f1e67992ed63097",
   "resolve_feature_pass": true,
   "resolve_evidence": "User confirmed tested, works on 2026-10-26 for full-catalogue node copy and previous-clip grade transfer. Stable identity promotion has not yet had an independent installed Resolve test.",
-  "tested_host_source_sha256": "cfafb61af305f3c623d5fbf9c0482c61e39739e948172d95550a38d5b883b180"
+  "tested_host_source_sha256": "cfafb61af305f3c623d5fbf9c0482c61e39739e948172d95550a38d5b883b180",
+  "stable_installer_resolve_test": "passed",
+  "stable_installer_resolve_test_date": "2026-10-26",
+  "stable_installer_resolve_test_evidence": "User confirmed installation works for 20261026_v1. Subsequent installer revision changes only README and welcome text."
 }
